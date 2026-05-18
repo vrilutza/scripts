@@ -4,7 +4,7 @@
 # =============================================================================
 #
 #  Ce instaleaza:
-#    1. Dependente (build-essential, dkms, linux-headers, linux-source, etc.)
+#    1. Dependente (build-essential, dkms, linux-headers-amd64, linux-source, etc.)
 #    2. Driver audio Cirrus Logic CS8409
 #       https://github.com/davidjo/snd_hda_macbookpro
 #    3. Firmware camera FaceTime HD (extras din driverul Apple OS X)
@@ -98,7 +98,7 @@ step "$CURRENT_STEP"
 info "Proiect: https://github.com/davidjo/snd_hda_macbookpro"
 
 if sudo dkms status 2>/dev/null | grep -q "snd_hda_macbookpro"; then
-    warn "Driver-ul audio este deja inregistrat in DKMS. Sar clonarea."
+    warn "Driver-ul audio este deja inregistrat in DKMS. Sar aceasta etapa."
 else
     cd "$WORKDIR"
     if [ -d "snd_hda_macbookpro" ]; then
@@ -254,8 +254,8 @@ info "Verificare parametri GRUB..."
 GRUB_FILE="/etc/default/grub"
 GRUB_NEEDS_UPDATE=false
 
-if grep -q "acpi_backlight=native" "$GRUB_FILE"; then
-    warn "acpi_backlight=native deja prezent in GRUB."
+if grep -q "acpi_backlight=native" "$GRUB_FILE" && grep -q "mem_sleep_default=s2idle" "$GRUB_FILE"; then
+    warn "Parametrii GRUB deja prezenti. Sar aceasta etapa."
 else
     info "Adaugare acpi_backlight=native si mem_sleep_default=s2idle in GRUB..."
     sudo sed -i \
