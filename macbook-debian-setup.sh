@@ -110,7 +110,7 @@ else
             || fail "git clone snd_hda_macbookpro a esuat."
     fi
 
-    cd snd_hda_macbookpro
+    cd snd_hda_macbookpro || fail "Nu am putut intra in directorul snd_hda_macbookpro."
     info "Instalare driver audio cu DKMS (poate dura cateva minute)..."
     sudo ./install.cirrus.driver.sh -i || fail "install.cirrus.driver.sh a esuat."
     cd "$WORKDIR"
@@ -153,7 +153,7 @@ else
             || fail "git clone facetimehd-firmware a esuat."
     fi
 
-    cd facetimehd-firmware
+    cd facetimehd-firmware || fail "Nu am putut intra in directorul facetimehd-firmware."
     info "Extragere firmware din driverul Apple OS X (descarca automat ~50MB)..."
     make || fail "make firmware a esuat. Verifica conexiunea la internet."
     info "Instalare firmware..."
@@ -195,7 +195,7 @@ else
     [ -z "$FTIMEHD_VER" ] && FTIMEHD_VER="0.7.0.1"
     info "Versiune driver camera: $FTIMEHD_VER"
 
-    cd facetimehd
+    cd facetimehd || fail "Nu am putut intra in directorul facetimehd."
     info "Compilare modul kernel..."
     make || fail "Compilarea facetimehd a esuat."
 
@@ -207,7 +207,7 @@ else
     fi
 
     info "dkms add..."
-    sudo dkms add -m facetimehd -v "$FTIMEHD_VER" 2>/dev/null \
+    sudo dkms add -m facetimehd -v "$FTIMEHD_VER" \
         || warn "dkms add: modulul poate fi deja adaugat, continui."
 
     info "dkms build..."
@@ -269,7 +269,7 @@ if [ "$GRUB_NEEDS_UPDATE" = true ]; then
     sudo update-grub || fail "update-grub a esuat."
 fi
 
-if grep -q "acpi_backlight=native" "$GRUB_FILE"; then
+if grep -q "acpi_backlight=native" "$GRUB_FILE" && grep -q "mem_sleep_default=s2idle" "$GRUB_FILE"; then
     ok "GRUB: acpi_backlight=native + mem_sleep_default=s2idle aplicate."
 else
     fail "Parametrii GRUB nu au fost scrisi corect in $GRUB_FILE."
