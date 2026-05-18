@@ -1,17 +1,32 @@
-# macbook-linux
+# scripts
 
 Setup scripts for **MacBook Pro 13" 2017 (A1708)** running **Debian Testing**.
 
-Each folder is independent — run only what you need.
+## Usage
 
-## Structure
+```bash
+git clone https://github.com/vrilutza/scripts.git
+cd scripts
+chmod +x macbook-debian-setup.sh
+./macbook-debian-setup.sh
+sudo reboot
+```
 
-| Folder | Content |
+## Scripts
+
+### `macbook-debian-setup.sh`
+
+Full setup for MacBook Pro 13" 2017 on a fresh Debian Testing install. Runs in 5 stages, each with auto-verification before proceeding.
+
+| Stage | What it does |
 |---|---|
-| [`drivers/`](drivers/) | Audio (Cirrus CS8409), Camera (FaceTime HD) |
-| [`optimization/`](optimization/) | Battery, thermal, performance tweaks |
-| [`dev-tools/`](dev-tools/) | Development environment (IDE, Docker, languages) |
-| [`system/`](system/) | Backlight, touchpad, keyboard, suspend |
+| 1 — Dependencies | `build-essential`, `dkms`, `linux-headers`, `linux-source`, `git`, `patch`, `wget` |
+| 2 — Audio driver | [davidjo/snd_hda_macbookpro](https://github.com/davidjo/snd_hda_macbookpro) — Cirrus CS8409 patched driver via DKMS |
+| 3 — Camera firmware | [patjak/facetimehd-firmware](https://github.com/patjak/facetimehd-firmware) — extracted from Apple OS X driver |
+| 4 — Camera driver | [patjak/facetimehd](https://github.com/patjak/facetimehd) — kernel module via DKMS |
+| 5 — System fixes | Backlight (`acpi_backlight=native`) + stable suspend (`mem_sleep_default=s2idle` + facetimehd sleep hook) |
+
+Both DKMS modules auto-rebuild on kernel updates. The script is idempotent — safe to re-run, skips already completed stages.
 
 ## Hardware
 
@@ -22,27 +37,6 @@ Each folder is independent — run only what you need.
 - Camera: Broadcom 720p FaceTime HD [14e4:1570]
 - WiFi: Broadcom BCM4350
 
-## Usage
+## Tested on
 
-```bash
-git clone https://github.com/vrilutza/macbook-linux.git
-cd macbook-linux/drivers
-chmod +x macbook-debian-setup.sh
-./macbook-debian-setup.sh
-```
-
-## Scripts
-
-### `drivers/macbook-debian-setup.sh`
-
-Installs audio and FaceTime HD camera drivers on a fresh Debian Testing install.
-
-- **Audio**: [davidjo/snd_hda_macbookpro](https://github.com/davidjo/snd_hda_macbookpro) — Cirrus Logic CS8409 patched driver via DKMS
-- **Camera firmware**: [patjak/facetimehd-firmware](https://github.com/patjak/facetimehd-firmware) — extracted from Apple OS X driver
-- **Camera driver**: [patjak/facetimehd](https://github.com/patjak/facetimehd) — kernel module via DKMS
-
-Both DKMS modules auto-rebuild on kernel updates.
-
-## OS
-
-Tested on **Debian Testing** (kernel 7.0.7+deb14-amd64) — May 2026.
+Debian Testing — kernel 7.0.7+deb14-amd64 — May 2026.
