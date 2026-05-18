@@ -20,7 +20,7 @@ Full setup for MacBook Pro 13" 2017 on a fresh Debian Testing install. Runs in 5
 
 | Stage | What it does |
 |---|---|
-| 1 — Dependencies | `build-essential`, `dkms`, `linux-headers`, `linux-source`, `git`, `patch`, `wget` |
+| 1 — Dependencies | `build-essential`, `linux-headers-amd64`, `linux-source`, `dkms`, `git`, `patch`, `wget`, `curl`, `cpio`, `xz-utils`, `libssl-dev` |
 | 2 — Audio driver | [davidjo/snd_hda_macbookpro](https://github.com/davidjo/snd_hda_macbookpro) — Cirrus CS8409 patched driver via DKMS |
 | 3 — Camera firmware | [patjak/facetimehd-firmware](https://github.com/patjak/facetimehd-firmware) — extracted from Apple OS X driver |
 | 4 — Camera driver | [patjak/facetimehd](https://github.com/patjak/facetimehd) — kernel module via DKMS |

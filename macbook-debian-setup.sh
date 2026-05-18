@@ -70,7 +70,7 @@ mkdir -p "$WORKDIR"
 CURRENT_STEP="ETAPA 1/5 — Dependente"
 step "$CURRENT_STEP"
 
-PKGS=(build-essential linux-headers-amd64 linux-source dkms git patch wget)
+PKGS=(build-essential linux-headers-amd64 linux-source dkms git patch wget curl cpio xz-utils libssl-dev)
 
 info "Actualizare lista de pachete..."
 sudo apt-get update -qq || fail "apt-get update a esuat."
