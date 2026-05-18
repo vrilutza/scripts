@@ -12,6 +12,8 @@
 #    4. Driver kernel camera FaceTime HD cu DKMS
 #       https://github.com/patjak/facetimehd
 #    5. Fix sistem: luminozitate ecran + suspend stabil (sleep hook facetimehd)
+#    6. Fix touchpad Apple SPI — elimina "Touch jump detected and discarded"
+#    7. Accelerare video hardware VA-API (Intel Iris Plus 640 / Kaby Lake)
 #
 #  Utilizare:
 #    chmod +x macbook-debian-setup.sh
@@ -42,6 +44,7 @@ fail()  {
 }
 
 CURRENT_STEP="initializare"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKDIR="$HOME/macbook-setup"
 KERNEL="$(uname -r)"
 
@@ -65,9 +68,9 @@ mkdir -p "$WORKDIR"
 
 
 # =============================================================================
-# ETAPA 1/5 — Dependente
+# ETAPA 1/7 — Dependente
 # =============================================================================
-CURRENT_STEP="ETAPA 1/5 — Dependente"
+CURRENT_STEP="ETAPA 1/7 — Dependente"
 step "$CURRENT_STEP"
 
 PKGS=(build-essential linux-headers-amd64 linux-source dkms git patch wget curl cpio xz-utils libssl-dev)
@@ -90,10 +93,10 @@ ok "Toate dependentele sunt instalate."
 
 
 # =============================================================================
-# ETAPA 2/5 — Driver audio Cirrus Logic CS8409
+# ETAPA 2/7 — Driver audio Cirrus Logic CS8409
 # https://github.com/davidjo/snd_hda_macbookpro
 # =============================================================================
-CURRENT_STEP="ETAPA 2/5 — Driver audio"
+CURRENT_STEP="ETAPA 2/7 — Driver audio"
 step "$CURRENT_STEP"
 info "Proiect: https://github.com/davidjo/snd_hda_macbookpro"
 
@@ -131,10 +134,10 @@ fi
 
 
 # =============================================================================
-# ETAPA 3/5 — Firmware camera FaceTime HD
+# ETAPA 3/7 — Firmware camera FaceTime HD
 # https://github.com/patjak/facetimehd-firmware
 # =============================================================================
-CURRENT_STEP="ETAPA 3/5 — Firmware camera FaceTime HD"
+CURRENT_STEP="ETAPA 3/7 — Firmware camera FaceTime HD"
 step "$CURRENT_STEP"
 info "Proiect: https://github.com/patjak/facetimehd-firmware"
 
@@ -170,10 +173,10 @@ fi
 
 
 # =============================================================================
-# ETAPA 4/5 — Driver kernel camera FaceTime HD cu DKMS
+# ETAPA 4/7 — Driver kernel camera FaceTime HD cu DKMS
 # https://github.com/patjak/facetimehd
 # =============================================================================
-CURRENT_STEP="ETAPA 4/5 — Driver camera FaceTime HD (DKMS)"
+CURRENT_STEP="ETAPA 4/7 — Driver camera FaceTime HD (DKMS)"
 step "$CURRENT_STEP"
 info "Proiect: https://github.com/patjak/facetimehd"
 
@@ -243,9 +246,9 @@ fi
 
 
 # =============================================================================
-# ETAPA 5/5 — Fix sistem: luminozitate ecran + suspend stabil
+# ETAPA 5/7 — Fix sistem: luminozitate ecran + suspend stabil
 # =============================================================================
-CURRENT_STEP="ETAPA 5/5 — Fix luminozitate si suspend"
+CURRENT_STEP="ETAPA 5/7 — Fix luminozitate si suspend"
 step "$CURRENT_STEP"
 
 # --- 5a: GRUB — luminozitate (acpi_backlight=native) + sleep mode (s2idle) ---
@@ -306,6 +309,109 @@ fi
 
 
 # =============================================================================
+# ETAPA 6/7 — Fix touchpad Apple SPI (patch kernel via DKMS)
+# Problema: "Apple SPI Touchpad: kernel bug: Touch jump detected and discarded"
+# Cauza:    driver-ul applespi primeste coordonate corupte de pe SPI bus
+# Fix:      velocity filter in report_tp_state() — patch out-of-tree via DKMS
+# Sursa:    applespi-fix/ din acest repo
+# =============================================================================
+CURRENT_STEP="ETAPA 6/7 — Fix touchpad Apple SPI (DKMS)"
+step "$CURRENT_STEP"
+info "Problema: cursor sare — Touch jump in jurnalul kernel"
+info "Fix: velocity filter in driver applespi — DKMS patch"
+
+APPLESPI_SRC="${SCRIPT_DIR}/applespi-fix"
+APPLESPI_VER="7.0.7"
+APPLESPI_DKMS_SRC="/usr/src/applespi-fix-${APPLESPI_VER}"
+
+if [ ! -d "$APPLESPI_SRC" ]; then
+    fail "Directorul applespi-fix lipseste: $APPLESPI_SRC — cloneaza repo-ul complet."
+fi
+
+if sudo dkms status 2>/dev/null | grep -q "applespi-fix/${APPLESPI_VER}"; then
+    warn "Modulul applespi-fix/${APPLESPI_VER} este deja inregistrat in DKMS. Sar aceasta etapa."
+else
+    info "Copiere surse in $APPLESPI_DKMS_SRC..."
+    sudo rm -rf "$APPLESPI_DKMS_SRC"
+    sudo cp -r "$APPLESPI_SRC" "$APPLESPI_DKMS_SRC" \
+        || fail "Copierea surselor applespi-fix a esuat."
+
+    info "dkms add applespi-fix/${APPLESPI_VER}..."
+    sudo dkms add -m applespi-fix -v "$APPLESPI_VER" \
+        || warn "dkms add: modulul poate fi deja adaugat, continui."
+
+    info "dkms build applespi-fix/${APPLESPI_VER} (poate dura ~1 minut)..."
+    sudo dkms build -m applespi-fix -v "$APPLESPI_VER" \
+        || fail "dkms build applespi-fix a esuat. Verifica: sudo dkms status"
+
+    info "dkms install applespi-fix/${APPLESPI_VER}..."
+    sudo dkms install -m applespi-fix -v "$APPLESPI_VER" \
+        || fail "dkms install applespi-fix a esuat."
+fi
+
+if sudo dkms status 2>/dev/null | grep -q "applespi-fix/${APPLESPI_VER}"; then
+    ok "Modulul applespi-fix/${APPLESPI_VER} inregistrat in DKMS."
+else
+    fail "applespi-fix nu apare in dkms status. Verifica cu: sudo dkms status"
+fi
+
+# Inlocuire modul incarcat fara reboot
+info "Incarcare modul applespi cu patch aplicat..."
+if lsmod | grep -q "^applespi"; then
+    sudo modprobe -r applespi 2>/dev/null || true
+fi
+sudo modprobe applespi || warn "modprobe applespi a esuat — va fi incarcat la reboot."
+
+if lsmod | grep -q "^applespi"; then
+    ok "Modulul applespi (patched) este incarcat."
+    info "Verifica: journalctl -f 2>/dev/null | grep -i 'touch jump'"
+else
+    warn "Modulul va fi activ dupa reboot."
+fi
+
+
+# =============================================================================
+# ETAPA 7/7 — Accelerare video hardware VA-API (Intel Iris Plus 640)
+# Problema: "vaInitialize failed: unknown libva error" in VS Code / Chrome
+# Cauza:    driver-ele VA-API pentru Intel Kaby Lake nu sunt instalate
+# Fix:      intel-media-va-driver (iHD, Kaby Lake+) + i965-va-driver (fallback)
+# =============================================================================
+CURRENT_STEP="ETAPA 7/7 — Accelerare video hardware VA-API"
+step "$CURRENT_STEP"
+info "Intel Iris Plus 640 (Kaby Lake) — instalare drivere VA-API..."
+
+VAAPI_PKGS=(intel-media-va-driver i965-va-driver vainfo)
+
+info "Instalare pachete VA-API: ${VAAPI_PKGS[*]}"
+sudo apt-get install -y "${VAAPI_PKGS[@]}" || fail "Instalarea pachetelor VA-API a esuat."
+
+for pkg in "${VAAPI_PKGS[@]}"; do
+    if dpkg -l "$pkg" 2>/dev/null | grep -q "^ii"; then
+        ok "$pkg"
+    else
+        warn "Pachetul '$pkg' nu a putut fi instalat — poate nu e disponibil."
+    fi
+done
+
+# Verificare VA-API cu driver iHD (Intel Media Driver — Kaby Lake nativ)
+if command -v vainfo &>/dev/null; then
+    VAAPI_iHD=$(LIBVA_DRIVER_NAME=iHD vainfo 2>&1 | grep -c "VAProfile" || true)
+    if [ "$VAAPI_iHD" -gt 0 ]; then
+        ok "VA-API functional cu driver iHD (Intel Media Driver — Kaby Lake)."
+    else
+        VAAPI_i965=$(LIBVA_DRIVER_NAME=i965 vainfo 2>&1 | grep -c "VAProfile" || true)
+        if [ "$VAAPI_i965" -gt 0 ]; then
+            ok "VA-API functional cu driver i965 (fallback)."
+        else
+            warn "VA-API instalat dar neactivat inca — va fi activ dupa reboot."
+        fi
+    fi
+else
+    warn "vainfo nu este disponibil pentru verificare — reboot si verifica manual cu: vainfo"
+fi
+
+
+# =============================================================================
 # REZUMAT FINAL
 # =============================================================================
 echo ""
@@ -318,6 +424,8 @@ echo -e "  ${GREEN}✓${NC}  Firmware FaceTime HD — /usr/lib/firmware/facetime
 echo -e "  ${GREEN}✓${NC}  Driver camera FaceTime HD — DKMS"
 echo -e "  ${GREEN}✓${NC}  Luminozitate ecran — acpi_backlight=native in GRUB"
 echo -e "  ${GREEN}✓${NC}  Suspend stabil — s2idle + hook facetimehd"
+echo -e "  ${GREEN}✓${NC}  Fix touchpad Apple SPI — applespi velocity filter (DKMS)"
+echo -e "  ${GREEN}✓${NC}  Accelerare video VA-API — intel-media-va-driver + i965-va-driver"
 echo ""
 echo -e "  ${YELLOW}⚠${NC}  Necesar: ${BOLD}sudo reboot${NC} pentru a activa toate modificarile."
 echo ""
