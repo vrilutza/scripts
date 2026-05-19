@@ -329,19 +329,35 @@ else
 fi
 
 # --- 5c: Hook suspend/resume pentru brcmfmac (WiFi) ---
-# brcmfmac (BCM4350) nu se reinitializeaza corect dupa S3 resume fara reload complet
+# brcmfmac (BCM4350) nu se reinitializeaza corect dupa S3 resume fara reload complet.
+# Problema: modprobe -r esueaza cu "Module brcmfmac is in use" pentru ca NetworkManager
+# deconecteaza interfata dar nu o aduce DOWN la nivel kernel. Fix: PCI sysfs unbind,
+# care opreste corect chip-ul inclusiv la wake-for-hibernate (suspend-then-hibernate default).
 info "Instalare hook suspend pentru WiFi (brcmfmac)..."
 
 WIFI_HOOK="/usr/lib/systemd/system-sleep/brcmfmac"
+WIFI_HOOK_OK=false
 
-if [ -f "$WIFI_HOOK" ]; then
-    warn "Hook suspend brcmfmac deja exista la $WIFI_HOOK."
-else
+# Verifica daca hook-ul existent are deja varianta corecta (PCI unbind)
+if [ -f "$WIFI_HOOK" ] && grep -q "pci/drivers/brcmfmac/unbind" "$WIFI_HOOK"; then
+    warn "Hook suspend brcmfmac (PCI unbind) deja exista la $WIFI_HOOK."
+    WIFI_HOOK_OK=true
+fi
+
+if [ "$WIFI_HOOK_OK" = false ]; then
     sudo tee "$WIFI_HOOK" > /dev/null << 'HOOKEOF'
 #!/bin/sh
+# BCM4350 WiFi suspend hook — MacBook Pro 2017
+# PCI sysfs unbind: opreste chip-ul corect inainte de S3,
+# inclusiv la tranzitia suspend-then-hibernate (default logind).
 case $1/$2 in
-  pre/*)   modprobe -r brcmfmac ;;
-  post/*)  modprobe brcmfmac ;;
+  pre/*)
+    echo -n "0000:02:00.0" > /sys/bus/pci/drivers/brcmfmac/unbind 2>/dev/null || true
+    ;;
+  post/*)
+    modprobe -r brcmfmac 2>/dev/null || true
+    modprobe brcmfmac
+    ;;
 esac
 HOOKEOF
 
