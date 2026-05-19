@@ -11,7 +11,7 @@
 #       https://github.com/patjak/facetimehd-firmware
 #    4. Driver kernel camera FaceTime HD cu DKMS
 #       https://github.com/patjak/facetimehd
-#    5. Fix sistem: luminozitate ecran + suspend stabil (sleep hook facetimehd)
+#    5. Fix sistem: luminozitate, suspend S3 stabil (nvme.noacpi, i915.enable_dc=0), WiFi dupa sleep
 #    6. Fix touchpad Apple SPI — elimina "Touch jump detected and discarded"
 #    7. Accelerare video hardware VA-API (Intel Iris Plus 640 / Kaby Lake)
 #
@@ -273,24 +273,18 @@ if grep -q "mem_sleep_default=s2idle" "$GRUB_FILE"; then
     GRUB_NEEDS_UPDATE=true
 fi
 
-GRUB_ALL_PRESENT=true
 for param in "acpi_backlight=native" "mem_sleep_default=deep" "nvme.noacpi=1" \
              "i915.enable_dc=0" "nvme_core.default_ps_max_latency_us=0"; do
-    if ! grep -q "$param" "$GRUB_FILE"; then
-        GRUB_ALL_PRESENT=false
-        break
+    if grep -q "$param" "$GRUB_FILE"; then
+        info "Prezent: $param"
+    else
+        info "Adaugare: $param"
+        sudo sed -i \
+            "s|GRUB_CMDLINE_LINUX_DEFAULT=\"\(.*\)\"|GRUB_CMDLINE_LINUX_DEFAULT=\"\1 ${param}\"|" \
+            "$GRUB_FILE" || fail "Adaugare '$param' in GRUB a esuat."
+        GRUB_NEEDS_UPDATE=true
     fi
 done
-
-if [ "$GRUB_ALL_PRESENT" = true ]; then
-    warn "Parametrii GRUB deja prezenti. Sar aceasta etapa."
-else
-    info "Adaugare parametri suspend in GRUB..."
-    sudo sed -i \
-        's|GRUB_CMDLINE_LINUX_DEFAULT="\(.*\)"|GRUB_CMDLINE_LINUX_DEFAULT="\1 acpi_backlight=native mem_sleep_default=deep nvme.noacpi=1 i915.enable_dc=0 nvme_core.default_ps_max_latency_us=0"|' \
-        "$GRUB_FILE" || fail "Modificarea GRUB a esuat."
-    GRUB_NEEDS_UPDATE=true
-fi
 
 if [ "$GRUB_NEEDS_UPDATE" = true ]; then
     info "Regenerare grub.cfg..."
