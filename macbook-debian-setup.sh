@@ -11,7 +11,7 @@
 #       https://github.com/patjak/facetimehd-firmware
 #    4. Driver kernel camera FaceTime HD cu DKMS
 #       https://github.com/patjak/facetimehd
-#    5. Fix sistem: luminozitate, suspend S3 stabil (nvme.noacpi, i915.enable_dc=0), WiFi dupa sleep
+#    5. Fix sistem: luminozitate, sleep hooks defensive, auto-suspend dezactivat (S3 unreliable)
 #    6. Fix touchpad Apple SPI — elimina "Touch jump detected and discarded"
 #    7. Accelerare video hardware VA-API (Intel Iris Plus 640 / Kaby Lake)
 #
@@ -252,7 +252,7 @@ fi
 # =============================================================================
 # ETAPA 5/7 — Fix sistem: luminozitate ecran + suspend stabil + WiFi dupa sleep
 # =============================================================================
-CURRENT_STEP="ETAPA 5/7 — Fix luminozitate, suspend si WiFi dupa sleep"
+CURRENT_STEP="ETAPA 5/7 — Fix luminozitate + auto-suspend dezactivat (S3 unreliable)"
 step "$CURRENT_STEP"
 
 # --- 5a: GRUB — luminozitate + suspend stabil pe Apple hardware ---
@@ -368,6 +368,62 @@ if [ -x "$WIFI_HOOK" ]; then
     ok "Hook suspend brcmfmac instalat si executabil: $WIFI_HOOK"
 else
     fail "Hook-ul $WIFI_HOOK nu este executabil sau lipseste."
+fi
+
+# --- 5d: Dezactivare auto-suspend pe idle ---
+# Cauza: S3 deep suspend pe MacBook Pro 2017 (NVMe Apple + EFI Apple) nu se trezeste fiabil
+# dupa intrarea in suspend (kernel intra in PM: suspend entry (deep) si hardware-ul
+# nu mai genereaza wake event). Testat cu toate fix-urile standard (nvme.noacpi, i915.enable_dc,
+# nvme_core.default_ps_max_latency_us, brcmfmac PCI unbind) — comportament inconstant: scurt OK, lung blocheaza.
+# Decizie: dezactivam auto-suspend pe idle + lid close = lock (nu suspend) → comportament predictibil.
+# GRUB params + sleep hooks raman, pentru cazul cand userul vrea sa testeze manual `systemctl suspend`.
+info "Configurare GNOME: dezactivare auto-suspend pe idle..."
+
+if command -v gsettings >/dev/null 2>&1; then
+    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing' \
+        || warn "Nu am putut seta sleep-inactive-ac-type."
+    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 'nothing' \
+        || warn "Nu am putut seta sleep-inactive-battery-type."
+
+    AC_TYPE=$(gsettings get org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 2>/dev/null)
+    BAT_TYPE=$(gsettings get org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 2>/dev/null)
+    if [ "$AC_TYPE" = "'nothing'" ] && [ "$BAT_TYPE" = "'nothing'" ]; then
+        ok "GNOME: auto-suspend dezactivat (AC + baterie)."
+    else
+        warn "GNOME: verificare esuata (AC=$AC_TYPE, BAT=$BAT_TYPE)."
+    fi
+else
+    warn "gsettings nu este disponibil — sari peste config GNOME."
+fi
+
+info "Configurare logind: lid close = lock screen (nu suspend)..."
+
+LOGIND_OVERRIDE="/etc/systemd/logind.conf.d/macbook-no-suspend.conf"
+
+if [ -f "$LOGIND_OVERRIDE" ] && grep -q "HandleLidSwitch=lock" "$LOGIND_OVERRIDE"; then
+    warn "logind override deja exista la $LOGIND_OVERRIDE."
+else
+    sudo mkdir -p "$(dirname "$LOGIND_OVERRIDE")" \
+        || fail "Nu am putut crea $(dirname "$LOGIND_OVERRIDE")."
+
+    sudo tee "$LOGIND_OVERRIDE" > /dev/null << 'LOGINDEOF'
+# MacBook Pro 2017: S3 suspend nu se trezeste fiabil pe acest hardware.
+# Lid close = blocheaza ecranul in loc de suspend (auto-suspend dezactivat in gsettings).
+[Login]
+HandleLidSwitch=lock
+HandleLidSwitchExternalPower=lock
+HandleLidSwitchDocked=ignore
+LOGINDEOF
+
+    info "Aplicare config logind (reincarcare daemon)..."
+    sudo systemctl kill -s HUP systemd-logind 2>/dev/null \
+        || warn "Reincarcare logind: aplica la urmatorul reboot."
+fi
+
+if [ -f "$LOGIND_OVERRIDE" ]; then
+    ok "logind override: $LOGIND_OVERRIDE"
+else
+    fail "logind override nu a fost creat la $LOGIND_OVERRIDE."
 fi
 
 
@@ -486,8 +542,9 @@ echo -e "  ${GREEN}✓${NC}  Driver audio Cirrus CS8409 — DKMS"
 echo -e "  ${GREEN}✓${NC}  Firmware FaceTime HD — /usr/lib/firmware/facetimehd/"
 echo -e "  ${GREEN}✓${NC}  Driver camera FaceTime HD — DKMS"
 echo -e "  ${GREEN}✓${NC}  Luminozitate ecran — acpi_backlight=native in GRUB"
-echo -e "  ${GREEN}✓${NC}  Suspend stabil — S3 deep + nvme.noacpi=1 + i915.enable_dc=0"
-echo -e "  ${GREEN}✓${NC}  WiFi dupa sleep — hook brcmfmac reload la resume"
+echo -e "  ${GREEN}✓${NC}  Auto-suspend dezactivat — S3 nu se trezeste fiabil pe Apple hardware"
+echo -e "  ${GREEN}✓${NC}  Lid close = lock screen (logind), nu suspend"
+echo -e "  ${GREEN}✓${NC}  Sleep hooks (facetimehd + brcmfmac PCI unbind) — defensive pt suspend manual"
 echo -e "  ${GREEN}✓${NC}  Fix touchpad Apple SPI — applespi velocity filter (DKMS)"
 echo -e "  ${GREEN}✓${NC}  Accelerare video VA-API — intel-media-va-driver + i965-va-driver"
 echo ""

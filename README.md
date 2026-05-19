@@ -24,7 +24,7 @@ Full setup for MacBook Pro 13" 2017 on a fresh Debian Testing install. Runs in 7
 | 2 — Audio driver | [davidjo/snd_hda_macbookpro](https://github.com/davidjo/snd_hda_macbookpro) — Cirrus CS8409 patched driver via DKMS |
 | 3 — Camera firmware | [patjak/facetimehd-firmware](https://github.com/patjak/facetimehd-firmware) — extracted from Apple OS X driver |
 | 4 — Camera driver | [patjak/facetimehd](https://github.com/patjak/facetimehd) — kernel module via DKMS |
-| 5 — System fixes | Backlight (`acpi_backlight=native`) + stable suspend (S3 deep, NVMe ACPI disabled, i915 DC-states off) + WiFi-after-resume hook |
+| 5 — System fixes | Backlight (`acpi_backlight=native`) + sleep hooks (defensive) + auto-suspend disabled (see below) |
 | 6 — Touchpad fix | `applespi-fix/` — velocity filter patch for Apple SPI driver via DKMS (see below) |
 | 7 — VA-API | `intel-media-va-driver` + `i965-va-driver` — hardware video acceleration for Intel Iris Plus 640 |
 
@@ -72,6 +72,26 @@ journalctl -f 2>/dev/null | grep -i 'touch jump'
 - Audio: Cirrus Logic CS8409 / CS42L83
 - Camera: Broadcom 720p FaceTime HD [14e4:1570]
 - WiFi/Bluetooth: Broadcom BCM4350 (WiFi) / BCM4350C0 (Bluetooth, UART on serial0/ttyS4)
+
+## Suspend / sleep
+
+**Auto-suspend on idle is disabled.** S3 deep suspend does not wake reliably on this hardware
+(Apple proprietary NVMe + Apple EFI). Tested with all the usual fixes (`nvme.noacpi=1`,
+`i915.enable_dc=0`, `nvme_core.default_ps_max_latency_us=0`, brcmfmac PCI unbind hook):
+short suspends sometimes wake, longer ones (>20 min) leave the system frozen, only power
+button recovers — which causes data loss risk.
+
+Stage 5 configures:
+
+- GNOME `sleep-inactive-ac-type` / `sleep-inactive-battery-type` → `nothing` (no auto-suspend)
+- logind override at `/etc/systemd/logind.conf.d/macbook-no-suspend.conf`:
+  - `HandleLidSwitch=lock` — closing the lid locks the screen, does not suspend
+  - `HandleLidSwitchExternalPower=lock`
+  - `HandleLidSwitchDocked=ignore`
+- Screen still blanks/locks after idle (GNOME `idle-delay=300`); the laptop stays running.
+
+The GRUB suspend params and sleep hooks (facetimehd, brcmfmac) remain installed — they are
+defensive, in case you want to test manual `systemctl suspend`.
 
 ## Bluetooth
 
