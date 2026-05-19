@@ -2,6 +2,22 @@
 
 Setup scripts for **MacBook Pro 13" 2017 (A1708)** running **Debian Testing**.
 
+## Prerequisites — fresh Debian Testing install
+
+Before running this script:
+
+1. **Install Debian Testing with non-free firmware enabled** — the Debian installer must include
+   `firmware-iwlwifi`, `firmware-brcm80211` and friends. The graphical installer offers
+   "non-free-firmware" as a checkbox; the netinst ISO from `cdimage.debian.org/cdimage/unofficial/non-free/firmware/`
+   has them bundled. Without these, WiFi/Bluetooth will not work even after this script runs.
+2. **Boot into GNOME, open a terminal**, then install `git`:
+   ```bash
+   sudo apt update
+   sudo apt install -y git
+   ```
+3. **(Optional) If migrating from macOS:** perform an SMC Reset once (see Bluetooth section below)
+   — otherwise Bluetooth will stay broken even after the script runs.
+
 ## Usage
 
 ```bash
@@ -11,6 +27,20 @@ chmod +x macbook-debian-setup.sh
 ./macbook-debian-setup.sh
 sudo reboot
 ```
+
+## After reboot — quick stability check
+
+| What to test | How |
+|---|---|
+| Audio (speakers + headphones jack) | Play any sound; toggle output in GNOME Settings → Sound |
+| Camera | `cheese` or any video-call app — `/dev/video0` should exist |
+| Backlight | `Fn+F1` / `Fn+F2` — slider should respond smoothly |
+| WiFi | Connect to your network from GNOME |
+| Bluetooth | Pair a device from GNOME Settings → Bluetooth (SMC reset first if needed) |
+| Touchpad | Tap, swipe, two-finger scroll — cursor should be smooth |
+| VA-API (video accel) | `vainfo` should print supported profiles |
+| Suspend | Auto-suspend is **disabled by design**. Closing the lid only locks the screen. |
+| DKMS rebuild | `sudo dkms status` — `snd_hda_macbookpro` and `facetimehd` should show `installed` |
 
 ## Scripts
 
