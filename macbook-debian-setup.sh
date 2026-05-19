@@ -13,6 +13,7 @@
 #       https://github.com/patjak/facetimehd
 #    5. Fix sistem: luminozitate, sleep hooks defensive, auto-suspend dezactivat (S3 unreliable)
 #    6. Accelerare video hardware VA-API (Intel Iris Plus 640 / Kaby Lake)
+#    7. Touchpad UX (tap-to-click + natural scroll + disable-while-typing)
 #
 #  Notă touchpad: nu mai aplicăm patch out-of-tree pentru "Touch jump detected and discarded".
 #  libinput protejează în userspace (discard event corupt) — cursorul nu sare vizibil.
@@ -74,9 +75,9 @@ info "Log salvat in: $LOGFILE"
 
 
 # =============================================================================
-# ETAPA 1/6 — Dependente
+# ETAPA 1/7 — Dependente
 # =============================================================================
-CURRENT_STEP="ETAPA 1/6 — Dependente"
+CURRENT_STEP="ETAPA 1/7 — Dependente"
 step "$CURRENT_STEP"
 
 PKGS=(build-essential linux-headers-amd64 linux-source dkms git patch wget curl cpio xz-utils libssl-dev)
@@ -99,10 +100,10 @@ ok "Toate dependentele sunt instalate."
 
 
 # =============================================================================
-# ETAPA 2/6 — Driver audio Cirrus Logic CS8409
+# ETAPA 2/7 — Driver audio Cirrus Logic CS8409
 # https://github.com/davidjo/snd_hda_macbookpro
 # =============================================================================
-CURRENT_STEP="ETAPA 2/6 — Driver audio"
+CURRENT_STEP="ETAPA 2/7 — Driver audio"
 step "$CURRENT_STEP"
 info "Proiect: https://github.com/davidjo/snd_hda_macbookpro"
 
@@ -140,10 +141,10 @@ fi
 
 
 # =============================================================================
-# ETAPA 3/6 — Firmware camera FaceTime HD
+# ETAPA 3/7 — Firmware camera FaceTime HD
 # https://github.com/patjak/facetimehd-firmware
 # =============================================================================
-CURRENT_STEP="ETAPA 3/6 — Firmware camera FaceTime HD"
+CURRENT_STEP="ETAPA 3/7 — Firmware camera FaceTime HD"
 step "$CURRENT_STEP"
 info "Proiect: https://github.com/patjak/facetimehd-firmware"
 
@@ -179,10 +180,10 @@ fi
 
 
 # =============================================================================
-# ETAPA 4/6 — Driver kernel camera FaceTime HD cu DKMS
+# ETAPA 4/7 — Driver kernel camera FaceTime HD cu DKMS
 # https://github.com/patjak/facetimehd
 # =============================================================================
-CURRENT_STEP="ETAPA 4/6 — Driver camera FaceTime HD (DKMS)"
+CURRENT_STEP="ETAPA 4/7 — Driver camera FaceTime HD (DKMS)"
 step "$CURRENT_STEP"
 info "Proiect: https://github.com/patjak/facetimehd"
 
@@ -252,9 +253,9 @@ fi
 
 
 # =============================================================================
-# ETAPA 5/6 — Fix sistem: luminozitate ecran + suspend stabil + WiFi dupa sleep
+# ETAPA 5/7 — Fix sistem: luminozitate ecran + suspend stabil + WiFi dupa sleep
 # =============================================================================
-CURRENT_STEP="ETAPA 5/6 — Fix luminozitate + auto-suspend dezactivat (S3 unreliable)"
+CURRENT_STEP="ETAPA 5/7 — Fix luminozitate + auto-suspend dezactivat (S3 unreliable)"
 step "$CURRENT_STEP"
 
 # --- 5a: GRUB — luminozitate + suspend stabil pe Apple hardware ---
@@ -430,12 +431,12 @@ fi
 
 
 # =============================================================================
-# ETAPA 6/6 — Accelerare video hardware VA-API (Intel Iris Plus 640)
+# ETAPA 6/7 — Accelerare video hardware VA-API (Intel Iris Plus 640)
 # Problema: "vaInitialize failed: unknown libva error" in VS Code / Chrome
 # Cauza:    driver-ele VA-API pentru Intel Kaby Lake nu sunt instalate
 # Fix:      intel-media-va-driver (iHD, Kaby Lake+) + i965-va-driver (fallback)
 # =============================================================================
-CURRENT_STEP="ETAPA 6/6 — Accelerare video hardware VA-API"
+CURRENT_STEP="ETAPA 6/7 — Accelerare video hardware VA-API"
 step "$CURRENT_STEP"
 info "Intel Iris Plus 640 (Kaby Lake) — instalare drivere VA-API..."
 
@@ -471,6 +472,35 @@ fi
 
 
 # =============================================================================
+# ETAPA 7/7 — Touchpad UX (tap-to-click + natural scroll + disable-while-typing)
+# Comportament macOS-like out of the box, doar gsettings, fara modificari kernel.
+# =============================================================================
+CURRENT_STEP="ETAPA 7/7 — Touchpad UX"
+step "$CURRENT_STEP"
+info "Configurare GNOME touchpad: tap-to-click + natural scroll + disable-while-typing..."
+
+if command -v gsettings >/dev/null 2>&1; then
+    gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true \
+        || warn "Nu am putut seta tap-to-click."
+    gsettings set org.gnome.desktop.peripherals.touchpad natural-scroll true \
+        || warn "Nu am putut seta natural-scroll."
+    gsettings set org.gnome.desktop.peripherals.touchpad disable-while-typing true \
+        || warn "Nu am putut seta disable-while-typing."
+
+    TAP=$(gsettings get org.gnome.desktop.peripherals.touchpad tap-to-click 2>/dev/null)
+    NAT=$(gsettings get org.gnome.desktop.peripherals.touchpad natural-scroll 2>/dev/null)
+    DWT=$(gsettings get org.gnome.desktop.peripherals.touchpad disable-while-typing 2>/dev/null)
+    if [ "$TAP" = "true" ] && [ "$NAT" = "true" ] && [ "$DWT" = "true" ]; then
+        ok "Touchpad UX: tap-to-click + natural scroll + disable-while-typing active."
+    else
+        warn "Touchpad UX: verificare esuata (tap=$TAP, natural=$NAT, dwt=$DWT)."
+    fi
+else
+    warn "gsettings nu este disponibil — sari peste config touchpad UX."
+fi
+
+
+# =============================================================================
 # REZUMAT FINAL
 # =============================================================================
 echo ""
@@ -486,6 +516,7 @@ echo -e "  ${GREEN}✓${NC}  Auto-suspend dezactivat — S3 nu se trezeste fiabi
 echo -e "  ${GREEN}✓${NC}  Lid close = lock screen (logind), nu suspend"
 echo -e "  ${GREEN}✓${NC}  Sleep hooks (facetimehd + brcmfmac PCI unbind) — defensive pt suspend manual"
 echo -e "  ${GREEN}✓${NC}  Touchpad: libinput protejeaza in userspace (nu mai aplicam patch DKMS)"
+echo -e "  ${GREEN}✓${NC}  Touchpad UX — tap-to-click + natural scroll + disable-while-typing"
 echo -e "  ${GREEN}✓${NC}  Accelerare video VA-API — intel-media-va-driver + i965-va-driver"
 echo ""
 echo -e "  ${YELLOW}⚠${NC}  Necesar: ${BOLD}sudo reboot${NC} pentru a activa toate modificarile."
