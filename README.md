@@ -16,7 +16,7 @@ sudo reboot
 
 ### `macbook-debian-setup.sh`
 
-Full setup for MacBook Pro 13" 2017 on a fresh Debian Testing install. Runs in 7 stages, each with auto-verification before proceeding.
+Full setup for MacBook Pro 13" 2017 on a fresh Debian Testing install. Runs in 6 stages, each with auto-verification before proceeding.
 
 | Stage | What it does |
 |---|---|
@@ -25,43 +25,33 @@ Full setup for MacBook Pro 13" 2017 on a fresh Debian Testing install. Runs in 7
 | 3 — Camera firmware | [patjak/facetimehd-firmware](https://github.com/patjak/facetimehd-firmware) — extracted from Apple OS X driver |
 | 4 — Camera driver | [patjak/facetimehd](https://github.com/patjak/facetimehd) — kernel module via DKMS |
 | 5 — System fixes | Backlight (`acpi_backlight=native`) + sleep hooks (defensive) + auto-suspend disabled (see below) |
-| 6 — Touchpad fix | `applespi-fix/` — velocity filter patch for Apple SPI driver via DKMS (see below) |
-| 7 — VA-API | `intel-media-va-driver` + `i965-va-driver` — hardware video acceleration for Intel Iris Plus 640 |
+| 6 — VA-API | `intel-media-va-driver` + `i965-va-driver` — hardware video acceleration for Intel Iris Plus 640 |
 
-Both DKMS modules auto-rebuild on kernel updates. The script is idempotent — safe to re-run, skips already completed stages.
+The two DKMS modules (audio, camera) auto-rebuild on kernel updates. The script is idempotent — safe
+to re-run, skips already completed stages.
 
-## applespi-fix — touchpad patch
+## Touchpad — no patch needed
 
-The `applespi-fix/` folder contains a patched version of the in-kernel `applespi` driver that fixes
-cursor jumping on MacBook Pro 2017.
+Previous versions of this script shipped an out-of-tree `applespi-fix/` DKMS patch with a velocity
+filter to catch SPI-bus coordinate glitches before they reached libinput. Real-world testing showed
+the patch reduced touch-jump frequency only marginally (it only caught the case where finger count
+stayed constant between frames), and **libinput already discards these events in userspace** —
+the cursor does not visibly jump.
 
-**Symptom:** cursor snaps to a random position, kernel logs:
-```
-Apple SPI Touchpad: kernel bug: Touch jump detected and discarded (3.2mm -> 183mm, pointer)
-```
+The patch has been removed. libinput's own `tp_motion_history` detection handles all glitch cases
+cleanly. The `kernel bug: Touch jump detected and discarded` messages still appear in the journal
+when libinput discards a bad event, but that is the protection mechanism working as designed, not
+a defect.
 
-**Fix:** a velocity filter in `report_tp_state()` discards any touch coordinate that moves more than
-1440 units (~15 mm) between consecutive SPI frames — catching hardware glitches before they reach
-libinput.
+Root cause is hardware-level SPI bus instability on Apple T1/T2 systems — there is no software-only
+cure. libinput's secondary filtering is sufficient.
 
-See [`applespi-fix/README.md`](applespi-fix/README.md) for the full explanation and manual install commands.
-
-### Manual commands (applespi-fix)
+If you previously installed `applespi-fix` via this repo and want to remove it cleanly:
 
 ```bash
-# Copy sources into DKMS tree
-sudo cp -r applespi-fix /usr/src/applespi-fix-7.0.7
-
-# Register, build, install
-sudo dkms add     -m applespi-fix -v 7.0.7
-sudo dkms build   -m applespi-fix -v 7.0.7
-sudo dkms install -m applespi-fix -v 7.0.7
-
-# Load patched module without reboot
+sudo dkms remove applespi-fix/7.0.7 --all
+sudo rm -rf /usr/src/applespi-fix-7.0.7
 sudo modprobe -r applespi && sudo modprobe applespi
-
-# Verify — should be silent after 2 minutes of normal use
-journalctl -f 2>/dev/null | grep -i 'touch jump'
 ```
 
 ## Hardware
