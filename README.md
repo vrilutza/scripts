@@ -24,7 +24,7 @@ Full setup for MacBook Pro 13" 2017 on a fresh Debian Testing install. Runs in 7
 | 2 — Audio driver | [davidjo/snd_hda_macbookpro](https://github.com/davidjo/snd_hda_macbookpro) — Cirrus CS8409 patched driver via DKMS |
 | 3 — Camera firmware | [patjak/facetimehd-firmware](https://github.com/patjak/facetimehd-firmware) — extracted from Apple OS X driver |
 | 4 — Camera driver | [patjak/facetimehd](https://github.com/patjak/facetimehd) — kernel module via DKMS |
-| 5 — System fixes | Backlight (`acpi_backlight=native`) + stable suspend (`mem_sleep_default=s2idle` + facetimehd sleep hook) |
+| 5 — System fixes | Backlight (`acpi_backlight=native`) + stable suspend (S3 deep, NVMe ACPI disabled, i915 DC-states off) + WiFi-after-resume hook |
 | 6 — Touchpad fix | `applespi-fix/` — velocity filter patch for Apple SPI driver via DKMS (see below) |
 | 7 — VA-API | `intel-media-va-driver` + `i965-va-driver` — hardware video acceleration for Intel Iris Plus 640 |
 
@@ -71,7 +71,27 @@ journalctl -f 2>/dev/null | grep -i 'touch jump'
 - GPU: Intel Iris Plus Graphics 640
 - Audio: Cirrus Logic CS8409 / CS42L83
 - Camera: Broadcom 720p FaceTime HD [14e4:1570]
-- WiFi: Broadcom BCM4350
+- WiFi/Bluetooth: Broadcom BCM4350 (WiFi) / BCM4350C0 (Bluetooth, UART on serial0/ttyS4)
+
+## Bluetooth
+
+The Bluetooth chip (BCM4350C0) communicates over UART, not USB. Linux initializes it at 115200 baud,
+but macOS leaves it at 3 Mbaud at shutdown — so after migrating from macOS the chip doesn't respond
+and `hci0` fails to initialize:
+
+```
+Bluetooth: hci0: command 0xfc18 tx timeout
+Bluetooth: hci0: BCM: Reset failed (-110)
+```
+
+**Fix — SMC Reset (one time only, after first boot from macOS):**
+
+1. Shut down completely: `sudo shutdown -h now`
+2. Hold **Shift left + Control left + Option left + Power** simultaneously for 10 seconds
+3. Release all keys, then press **Power** to boot normally
+
+The SMC Reset power-cycles the chip back to 115200 baud. After that Linux initializes it correctly
+and resets it to 115200 on every shutdown — so subsequent boots work without SMC Reset.
 
 ## Tested on
 
