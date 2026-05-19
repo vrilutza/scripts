@@ -48,6 +48,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKDIR="$HOME/macbook-setup"
 KERNEL="$(uname -r)"
 
+mkdir -p "$WORKDIR"
+LOGFILE="$WORKDIR/setup-$(date +%Y%m%d-%H%M%S).log"
+exec > >(tee -a "$LOGFILE") 2>&1
+
 # =============================================================================
 # Verificari initiale
 # =============================================================================
@@ -64,7 +68,7 @@ echo "  ╚═══════════════════════
 echo -e "${NC}"
 info "Kernel curent: $KERNEL"
 info "Director de lucru: $WORKDIR"
-mkdir -p "$WORKDIR"
+info "Log salvat in: $LOGFILE"
 
 
 # =============================================================================
@@ -246,23 +250,44 @@ fi
 
 
 # =============================================================================
-# ETAPA 5/7 — Fix sistem: luminozitate ecran + suspend stabil
+# ETAPA 5/7 — Fix sistem: luminozitate ecran + suspend stabil + WiFi dupa sleep
 # =============================================================================
-CURRENT_STEP="ETAPA 5/7 — Fix luminozitate si suspend"
+CURRENT_STEP="ETAPA 5/7 — Fix luminozitate, suspend si WiFi dupa sleep"
 step "$CURRENT_STEP"
 
-# --- 5a: GRUB — luminozitate (acpi_backlight=native) + sleep mode (s2idle) ---
+# --- 5a: GRUB — luminozitate + suspend stabil pe Apple hardware ---
+# mem_sleep_default=deep      — S3 suspend; s2idle crasha pe Apple NVMe (vendor 0x106b)
+# nvme.noacpi=1               — dezactiveaza ACPI PM pentru Apple NVMe proprietar
+# i915.enable_dc=0            — dezactiveaza Intel Display C-states; previne crash i915/DMC la resume
+# nvme_core.default_ps_max_latency_us=0 — tine Apple NVMe in PS0; power states mai inalte nu revin corect
 info "Verificare parametri GRUB..."
 
 GRUB_FILE="/etc/default/grub"
 GRUB_NEEDS_UPDATE=false
 
-if grep -q "acpi_backlight=native" "$GRUB_FILE" && grep -q "mem_sleep_default=s2idle" "$GRUB_FILE"; then
+# Inlocuieste mem_sleep_default=s2idle cu deep daca exista din versiuni anterioare
+if grep -q "mem_sleep_default=s2idle" "$GRUB_FILE"; then
+    info "Inlocuire mem_sleep_default=s2idle cu deep..."
+    sudo sed -i 's/mem_sleep_default=s2idle/mem_sleep_default=deep/g' \
+        "$GRUB_FILE" || fail "Inlocuirea sleep mode in GRUB a esuat."
+    GRUB_NEEDS_UPDATE=true
+fi
+
+GRUB_ALL_PRESENT=true
+for param in "acpi_backlight=native" "mem_sleep_default=deep" "nvme.noacpi=1" \
+             "i915.enable_dc=0" "nvme_core.default_ps_max_latency_us=0"; do
+    if ! grep -q "$param" "$GRUB_FILE"; then
+        GRUB_ALL_PRESENT=false
+        break
+    fi
+done
+
+if [ "$GRUB_ALL_PRESENT" = true ]; then
     warn "Parametrii GRUB deja prezenti. Sar aceasta etapa."
 else
-    info "Adaugare acpi_backlight=native si mem_sleep_default=s2idle in GRUB..."
+    info "Adaugare parametri suspend in GRUB..."
     sudo sed -i \
-        's|GRUB_CMDLINE_LINUX_DEFAULT="\(.*\)"|GRUB_CMDLINE_LINUX_DEFAULT="\1 acpi_backlight=native mem_sleep_default=s2idle"|' \
+        's|GRUB_CMDLINE_LINUX_DEFAULT="\(.*\)"|GRUB_CMDLINE_LINUX_DEFAULT="\1 acpi_backlight=native mem_sleep_default=deep nvme.noacpi=1 i915.enable_dc=0 nvme_core.default_ps_max_latency_us=0"|' \
         "$GRUB_FILE" || fail "Modificarea GRUB a esuat."
     GRUB_NEEDS_UPDATE=true
 fi
@@ -272,11 +297,13 @@ if [ "$GRUB_NEEDS_UPDATE" = true ]; then
     sudo update-grub || fail "update-grub a esuat."
 fi
 
-if grep -q "acpi_backlight=native" "$GRUB_FILE" && grep -q "mem_sleep_default=s2idle" "$GRUB_FILE"; then
-    ok "GRUB: acpi_backlight=native + mem_sleep_default=s2idle aplicate."
-else
-    fail "Parametrii GRUB nu au fost scrisi corect in $GRUB_FILE."
-fi
+for param in "acpi_backlight=native" "mem_sleep_default=deep" "nvme.noacpi=1" \
+             "i915.enable_dc=0" "nvme_core.default_ps_max_latency_us=0"; do
+    if ! grep -q "$param" "$GRUB_FILE"; then
+        fail "Parametrul '$param' nu a fost scris corect in $GRUB_FILE."
+    fi
+done
+ok "GRUB: toti parametrii de suspend aplicati."
 
 # --- 5b: Hook suspend/resume pentru facetimehd ---
 # Previne kernel panic la sleep descarcand modulul inainte si reincarcandu-l la wake
@@ -305,6 +332,32 @@ if [ -x "$SLEEP_HOOK" ]; then
     ok "Hook suspend facetimehd instalat si executabil: $SLEEP_HOOK"
 else
     fail "Hook-ul $SLEEP_HOOK nu este executabil sau lipseste."
+fi
+
+# --- 5c: Hook suspend/resume pentru brcmfmac (WiFi) ---
+# brcmfmac (BCM4350) nu se reinitializeaza corect dupa S3 resume fara reload complet
+info "Instalare hook suspend pentru WiFi (brcmfmac)..."
+
+WIFI_HOOK="/usr/lib/systemd/system-sleep/brcmfmac"
+
+if [ -f "$WIFI_HOOK" ]; then
+    warn "Hook suspend brcmfmac deja exista la $WIFI_HOOK."
+else
+    sudo tee "$WIFI_HOOK" > /dev/null << 'HOOKEOF'
+#!/bin/sh
+case $1/$2 in
+  pre/*)   modprobe -r brcmfmac ;;
+  post/*)  modprobe brcmfmac ;;
+esac
+HOOKEOF
+
+    sudo chmod +x "$WIFI_HOOK" || fail "chmod pe hook WiFi a esuat."
+fi
+
+if [ -x "$WIFI_HOOK" ]; then
+    ok "Hook suspend brcmfmac instalat si executabil: $WIFI_HOOK"
+else
+    fail "Hook-ul $WIFI_HOOK nu este executabil sau lipseste."
 fi
 
 
@@ -423,7 +476,8 @@ echo -e "  ${GREEN}✓${NC}  Driver audio Cirrus CS8409 — DKMS"
 echo -e "  ${GREEN}✓${NC}  Firmware FaceTime HD — /usr/lib/firmware/facetimehd/"
 echo -e "  ${GREEN}✓${NC}  Driver camera FaceTime HD — DKMS"
 echo -e "  ${GREEN}✓${NC}  Luminozitate ecran — acpi_backlight=native in GRUB"
-echo -e "  ${GREEN}✓${NC}  Suspend stabil — s2idle + hook facetimehd"
+echo -e "  ${GREEN}✓${NC}  Suspend stabil — S3 deep + nvme.noacpi=1 + i915.enable_dc=0"
+echo -e "  ${GREEN}✓${NC}  WiFi dupa sleep — hook brcmfmac reload la resume"
 echo -e "  ${GREEN}✓${NC}  Fix touchpad Apple SPI — applespi velocity filter (DKMS)"
 echo -e "  ${GREEN}✓${NC}  Accelerare video VA-API — intel-media-va-driver + i965-va-driver"
 echo ""

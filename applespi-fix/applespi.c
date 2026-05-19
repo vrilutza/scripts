@@ -1014,11 +1014,12 @@ static void report_finger_data(struct input_dev *input, int slot,
 /*
  * Maximum coordinate delta allowed between consecutive frames per finger.
  * At 96 units/mm and ~125 Hz (8ms/frame):
- *   1440 units = 15 mm/frame = 1875 mm/s  — below libinput's 20mm threshold.
+ *   960 units = 10 mm/frame = 1250 mm/s  — well below libinput's threshold.
  * This catches erratic SPI glitches (in-bounds but impossible velocity) before
  * they reach libinput, eliminating "Touch jump detected and discarded" errors.
+ * 10 mm is conservative enough to catch finger-landing glitches too.
  */
-#define APPLESPI_MAX_DELTA	1440
+#define APPLESPI_MAX_DELTA	960
 
 static void report_tp_state(struct applespi_data *applespi,
 			    struct touchpad_protocol *t)
@@ -1059,8 +1060,8 @@ static void report_tp_state(struct applespi_data *applespi,
 		 * this coordinate is farther than APPLESPI_MAX_DELTA units
 		 * from every previously tracked position, it is a SPI glitch.
 		 * A real finger cannot teleport between frames — discard it.
-		 * Skip the filter when finger count changes (new touch landing
-		 * far from existing ones is legitimate).
+		 * Skip the filter when finger count changes: a new touch landing
+		 * far from existing fingers is legitimate.
 		 */
 		if (prev_n > 0 && prev_n == t->number_of_fingers) {
 			bool glitch = true;
