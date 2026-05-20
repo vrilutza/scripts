@@ -6,7 +6,6 @@ După ce am un script stabil testat pe fresh Debian Testing install, continui cu
 
 | Componentă | Ce face | Impact | Risc |
 |---|---|---|---|
-| **`tlp`** (battery/power mgmt) | Optimizări consum baterie pe diverse subsisteme | Mediu (laptop durează mai mult din priză) | Mic, dar poate intra în conflict cu unele setări existente |
 | **`hid_apple` fn-mode** (F-keys vs media keys) | Schimbă comportamentul F1-F12 (media keys vs F-keys reale) | Preferință pură | Zero, e parametru kernel |
 
 ## Implementate
@@ -24,4 +23,4 @@ După ce am un script stabil testat pe fresh Debian Testing install, continui cu
 Pentru testul tău de stabilitate fresh — **scriptul e complet pentru hardware**. Adăugările de mai sus sunt nice-to-have, nu blocante. Recomand:
 
 1. **Întâi:** testează fresh ce avem acum (asta era planul tău)
-2. **Dacă vrei baterie mai bună din priză:** evaluăm **`tlp`** (atenție la conflictele cu thermald)
+2. **Dacă vrei mai mult control la F-keys vs media keys:** `hid_apple` fn-mode (5 minute)

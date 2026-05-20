@@ -42,9 +42,71 @@ sudo reboot
 | Suspend | Auto-suspend is **disabled by design**. Closing the lid only locks the screen. |
 | DKMS rebuild | `sudo dkms status` — `snd_hda_macbookpro` and `facetimehd` should show `installed` |
 
-## Monitoring — temperatures, fan, thermal events
+## Diagnostics & monitoring per subsystem
 
-Quick commands for daily ops on this MacBook. All read-only, no root needed unless noted.
+Commands you can come back to without remembering anything — open this section, copy what you need. All read-only unless noted. Some commands need extra tools; the `apt install` hint is shown where relevant.
+
+### Audio (Cirrus CS8409)
+
+```bash
+sudo dkms status snd_hda_macbookpro      # DKMS module installed + built for current kernel?
+lsmod | grep cs8409                      # Codec module loaded right now?
+cat /proc/asound/cards                   # ALSA sees the card?
+aplay -l                                 # Playback devices visible to ALSA?
+```
+
+Quick live test: from GNOME Settings → Sound, toggle output between Speakers and Headphones; both should respond. If audio dies after a kernel upgrade, run `sudo dkms status` first — DKMS rebuilds the module automatically against the new headers and a missing rebuild is the usual culprit.
+
+### Camera (FaceTime HD)
+
+```bash
+ls -la /dev/video*                                   # Device node present after boot?
+lsmod | grep facetimehd                              # Driver loaded right now?
+sudo dkms status facetimehd                          # DKMS state (installed against current kernel)?
+ls -la /usr/lib/firmware/facetimehd/firmware.bin     # ~1.4 MB firmware in place?
+sudo modinfo facetimehd | head -10                   # Driver metadata (version, deps)
+```
+
+Quick live test: `sudo apt install cheese && cheese` — webcam preview should appear in 1-2 seconds. If `/dev/video0` is missing right after boot, try `sudo modprobe facetimehd` manually.
+
+### System fixes (backlight, suspend, lid behavior)
+
+```bash
+cat /proc/cmdline                                                                # Kernel boot params currently active
+ls -la /usr/lib/systemd/system-sleep/                                            # Sleep hooks (facetimehd, brcmfmac) present?
+gsettings get org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type     # Should be 'nothing'
+gsettings get org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type # Should be 'nothing'
+cat /etc/systemd/logind.conf.d/macbook-no-suspend.conf                           # Lid switch override
+systemctl show systemd-logind | grep -i lid                                      # Effective lid behavior (Lock = correct)
+```
+
+To test the backlight keys: `Fn+F1` / `Fn+F2` — slider in GNOME panel should slide smoothly without jumps.
+
+### Video acceleration (VA-API)
+
+```bash
+LIBVA_DRIVER_NAME=iHD vainfo 2>&1 | head -10    # iHD driver (Kaby Lake native) profiles
+vainfo 2>&1 | grep VAProfile                    # All profiles available (any driver)
+dpkg -l intel-media-va-driver i965-va-driver    # Both VA-API packages installed?
+```
+
+Browser-side check: open `chrome://gpu` in Chrome/Chromium and look for **Video Decode: Hardware accelerated**. In Firefox, `about:support` → search "Decoder" → should show VAAPI for H.264/HEVC.
+
+### Touchpad UX
+
+```bash
+# Current GNOME settings — should all return 'true'
+gsettings get org.gnome.desktop.peripherals.touchpad tap-to-click
+gsettings get org.gnome.desktop.peripherals.touchpad natural-scroll
+gsettings get org.gnome.desktop.peripherals.touchpad disable-while-typing
+
+# Touchpad device known to libinput  (apt install libinput-tools if missing)
+sudo libinput list-devices | grep -A 6 -i touchpad
+```
+
+To live-debug events (e.g., "did my tap register as click?"): `sudo libinput debug-events` then touch the trackpad; Ctrl+C to stop. To check libinput discarding bad touchpad events (the "Touch jump detected" messages): `journalctl -k --since "1 hour ago" | grep -i "touch jump"`.
+
+### Thermal management
 
 ```bash
 # Live temps + fan speed (Ctrl+C to exit)
@@ -59,10 +121,8 @@ grep . /sys/class/powercap/intel-rapl:0/constraint_*_power_limit_uw
 # Recent thermal throttle events
 journalctl --since "1 hour ago" | grep -iE "throttle|thermal"
 
-# Is thermald running?
-systemctl is-active thermald
-
-# Did macbook-rapl.service apply the limits this boot?
+# Are thermald + the RAPL service running?
+systemctl is-active thermald macbook-rapl
 systemctl status macbook-rapl --no-pager
 ```
 
@@ -81,6 +141,29 @@ systemctl status macbook-rapl --no-pager
 - **Sustained over 95°C with fan maxed** — PL1 is too aggressive for this thermal solution. To lower it, edit `/etc/systemd/system/macbook-rapl.service` (change `22000000` to e.g. `18000000`) then `sudo systemctl daemon-reload && sudo systemctl restart macbook-rapl.service`. No reboot needed.
 
 **Why a systemd service, not `tmpfiles.d`?** Earlier versions of this repo wrote the RAPL limits via `/etc/tmpfiles.d/macbook-rapl.conf`. That worked at first apply but *did not survive reboot* on MacBook Pro 2017: `intel_rapl_msr` is loaded late via udev (~2 minutes into boot) and overwrote the tmpfiles-set values with Apple EFI defaults (100W / 125W). A oneshot service ordered `After=thermald.service` runs last, after every other initialiser has touched RAPL, so the limits stick.
+
+### WiFi & Bluetooth
+
+```bash
+lsmod | grep brcmfmac           # WiFi driver loaded?
+nmcli device wifi               # Visible networks + current connection
+nmcli device status             # All network interfaces state
+systemctl status bluetooth      # Bluetooth daemon running?
+bluetoothctl show               # Adapter info; expect "Powered: yes"
+```
+
+Live BT debug: `journalctl -u bluetooth -f`, then try to pair from GNOME Settings — watch for `BCM: Reset failed` (means you need the SMC Reset described in [Bluetooth section below](#bluetooth)).
+
+### General health — anything failing this boot?
+
+```bash
+journalctl -p err -b --no-pager            # All errors since boot
+systemctl --failed                          # Any failed unit?
+sudo dkms status                            # All DKMS modules state (both snd_hda_macbookpro and facetimehd should show 'installed')
+uptime                                      # Boot time + load avg
+```
+
+If `systemctl --failed` lists anything, drill in with `systemctl status <unit>` and `journalctl -u <unit>` for that specific unit.
 
 ## Scripts
 
@@ -117,14 +200,6 @@ a defect.
 
 Root cause is hardware-level SPI bus instability on Apple T1/T2 systems — there is no software-only
 cure. libinput's secondary filtering is sufficient.
-
-If you previously installed `applespi-fix` via this repo and want to remove it cleanly:
-
-```bash
-sudo dkms remove applespi-fix/7.0.7 --all
-sudo rm -rf /usr/src/applespi-fix-7.0.7
-sudo modprobe -r applespi && sudo modprobe applespi
-```
 
 ## Hardware
 
