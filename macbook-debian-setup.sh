@@ -537,8 +537,10 @@ sudo systemctl enable --now thermald.service \
     || fail "systemctl enable --now thermald a esuat."
 
 if systemctl is-active --quiet thermald.service; then
-    THERMALD_VER=$(thermald --version 2>&1 | awk 'NR==1{print $NF}')
-    ok "thermald active (versiune $THERMALD_VER)."
+    # Versiunea din dpkg (nu din `thermald --version` — binarul e in /usr/sbin
+    # si poate sa nu fie in PATH-ul user-ului care ruleaza scriptul).
+    THERMALD_VER=$(dpkg-query -W -f='${Version}' thermald 2>/dev/null)
+    ok "thermald active (versiune ${THERMALD_VER:-necunoscuta})."
 else
     fail "thermald.service nu este active. Vezi: systemctl status thermald"
 fi

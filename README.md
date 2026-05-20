@@ -42,6 +42,41 @@ sudo reboot
 | Suspend | Auto-suspend is **disabled by design**. Closing the lid only locks the screen. |
 | DKMS rebuild | `sudo dkms status` — `snd_hda_macbookpro` and `facetimehd` should show `installed` |
 
+## Monitoring — temperatures, fan, thermal events
+
+Quick commands for daily ops on this MacBook. All read-only, no root needed unless noted.
+
+```bash
+# Live temps + fan speed (Ctrl+C to exit)
+watch -n 1 'sensors | grep -E "Core|fan"'
+
+# One-shot read of all sensors (CPU, battery, ambient)
+sensors
+
+# RAPL limits currently active (constraint_0 = PL1, constraint_1 = PL2)
+grep . /sys/class/powercap/intel-rapl:0/constraint_*_power_limit_uw
+
+# Recent thermal throttle events
+journalctl --since "1 hour ago" | grep -iE "throttle|thermal"
+
+# Is thermald running?
+systemctl is-active thermald
+```
+
+**Expected ranges on i5-7360U with PL1=22W / PL2=30W:**
+
+| Scenario | Temperature |
+|---|---|
+| Idle / light browsing | 40-60°C |
+| YouTube / Netflix HD (VA-API active) | 60-75°C |
+| Sustained heavy load (build, video encode) | 80-92°C — PL1 22W cap engages |
+| Brief burst (app launch, short compile) | up to ~95°C — PL2 30W, transient |
+
+**Red flags worth investigating:**
+
+- **Idle persistent over 70°C** — RAPL may not be applied (`grep .` command above) or thermald is down (`systemctl is-active thermald`).
+- **Sustained over 95°C with fan maxed** — PL1 is too aggressive for this thermal solution. To lower it, edit `/etc/tmpfiles.d/macbook-rapl.conf` (e.g., change `22000000` to `18000000`) and run `sudo systemd-tmpfiles --create`. No reboot needed.
+
 ## Scripts
 
 ### `macbook-debian-setup.sh`
