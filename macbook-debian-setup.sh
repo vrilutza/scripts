@@ -14,6 +14,7 @@
 #    5. Fix sistem: luminozitate, sleep hooks defensive, auto-suspend dezactivat (S3 unreliable)
 #    6. Accelerare video hardware VA-API (Intel Iris Plus 640 / Kaby Lake)
 #    7. Touchpad UX (tap-to-click + natural scroll + disable-while-typing)
+#    8. Thermal management: thermald + RAPL PL1/PL2 (22W/30W Apple-like)
 #
 #  Notă touchpad: nu mai aplicăm patch out-of-tree pentru "Touch jump detected and discarded".
 #  libinput protejează în userspace (discard event corupt) — cursorul nu sare vizibil.
@@ -75,9 +76,9 @@ info "Log salvat in: $LOGFILE"
 
 
 # =============================================================================
-# ETAPA 1/7 — Dependente
+# ETAPA 1/8 — Dependente
 # =============================================================================
-CURRENT_STEP="ETAPA 1/7 — Dependente"
+CURRENT_STEP="ETAPA 1/8 — Dependente"
 step "$CURRENT_STEP"
 
 PKGS=(build-essential linux-headers-amd64 linux-source dkms git patch wget curl cpio xz-utils libssl-dev)
@@ -100,10 +101,10 @@ ok "Toate dependentele sunt instalate."
 
 
 # =============================================================================
-# ETAPA 2/7 — Driver audio Cirrus Logic CS8409
+# ETAPA 2/8 — Driver audio Cirrus Logic CS8409
 # https://github.com/davidjo/snd_hda_macbookpro
 # =============================================================================
-CURRENT_STEP="ETAPA 2/7 — Driver audio"
+CURRENT_STEP="ETAPA 2/8 — Driver audio"
 step "$CURRENT_STEP"
 info "Proiect: https://github.com/davidjo/snd_hda_macbookpro"
 
@@ -141,10 +142,10 @@ fi
 
 
 # =============================================================================
-# ETAPA 3/7 — Firmware camera FaceTime HD
+# ETAPA 3/8 — Firmware camera FaceTime HD
 # https://github.com/patjak/facetimehd-firmware
 # =============================================================================
-CURRENT_STEP="ETAPA 3/7 — Firmware camera FaceTime HD"
+CURRENT_STEP="ETAPA 3/8 — Firmware camera FaceTime HD"
 step "$CURRENT_STEP"
 info "Proiect: https://github.com/patjak/facetimehd-firmware"
 
@@ -180,10 +181,10 @@ fi
 
 
 # =============================================================================
-# ETAPA 4/7 — Driver kernel camera FaceTime HD cu DKMS
+# ETAPA 4/8 — Driver kernel camera FaceTime HD cu DKMS
 # https://github.com/patjak/facetimehd
 # =============================================================================
-CURRENT_STEP="ETAPA 4/7 — Driver camera FaceTime HD (DKMS)"
+CURRENT_STEP="ETAPA 4/8 — Driver camera FaceTime HD (DKMS)"
 step "$CURRENT_STEP"
 info "Proiect: https://github.com/patjak/facetimehd"
 
@@ -253,9 +254,9 @@ fi
 
 
 # =============================================================================
-# ETAPA 5/7 — Fix sistem: luminozitate ecran + suspend stabil + WiFi dupa sleep
+# ETAPA 5/8 — Fix sistem: luminozitate ecran + suspend stabil + WiFi dupa sleep
 # =============================================================================
-CURRENT_STEP="ETAPA 5/7 — Fix luminozitate + auto-suspend dezactivat (S3 unreliable)"
+CURRENT_STEP="ETAPA 5/8 — Fix luminozitate + auto-suspend dezactivat (S3 unreliable)"
 step "$CURRENT_STEP"
 
 # --- 5a: GRUB — luminozitate + suspend stabil pe Apple hardware ---
@@ -431,12 +432,12 @@ fi
 
 
 # =============================================================================
-# ETAPA 6/7 — Accelerare video hardware VA-API (Intel Iris Plus 640)
+# ETAPA 6/8 — Accelerare video hardware VA-API (Intel Iris Plus 640)
 # Problema: "vaInitialize failed: unknown libva error" in VS Code / Chrome
 # Cauza:    driver-ele VA-API pentru Intel Kaby Lake nu sunt instalate
 # Fix:      intel-media-va-driver (iHD, Kaby Lake+) + i965-va-driver (fallback)
 # =============================================================================
-CURRENT_STEP="ETAPA 6/7 — Accelerare video hardware VA-API"
+CURRENT_STEP="ETAPA 6/8 — Accelerare video hardware VA-API"
 step "$CURRENT_STEP"
 info "Intel Iris Plus 640 (Kaby Lake) — instalare drivere VA-API..."
 
@@ -472,10 +473,10 @@ fi
 
 
 # =============================================================================
-# ETAPA 7/7 — Touchpad UX (tap-to-click + natural scroll + disable-while-typing)
+# ETAPA 7/8 — Touchpad UX (tap-to-click + natural scroll + disable-while-typing)
 # Comportament macOS-like out of the box, doar gsettings, fara modificari kernel.
 # =============================================================================
-CURRENT_STEP="ETAPA 7/7 — Touchpad UX"
+CURRENT_STEP="ETAPA 7/8 — Touchpad UX"
 step "$CURRENT_STEP"
 info "Configurare GNOME touchpad: tap-to-click + natural scroll + disable-while-typing..."
 
@@ -501,6 +502,95 @@ fi
 
 
 # =============================================================================
+# ETAPA 8/8 — Thermal management: thermald + RAPL PL1/PL2
+#
+# Problema: RAPL pe MBP 2017 sub Linux nu are limite sane (Apple EFI lasa
+# PL1=100W, PL2=125W pe un chip cu TDP nominal 15W). Chip-ul ruleaza
+# unrestricted pana cand kernel-ul face emergency thermal throttle la TJmax.
+#
+# Fix in 2 parti:
+#   8a) thermald 2.5.10 din apt — daemon dinamic care reduce P-state cand
+#       temperaturile cresc. Plus lm-sensors pentru monitoring manual.
+#   8b) tmpfiles config in /etc/tmpfiles.d/macbook-rapl.conf:
+#         PL1 = 22 W sustained — match Apple macOS config (cTDP-up)
+#         PL2 = 30 W short-term boost — match Apple macOS config
+#       Time windows raman default kernel (~28s PL1 / ~2.4ms PL2).
+# =============================================================================
+CURRENT_STEP="ETAPA 8/8 — Thermal management (thermald + RAPL)"
+step "$CURRENT_STEP"
+
+# --- 8a: thermald + lm-sensors via apt ---
+THERMAL_PKGS=(thermald lm-sensors)
+info "Instalare ${THERMAL_PKGS[*]}..."
+sudo apt-get install -y "${THERMAL_PKGS[@]}" || fail "Instalarea pachetelor thermald a esuat."
+
+for pkg in "${THERMAL_PKGS[@]}"; do
+    if dpkg -l "$pkg" 2>/dev/null | grep -q "^ii"; then
+        ok "$pkg"
+    else
+        fail "$pkg nu a putut fi instalat."
+    fi
+done
+
+info "Enable + start thermald.service..."
+sudo systemctl enable --now thermald.service \
+    || fail "systemctl enable --now thermald a esuat."
+
+if systemctl is-active --quiet thermald.service; then
+    THERMALD_VER=$(thermald --version 2>&1 | awk 'NR==1{print $NF}')
+    ok "thermald active (versiune $THERMALD_VER)."
+else
+    fail "thermald.service nu este active. Vezi: systemctl status thermald"
+fi
+
+# --- 8b: RAPL static PL1/PL2 via systemd-tmpfiles ---
+# PL in microWatts pentru kernel sysfs interface
+PL1_UW=22000000   # 22 W sustained
+PL2_UW=30000000   # 30 W short-term boost
+
+RAPL_BASE="/sys/class/powercap/intel-rapl:0"
+
+if [ ! -d "$RAPL_BASE" ]; then
+    fail "RAPL sysfs interface lipseste la $RAPL_BASE. Modulul intel_rapl_common nu e incarcat?"
+fi
+
+info "Configurare RAPL: PL1=$((PL1_UW/1000000))W (long-term), PL2=$((PL2_UW/1000000))W (short-term)..."
+
+TMPFILES_CONF="/etc/tmpfiles.d/macbook-rapl.conf"
+
+sudo tee "$TMPFILES_CONF" > /dev/null << TMPFILESEOF
+# MacBook Pro 13" 2017 (A1708) — Intel i5-7360U Kaby Lake RAPL limits
+# Apple EFI nu seteaza limite RAPL sane pe Linux; fara astea chip-ul trage
+# fara restrictie pana la thermal throttle la TJmax (100°C).
+#
+# PL1 = 22 W sustained — match Apple macOS config (cTDP-up)
+# PL2 = 30 W short-term boost — match Apple macOS config
+# Time windows raman la default kernel (~28s PL1, ~2.4ms PL2).
+w /sys/devices/virtual/powercap/intel-rapl/intel-rapl:0/constraint_0_power_limit_uw - - - - $PL1_UW
+w /sys/devices/virtual/powercap/intel-rapl/intel-rapl:0/constraint_1_power_limit_uw - - - - $PL2_UW
+TMPFILESEOF
+
+if [ -f "$TMPFILES_CONF" ]; then
+    ok "tmpfiles config scris: $TMPFILES_CONF"
+else
+    fail "Nu am putut scrie $TMPFILES_CONF."
+fi
+
+info "Aplicare imediata RAPL (fara reboot)..."
+sudo systemd-tmpfiles --create "$TMPFILES_CONF" \
+    || warn "systemd-tmpfiles a returnat eroare; verificare valori actuale..."
+
+PL1_READ=$(cat "$RAPL_BASE/constraint_0_power_limit_uw" 2>/dev/null)
+PL2_READ=$(cat "$RAPL_BASE/constraint_1_power_limit_uw" 2>/dev/null)
+
+if [ "$PL1_READ" = "$PL1_UW" ] && [ "$PL2_READ" = "$PL2_UW" ]; then
+    ok "RAPL aplicat efectiv: PL1=$((PL1_READ/1000000))W, PL2=$((PL2_READ/1000000))W."
+else
+    warn "RAPL: valori curente nu corespund (PL1=$PL1_READ vs $PL1_UW, PL2=$PL2_READ vs $PL2_UW). Vor fi reaplicate la urmatorul boot din tmpfiles."
+fi
+
+
+# =============================================================================
 # REZUMAT FINAL
 # =============================================================================
 echo ""
@@ -518,6 +608,8 @@ echo -e "  ${GREEN}✓${NC}  Sleep hooks (facetimehd + brcmfmac PCI unbind) — 
 echo -e "  ${GREEN}✓${NC}  Touchpad: libinput protejeaza in userspace (nu mai aplicam patch DKMS)"
 echo -e "  ${GREEN}✓${NC}  Touchpad UX — tap-to-click + natural scroll + disable-while-typing"
 echo -e "  ${GREEN}✓${NC}  Accelerare video VA-API — intel-media-va-driver + i965-va-driver"
+echo -e "  ${GREEN}✓${NC}  thermald (Intel thermal daemon) + lm-sensors"
+echo -e "  ${GREEN}✓${NC}  RAPL: PL1=22W / PL2=30W (Apple-like) prin systemd-tmpfiles"
 echo ""
 echo -e "  ${YELLOW}⚠${NC}  Necesar: ${BOLD}sudo reboot${NC} pentru a activa toate modificarile."
 echo ""

@@ -46,7 +46,7 @@ sudo reboot
 
 ### `macbook-debian-setup.sh`
 
-Full setup for MacBook Pro 13" 2017 on a fresh Debian Testing install. Runs in 7 stages, each with auto-verification before proceeding.
+Full setup for MacBook Pro 13" 2017 on a fresh Debian Testing install. Runs in 8 stages, each with auto-verification before proceeding.
 
 | Stage | What it does |
 |---|---|
@@ -57,6 +57,7 @@ Full setup for MacBook Pro 13" 2017 on a fresh Debian Testing install. Runs in 7
 | 5 — System fixes | Backlight (`acpi_backlight=native`) + sleep hooks (defensive) + auto-suspend disabled (see below) |
 | 6 — VA-API | `intel-media-va-driver` + `i965-va-driver` — hardware video acceleration for Intel Iris Plus 640 |
 | 7 — Touchpad UX | `tap-to-click` + `natural-scroll` + `disable-while-typing` via gsettings — macOS-like out of the box |
+| 8 — Thermal management | `thermald` + `lm-sensors` + RAPL PL1=22W / PL2=30W (Apple-like) via `systemd-tmpfiles` |
 
 The two DKMS modules (audio, camera) auto-rebuild on kernel updates. The script is idempotent — safe
 to re-run, skips already completed stages.
