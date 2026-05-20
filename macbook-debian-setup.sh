@@ -15,6 +15,7 @@
 #    6. Accelerare video hardware VA-API (Intel Iris Plus 640 / Kaby Lake)
 #    7. Touchpad UX (tap-to-click + natural scroll + disable-while-typing)
 #    8. Thermal management: thermald + RAPL PL1/PL2 (22W/30W Apple-like)
+#       via macbook-rapl.service (ordered after thermald — tmpfiles abandonat)
 #
 #  Notă touchpad: nu mai aplicăm patch out-of-tree pentru "Touch jump detected and discarded".
 #  libinput protejează în userspace (discard event corupt) — cursorul nu sare vizibil.
@@ -511,10 +512,14 @@ fi
 # Fix in 2 parti:
 #   8a) thermald 2.5.10 din apt — daemon dinamic care reduce P-state cand
 #       temperaturile cresc. Plus lm-sensors pentru monitoring manual.
-#   8b) tmpfiles config in /etc/tmpfiles.d/macbook-rapl.conf:
+#   8b) macbook-rapl.service — oneshot ordonat After=thermald.service:
 #         PL1 = 22 W sustained — match Apple macOS config (cTDP-up)
 #         PL2 = 30 W short-term boost — match Apple macOS config
 #       Time windows raman default kernel (~28s PL1 / ~2.4ms PL2).
+#       NB: am incercat initial tmpfiles dar nu functioneaza pe MBP 2017:
+#       intel_rapl_msr se incarca tarziu prin udev si suprascrie valorile
+#       tmpfiles cu defaults Apple EFI dupa ~2 min in boot. Un service
+#       ordonat after thermald scrie ULTIMUL si limitele raman.
 # =============================================================================
 CURRENT_STEP="ETAPA 8/8 — Thermal management (thermald + RAPL)"
 step "$CURRENT_STEP"
@@ -545,42 +550,57 @@ else
     fail "thermald.service nu este active. Vezi: systemctl status thermald"
 fi
 
-# --- 8b: RAPL static PL1/PL2 via systemd-tmpfiles ---
-# PL in microWatts pentru kernel sysfs interface
+# --- 8b: RAPL static PL1/PL2 via systemd service (ordered after thermald) ---
 PL1_UW=22000000   # 22 W sustained
 PL2_UW=30000000   # 30 W short-term boost
 
 RAPL_BASE="/sys/class/powercap/intel-rapl:0"
 
 if [ ! -d "$RAPL_BASE" ]; then
-    fail "RAPL sysfs interface lipseste la $RAPL_BASE. Modulul intel_rapl_common nu e incarcat?"
+    fail "RAPL sysfs interface lipseste la $RAPL_BASE. Modulul intel_rapl_msr nu e incarcat?"
+fi
+
+# Cleanup config tmpfiles vechi (versiuni anterioare ale scriptului foloseau
+# tmpfiles, dar pe MBP 2017 nu functioneaza — vezi comentariul de la 8b).
+OLD_TMPFILES="/etc/tmpfiles.d/macbook-rapl.conf"
+if [ -f "$OLD_TMPFILES" ]; then
+    info "Stergere config tmpfiles RAPL vechi (nu functioneaza pe MBP 2017)..."
+    sudo rm -f "$OLD_TMPFILES" \
+        || warn "Nu am putut sterge $OLD_TMPFILES (manual: sudo rm $OLD_TMPFILES)."
 fi
 
 info "Configurare RAPL: PL1=$((PL1_UW/1000000))W (long-term), PL2=$((PL2_UW/1000000))W (short-term)..."
 
-TMPFILES_CONF="/etc/tmpfiles.d/macbook-rapl.conf"
+RAPL_SERVICE="/etc/systemd/system/macbook-rapl.service"
 
-sudo tee "$TMPFILES_CONF" > /dev/null << TMPFILESEOF
-# MacBook Pro 13" 2017 (A1708) — Intel i5-7360U Kaby Lake RAPL limits
-# Apple EFI nu seteaza limite RAPL sane pe Linux; fara astea chip-ul trage
-# fara restrictie pana la thermal throttle la TJmax (100°C).
-#
-# PL1 = 22 W sustained — match Apple macOS config (cTDP-up)
-# PL2 = 30 W short-term boost — match Apple macOS config
-# Time windows raman la default kernel (~28s PL1, ~2.4ms PL2).
-w /sys/devices/virtual/powercap/intel-rapl/intel-rapl:0/constraint_0_power_limit_uw - - - - $PL1_UW
-w /sys/devices/virtual/powercap/intel-rapl/intel-rapl:0/constraint_1_power_limit_uw - - - - $PL2_UW
-TMPFILESEOF
+sudo tee "$RAPL_SERVICE" > /dev/null << SERVICEEOF
+[Unit]
+Description=MacBook Pro 2017 RAPL power limits (PL1=$((PL1_UW/1000000))W, PL2=$((PL2_UW/1000000))W)
+Documentation=https://github.com/vrilutza/scripts
+ConditionPathExists=/sys/class/powercap/intel-rapl:0/constraint_0_power_limit_uw
+After=thermald.service
+Wants=thermald.service
 
-if [ -f "$TMPFILES_CONF" ]; then
-    ok "tmpfiles config scris: $TMPFILES_CONF"
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'echo $PL1_UW > /sys/class/powercap/intel-rapl:0/constraint_0_power_limit_uw'
+ExecStart=/bin/sh -c 'echo $PL2_UW > /sys/class/powercap/intel-rapl:0/constraint_1_power_limit_uw'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+SERVICEEOF
+
+if [ -f "$RAPL_SERVICE" ]; then
+    ok "Service unit scris: $RAPL_SERVICE"
 else
-    fail "Nu am putut scrie $TMPFILES_CONF."
+    fail "Nu am putut scrie $RAPL_SERVICE."
 fi
 
-info "Aplicare imediata RAPL (fara reboot)..."
-sudo systemd-tmpfiles --create "$TMPFILES_CONF" \
-    || warn "systemd-tmpfiles a returnat eroare; verificare valori actuale..."
+info "Reload systemd + enable --now macbook-rapl.service..."
+sudo systemctl daemon-reload || fail "systemctl daemon-reload a esuat."
+sudo systemctl enable --now macbook-rapl.service \
+    || fail "Enable/start macbook-rapl.service a esuat."
 
 PL1_READ=$(cat "$RAPL_BASE/constraint_0_power_limit_uw" 2>/dev/null)
 PL2_READ=$(cat "$RAPL_BASE/constraint_1_power_limit_uw" 2>/dev/null)
@@ -588,7 +608,7 @@ PL2_READ=$(cat "$RAPL_BASE/constraint_1_power_limit_uw" 2>/dev/null)
 if [ "$PL1_READ" = "$PL1_UW" ] && [ "$PL2_READ" = "$PL2_UW" ]; then
     ok "RAPL aplicat efectiv: PL1=$((PL1_READ/1000000))W, PL2=$((PL2_READ/1000000))W."
 else
-    warn "RAPL: valori curente nu corespund (PL1=$PL1_READ vs $PL1_UW, PL2=$PL2_READ vs $PL2_UW). Vor fi reaplicate la urmatorul boot din tmpfiles."
+    warn "RAPL: valori curente nu corespund (PL1=$PL1_READ vs $PL1_UW, PL2=$PL2_READ vs $PL2_UW). Verifica: systemctl status macbook-rapl"
 fi
 
 
@@ -611,7 +631,7 @@ echo -e "  ${GREEN}✓${NC}  Touchpad: libinput protejeaza in userspace (nu mai 
 echo -e "  ${GREEN}✓${NC}  Touchpad UX — tap-to-click + natural scroll + disable-while-typing"
 echo -e "  ${GREEN}✓${NC}  Accelerare video VA-API — intel-media-va-driver + i965-va-driver"
 echo -e "  ${GREEN}✓${NC}  thermald (Intel thermal daemon) + lm-sensors"
-echo -e "  ${GREEN}✓${NC}  RAPL: PL1=22W / PL2=30W (Apple-like) prin systemd-tmpfiles"
+echo -e "  ${GREEN}✓${NC}  RAPL: PL1=22W / PL2=30W (Apple-like) prin macbook-rapl.service"
 echo ""
 echo -e "  ${YELLOW}⚠${NC}  Necesar: ${BOLD}sudo reboot${NC} pentru a activa toate modificarile."
 echo ""

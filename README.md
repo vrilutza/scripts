@@ -61,6 +61,9 @@ journalctl --since "1 hour ago" | grep -iE "throttle|thermal"
 
 # Is thermald running?
 systemctl is-active thermald
+
+# Did macbook-rapl.service apply the limits this boot?
+systemctl status macbook-rapl --no-pager
 ```
 
 **Expected ranges on i5-7360U with PL1=22W / PL2=30W:**
@@ -75,7 +78,9 @@ systemctl is-active thermald
 **Red flags worth investigating:**
 
 - **Idle persistent over 70°C** — RAPL may not be applied (`grep .` command above) or thermald is down (`systemctl is-active thermald`).
-- **Sustained over 95°C with fan maxed** — PL1 is too aggressive for this thermal solution. To lower it, edit `/etc/tmpfiles.d/macbook-rapl.conf` (e.g., change `22000000` to `18000000`) and run `sudo systemd-tmpfiles --create`. No reboot needed.
+- **Sustained over 95°C with fan maxed** — PL1 is too aggressive for this thermal solution. To lower it, edit `/etc/systemd/system/macbook-rapl.service` (change `22000000` to e.g. `18000000`) then `sudo systemctl daemon-reload && sudo systemctl restart macbook-rapl.service`. No reboot needed.
+
+**Why a systemd service, not `tmpfiles.d`?** Earlier versions of this repo wrote the RAPL limits via `/etc/tmpfiles.d/macbook-rapl.conf`. That worked at first apply but *did not survive reboot* on MacBook Pro 2017: `intel_rapl_msr` is loaded late via udev (~2 minutes into boot) and overwrote the tmpfiles-set values with Apple EFI defaults (100W / 125W). A oneshot service ordered `After=thermald.service` runs last, after every other initialiser has touched RAPL, so the limits stick.
 
 ## Scripts
 
@@ -92,7 +97,7 @@ Full setup for MacBook Pro 13" 2017 on a fresh Debian Testing install. Runs in 8
 | 5 — System fixes | Backlight (`acpi_backlight=native`) + sleep hooks (defensive) + auto-suspend disabled (see below) |
 | 6 — VA-API | `intel-media-va-driver` + `i965-va-driver` — hardware video acceleration for Intel Iris Plus 640 |
 | 7 — Touchpad UX | `tap-to-click` + `natural-scroll` + `disable-while-typing` via gsettings — macOS-like out of the box |
-| 8 — Thermal management | `thermald` + `lm-sensors` + RAPL PL1=22W / PL2=30W (Apple-like) via `systemd-tmpfiles` |
+| 8 — Thermal management | `thermald` + `lm-sensors` + RAPL PL1=22W / PL2=30W (Apple-like) via `macbook-rapl.service` (ordered after thermald) |
 
 The two DKMS modules (audio, camera) auto-rebuild on kernel updates. The script is idempotent — safe
 to re-run, skips already completed stages.
