@@ -512,25 +512,28 @@ fi
 # Fix in 2 parti:
 #   8a) thermald 2.5.10 din apt — daemon dinamic care reduce P-state cand
 #       temperaturile cresc. Plus lm-sensors pentru monitoring manual.
-#   8b) macbook-rapl.path + macbook-rapl.service:
+#   8b) Regula udev (scrie RAPL via ATTR) + macbook-rapl-thermald.service:
 #         PL1 = 22 W sustained — match Apple macOS config (cTDP-up)
 #         PL2 = 30 W short-term boost — match Apple macOS config
 #       Time windows raman default kernel (~28s PL1 / ~2.4ms PL2).
 #
-#       Evolutia abordarii (3 iteratii):
+#       Evolutia abordarii (4 iteratii — vezi TODO.md pentru date complete):
 #       v1) /etc/tmpfiles.d/macbook-rapl.conf — scria devreme la boot, dar
-#           intel_rapl_msr (udev-loaded ~2min in boot) suprascria valorile
-#           cu defaults Apple EFI. Abandonat.
-#       v2) macbook-rapl.service enable direct + ConditionPathExists pe
-#           sysfs RAPL. Functiona pe kernel 7.0.7 (100% boots). Pe kernel
-#           7.0.9 race condition ~110ms: systemd evalua condition INAINTE
-#           ca intel_rapl_msr sa expuna fisierul → service skip silent in
-#           37.5% din boot-uri. Plus thermald initializa fara RAPL pe
-#           aceleasi boot-uri ("NO RAPL sysfs present" in log).
-#       v3) (curent) .path unit cu PathExists asteapta indefinit aparitia
-#           sysfs RAPL, declanseaza .service exact cand e gata. Plus
-#           ExecStartPost=systemctl try-restart thermald → thermald
-#           reinitializeaza si vede RAPL. Race condition eliminat complet.
+#           intel_rapl_msr (udev-loaded) suprascria cu defaults Apple. NU.
+#       v2) macbook-rapl.service + ConditionPathExists. Mergea pe 7.0.7
+#           (100%), dar pe 7.0.9 race ~110ms → 37.5% boot-uri esuate.
+#       v3) macbook-rapl.path (PathExists) + .service. ESUAT: .path units
+#           folosesc inotify, iar sysfs NU emite fiabil evenimente inotify
+#           de creare → tot non-determinist. Plus After=thermald pe .path
+#           crea ordering cycle (paths.target e inainte de basic.target).
+#       v4) (curent) Regula udev pe SUBSYSTEM==powercap, KERNEL==intel-rapl:0.
+#           udev primeste uevent KERNEL real la aparitia device-ului (fiabil,
+#           spre deosebire de inotify-pe-sysfs). Scrie valorile direct via
+#           ATTR{}= (zero race, sincron cu add event). TAG+=systemd +
+#           SYSTEMD_WANTS declanseaza macbook-rapl-thermald.service care face
+#           try-restart thermald → thermald redescopera RAPL.
+#           Testat empiric: udevadm trigger --action=add re-aplica 100M→22M;
+#           thermald restartat dupa RAPL set nu mai logheaza "NO RAPL sysfs".
 # =============================================================================
 CURRENT_STEP="ETAPA 8/8 — Thermal management (thermald + RAPL)"
 step "$CURRENT_STEP"
@@ -561,7 +564,7 @@ else
     fail "thermald.service nu este active. Vezi: systemctl status thermald"
 fi
 
-# --- 8b: RAPL via .path unit (asteapta sysfs) + .service (scrie + restart thermald) ---
+# --- 8b: RAPL via regula udev (ATTR write) + thermald reinit service ---
 PL1_UW=22000000   # 22 W sustained
 PL2_UW=30000000   # 30 W short-term boost
 
@@ -571,72 +574,65 @@ if [ ! -d "$RAPL_BASE" ]; then
     fail "RAPL sysfs interface lipseste la $RAPL_BASE. Modulul intel_rapl_msr nu e incarcat?"
 fi
 
-# Cleanup migrare v1 → v3: config tmpfiles din versiunea v1 a scriptului.
+# Cleanup iteratii anterioare (v1 tmpfiles, v2/v3 service + .path unit).
 OLD_TMPFILES="/etc/tmpfiles.d/macbook-rapl.conf"
 if [ -f "$OLD_TMPFILES" ]; then
-    info "Stergere config tmpfiles RAPL vechi (v1, nu functiona pe MBP 2017)..."
-    sudo rm -f "$OLD_TMPFILES" \
-        || warn "Nu am putut sterge $OLD_TMPFILES (manual: sudo rm $OLD_TMPFILES)."
+    info "Stergere config tmpfiles RAPL vechi (v1)..."
+    sudo rm -f "$OLD_TMPFILES" || warn "Nu am putut sterge $OLD_TMPFILES."
 fi
-
-# Cleanup migrare v2 → v3: dezactivam .service direct-enable, .path il declanseaza acum.
-if systemctl is-enabled --quiet macbook-rapl.service 2>/dev/null; then
-    info "Dezactivare macbook-rapl.service direct-enable (v2 → v3 migration)..."
-    sudo systemctl disable macbook-rapl.service >/dev/null 2>&1 \
-        || warn "systemctl disable macbook-rapl.service a returnat eroare."
-fi
+for unit in macbook-rapl.path macbook-rapl.service; do
+    if systemctl is-enabled --quiet "$unit" 2>/dev/null || systemctl is-active --quiet "$unit" 2>/dev/null; then
+        info "Dezactivare $unit (iteratie v2/v3)..."
+        sudo systemctl disable --now "$unit" >/dev/null 2>&1 || true
+    fi
+done
+sudo rm -f /etc/systemd/system/macbook-rapl.path /etc/systemd/system/macbook-rapl.service
 
 info "Configurare RAPL: PL1=$((PL1_UW/1000000))W (long-term), PL2=$((PL2_UW/1000000))W (short-term)..."
 
-RAPL_SERVICE="/etc/systemd/system/macbook-rapl.service"
-RAPL_PATH="/etc/systemd/system/macbook-rapl.path"
+UDEV_RULE="/etc/udev/rules.d/99-macbook-rapl.rules"
+REINIT_SERVICE="/etc/systemd/system/macbook-rapl-thermald.service"
 
-# Service: oneshot care scrie RAPL + restart thermald (sa redescopere RAPL).
-# Fara ConditionPathExists — .path se ocupa de timing.
-sudo tee "$RAPL_SERVICE" > /dev/null << SERVICEEOF
+# Regula udev: la aparitia device-ului powercap intel-rapl:0 (uevent KERNEL
+# real, fiabil — nu inotify), scrie valorile RAPL direct via ATTR{}= si
+# declanseaza service-ul de reinit thermald prin SYSTEMD_WANTS.
+sudo tee "$UDEV_RULE" > /dev/null << UDEVEOF
+# MacBook Pro 13" 2017 (A1708) — Intel i5-7360U RAPL power limits
+# Apple EFI lasa RAPL nelimitat (100W/125W) pe Linux. Scriem PL1/PL2 fix
+# cand kernel-ul expune device-ul powercap, via uevent udev (deterministic
+# pe orice kernel — vs inotify pe sysfs care nu emite fiabil add events).
+ACTION=="add", SUBSYSTEM=="powercap", KERNEL=="intel-rapl:0", ATTR{constraint_0_power_limit_uw}="$PL1_UW", ATTR{constraint_1_power_limit_uw}="$PL2_UW", TAG+="systemd", ENV{SYSTEMD_WANTS}+="macbook-rapl-thermald.service"
+UDEVEOF
+
+# Service mic: thermald initializeaza fara RAPL daca porneste inainte ca
+# device-ul sa existe ("NO RAPL sysfs present"), iar polling-ul lui nu
+# redescopera cooling devices. try-restart il forteaza sa reinitializeze
+# dupa ce udev a setat RAPL. Fara After=thermald (evitam ordering cycle).
+sudo tee "$REINIT_SERVICE" > /dev/null << 'SERVICEEOF'
 [Unit]
-Description=MacBook Pro 2017 RAPL power limits (PL1=$((PL1_UW/1000000))W, PL2=$((PL2_UW/1000000))W)
+Description=Reinit thermald after MacBook RAPL limits are set by udev
 Documentation=https://github.com/vrilutza/scripts
-After=thermald.service
 
 [Service]
 Type=oneshot
-ExecStart=/bin/sh -c 'echo $PL1_UW > /sys/class/powercap/intel-rapl:0/constraint_0_power_limit_uw'
-ExecStart=/bin/sh -c 'echo $PL2_UW > /sys/class/powercap/intel-rapl:0/constraint_1_power_limit_uw'
-ExecStartPost=/bin/systemctl try-restart thermald.service
+ExecStart=/bin/systemctl try-restart thermald.service
 RemainAfterExit=yes
 SERVICEEOF
 
-# Path unit: declanseaza .service cand fisierul RAPL sysfs apare.
-# PathExists asteapta indefinit — elimina race condition pe orice kernel.
-sudo tee "$RAPL_PATH" > /dev/null << PATHEOF
-[Unit]
-Description=Watch for intel-rapl sysfs to apply MacBook RAPL limits
-Documentation=https://github.com/vrilutza/scripts
-After=thermald.service
-
-[Path]
-PathExists=/sys/class/powercap/intel-rapl:0/constraint_0_power_limit_uw
-Unit=macbook-rapl.service
-
-[Install]
-WantedBy=multi-user.target
-PATHEOF
-
-if [ -f "$RAPL_SERVICE" ] && [ -f "$RAPL_PATH" ]; then
-    ok "Unit files scrise: $RAPL_SERVICE + $RAPL_PATH"
+if [ -f "$UDEV_RULE" ] && [ -f "$REINIT_SERVICE" ]; then
+    ok "Scrise: $UDEV_RULE + $REINIT_SERVICE"
 else
-    fail "Nu am putut scrie unit files RAPL."
+    fail "Nu am putut scrie regula udev / service-ul de reinit."
 fi
 
-info "Reload systemd + enable --now macbook-rapl.path..."
+info "Reload udev + systemd, aplicare imediata (udevadm trigger)..."
 sudo systemctl daemon-reload || fail "systemctl daemon-reload a esuat."
-sudo systemctl enable --now macbook-rapl.path \
-    || fail "Enable/start macbook-rapl.path a esuat."
-
-# RAPL sysfs exista deja (rerun pe sistem live), .path declanseaza service-ul
-# instant. Asteptam 2s ca service-ul sa scrie valorile inainte de verificare.
-sleep 2
+sudo udevadm control --reload || fail "udevadm control --reload a esuat."
+# Pe sistem live device-ul exista deja; trigger-ul re-fire-uieste regula acum.
+sudo udevadm trigger --action=add /sys/class/powercap/intel-rapl:0 \
+    || warn "udevadm trigger a returnat eroare."
+sudo udevadm settle
+sleep 1
 
 PL1_READ=$(cat "$RAPL_BASE/constraint_0_power_limit_uw" 2>/dev/null)
 PL2_READ=$(cat "$RAPL_BASE/constraint_1_power_limit_uw" 2>/dev/null)
@@ -644,7 +640,7 @@ PL2_READ=$(cat "$RAPL_BASE/constraint_1_power_limit_uw" 2>/dev/null)
 if [ "$PL1_READ" = "$PL1_UW" ] && [ "$PL2_READ" = "$PL2_UW" ]; then
     ok "RAPL aplicat efectiv: PL1=$((PL1_READ/1000000))W, PL2=$((PL2_READ/1000000))W."
 else
-    warn "RAPL: valori curente nu corespund (PL1=$PL1_READ vs $PL1_UW, PL2=$PL2_READ vs $PL2_UW). Vor fi aplicate la urmatorul boot prin .path unit. Verifica: systemctl status macbook-rapl.path macbook-rapl.service"
+    warn "RAPL: valori curente nu corespund (PL1=$PL1_READ vs $PL1_UW, PL2=$PL2_READ vs $PL2_UW). Vor fi aplicate la urmatorul boot prin regula udev. Verifica: cat $RAPL_BASE/constraint_0_power_limit_uw"
 fi
 
 
@@ -667,7 +663,7 @@ echo -e "  ${GREEN}✓${NC}  Touchpad: libinput protejeaza in userspace (nu mai 
 echo -e "  ${GREEN}✓${NC}  Touchpad UX — tap-to-click + natural scroll + disable-while-typing"
 echo -e "  ${GREEN}✓${NC}  Accelerare video VA-API — intel-media-va-driver + i965-va-driver"
 echo -e "  ${GREEN}✓${NC}  thermald (Intel thermal daemon) + lm-sensors"
-echo -e "  ${GREEN}✓${NC}  RAPL: PL1=22W / PL2=30W (Apple-like) prin macbook-rapl.path + .service"
+echo -e "  ${GREEN}✓${NC}  RAPL: PL1=22W / PL2=30W (Apple-like) prin regula udev + thermald reinit"
 echo ""
 echo -e "  ${YELLOW}⚠${NC}  Necesar: ${BOLD}sudo reboot${NC} pentru a activa toate modificarile."
 echo ""

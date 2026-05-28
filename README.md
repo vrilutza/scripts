@@ -121,12 +121,15 @@ grep . /sys/class/powercap/intel-rapl:0/constraint_*_power_limit_uw
 # Recent thermal throttle events
 journalctl --since "1 hour ago" | grep -iE "throttle|thermal"
 
-# Are thermald + the RAPL path-watcher + service running?
-systemctl is-active thermald macbook-rapl.path macbook-rapl.service
-systemctl status macbook-rapl.path macbook-rapl.service --no-pager
+# Is thermald running + did the udev rule fire its reinit service?
+systemctl is-active thermald macbook-rapl-thermald.service
 
-# Did thermald actually find RAPL this boot? (key for adaptive throttling)
-journalctl -u thermald -b 0 | grep -i rapl
+# The udev rule that sets RAPL on device appearance
+cat /etc/udev/rules.d/99-macbook-rapl.rules
+
+# Did thermald find RAPL this boot? ZERO matches = good (it only logs the
+# negative "NO RAPL sysfs present" case; absence means RAPL was present)
+journalctl -u thermald -b 0 | grep -i "NO RAPL"
 ```
 
 **Expected ranges on i5-7360U with PL1=22W / PL2=30W:**
@@ -141,13 +144,14 @@ journalctl -u thermald -b 0 | grep -i rapl
 **Red flags worth investigating:**
 
 - **Idle persistent over 70°C** — RAPL may not be applied (`grep .` command above) or thermald is down (`systemctl is-active thermald`).
-- **Sustained over 95°C with fan maxed** — PL1 is too aggressive for this thermal solution. To lower it, edit `/etc/systemd/system/macbook-rapl.service` (change `22000000` to e.g. `18000000`) then `sudo systemctl daemon-reload && sudo systemctl start macbook-rapl.service`. No reboot needed. (The `.path` unit stays as-is — it only watches for the sysfs file appearing.)
+- **Sustained over 95°C with fan maxed** — PL1 is too aggressive for this thermal solution. To lower it, edit the two `ATTR{constraint_*_power_limit_uw}` values in `/etc/udev/rules.d/99-macbook-rapl.rules` (change `22000000` to e.g. `18000000`), then `sudo udevadm control --reload && sudo udevadm trigger --action=add /sys/class/powercap/intel-rapl:0`. No reboot needed.
 
-**Why a `.path` unit + `.service`?** This repo went through three iterations:
+**Why a udev rule (not tmpfiles / `.service` / `.path`)?** This repo went through four iterations:
 
 1. **v1 — `tmpfiles.d`**: wrote RAPL limits at early boot. Failed because `intel_rapl_msr` loads via udev later in boot and overwrote our values with Apple EFI defaults (100W / 125W).
 2. **v2 — `.service` with `ConditionPathExists`**: worked on kernel 7.0.7 (100% of boots) but **failed on ~37.5% of boots on kernel 7.0.9** due to a ~110 ms race condition: systemd evaluated the condition *just before* the kernel's udev probe exposed the sysfs file. Worse, `thermald` itself initialised without RAPL on the same failed boots (logged `NO RAPL sysfs present`) — and its 4-second polling does *not* rediscover cooling devices.
-3. **v3 (current) — `.path` unit + `.service`**: the `.path` unit's `PathExists=` waits *indefinitely* for the sysfs file to appear and then triggers the `.service`. Boot-time race eliminated regardless of kernel timing. The `.service` adds an `ExecStartPost=/bin/systemctl try-restart thermald.service` so thermald reinitialises and discovers RAPL after our writes.
+3. **v3 — `.path` unit + `.service`**: also failed. `.path` units use **inotify**, and sysfs does *not* reliably emit inotify creation events — so the trigger only fired when the file already existed at `.path` start time (still a race). Plus `After=thermald.service` on a `.path` unit created an ordering cycle (paths.target is ordered *before* basic.target, thermald *after*).
+4. **v4 (current) — udev rule**: `ACTION=="add", SUBSYSTEM=="powercap", KERNEL=="intel-rapl:0"` writes the limits directly via `ATTR{constraint_*_power_limit_uw}=`. udev fires on the kernel's *real* device-add uevent (reliable, unlike inotify on sysfs), so the values are set deterministically the moment the device appears — on any kernel. `TAG+="systemd"` + `ENV{SYSTEMD_WANTS}+="macbook-rapl-thermald.service"` pulls in a tiny oneshot that `try-restart`s thermald so it reinitialises and discovers RAPL. Verified empirically: `udevadm trigger --action=add` re-applies 100W→22W, and thermald restarted after RAPL is set no longer logs `NO RAPL sysfs present`.
 
 ### WiFi & Bluetooth
 
