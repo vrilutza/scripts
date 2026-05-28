@@ -190,6 +190,18 @@ Pentru fiecare boot apar ~40 mesaje "error/warning". Catalog clasificat:
 
 **Concluzia catalogului**: din 23 categorii log noise, **3-4 ar putea avea fix-uri opționale în script** (B1, B2 — GNOME cleanup; posibil C3 DMAR via iommu off). **Restul = Apple ACPI/firmware quirks inevitabil**.
 
+### Adendum (28 mai, după 8 reboot-uri rapide) — WiFi/BT unresponsive la warm reboot
+
+WiFi (BCM4350 PCIe 02:00.0) și BT (BCM4350C0 UART serial0) = **același modul Broadcom combo**.
+`sudo reboot` NU power-cycle-ază complet cip-ul. După reboot-uri rapide succesive poate ajunge mut:
+- WiFi: `brcmf_chip_recognition: MMIO read failed: 0xffffffff` → probe failed (1 din 8 boot-uri, self-recover)
+- BT: `command 0xfc18 tx timeout` → `BCM: Reset failed (-110)`, hci0 DOWN
+
+**Hardware, NU bug script** (hook-urile sleep nu rulează la reboot — confirmat). Distincție în log:
+`-16`/EBUSY = cip-ul răspunde, BT merge; `-110`/timeout = cip mut, necesită power cycle.
+**Recuperare: full power-off** (`shutdown -h now` → ~10s → pornire), NU warm reboot. Rerun script NU ajută.
+Clasificare: 🔴 D (hardware inevitabil). Documentat în README secțiunea Bluetooth → "Warm reboot...".
+
 ## 7. Plan execuție
 
 ```

@@ -194,7 +194,7 @@ Full setup for MacBook Pro 13" 2017 on a fresh Debian Testing install. Runs in 8
 | 5 — System fixes | Backlight (`acpi_backlight=native`) + sleep hooks (defensive) + auto-suspend disabled (see below) |
 | 6 — VA-API | `intel-media-va-driver` + `i965-va-driver` — hardware video acceleration for Intel Iris Plus 640 |
 | 7 — Touchpad UX | `tap-to-click` + `natural-scroll` + `disable-while-typing` via gsettings — macOS-like out of the box |
-| 8 — Thermal management | `thermald` + `lm-sensors` + RAPL PL1=22W / PL2=30W (Apple-like) via `macbook-rapl.service` (ordered after thermald) |
+| 8 — Thermal management | `thermald` + `lm-sensors` + RAPL PL1=22W / PL2=30W (Apple-like) via udev rule + thermald reinit |
 
 The two DKMS modules (audio, camera) auto-rebuild on kernel updates. The script is idempotent — safe
 to re-run, skips already completed stages.
@@ -263,6 +263,31 @@ Bluetooth: hci0: BCM: Reset failed (-110)
 
 The SMC Reset power-cycles the chip back to 115200 baud. After that Linux initializes it correctly
 and resets it to 115200 on every shutdown — so subsequent boots work without SMC Reset.
+
+### Warm reboot can leave WiFi/Bluetooth unresponsive
+
+WiFi (BCM4350 on PCIe) and Bluetooth (BCM4350C0 on UART) are the **same physical Broadcom combo
+chip**. A warm reboot (`sudo reboot`) does **not** fully power-cycle this chip, and after several
+rapid successive reboots it can land in an unresponsive state:
+
+- **WiFi**: `brcmfmac: brcmf_chip_recognition: MMIO read failed: 0xffffffff` → `brcmf_pcie_probe: failed` (chip returns all-ones on PCIe = not responding)
+- **Bluetooth**: `command 0xfc18 tx timeout` → `BCM: Reset failed (-110)` (chip times out on UART), `hci0` stays `DOWN`
+
+This is a **hardware-level limitation, not a software bug** — none of this repo's hooks run on
+reboot. Observed empirically: across 8 rapid reboots, WiFi failed once (self-recovered next boot)
+and Bluetooth went unresponsive after the burst.
+
+**Recovery: a full power-off, not a warm reboot.**
+
+```bash
+sudo shutdown -h now
+# wait ~10 seconds, then power on
+```
+
+A complete power-off de-powers the Broadcom chip so it comes up clean. Re-running the setup script
+does **not** help — there is no software fix for an unresponsive chip. (Tip: the distinction shows in
+the log — error `-16` / EBUSY means the chip still answered and BT worked; error `-110` / timeout
+means the chip is fully unresponsive and needs the power cycle.)
 
 ## Tested on
 
