@@ -198,10 +198,17 @@ Pentru fiecare boot apar ~40 mesaje "error/warning". Catalog clasificat:
 ✓ 6.   v3 (.path) implementat + commit — A ESUAT la reboot (race inotify + ordering cycle)
 ✓ 7.   v4 (udev) testat empiric pe sistem (udevadm trigger: 100M→22M, thermald OK)
 ✓ 8.   v4 implementat in script + README + TODO → commit + push
- → 9.  Tu: reboot test final (RAPL = 22M/30M la fiecare boot, deterministic)
-   10. Verificare post-reboot:
-         grep . /sys/class/powercap/intel-rapl:0/constraint_*_power_limit_uw   # 22M/30M
-         journalctl -u thermald -b 0 | grep -i "NO RAPL"                       # gol = bine
+✓ 9.   Reboot test real (boot 22:36): RAPL = 22M/30M ✓, thermald restartat
+       de reinit service la 22:36:16 → instanta noua (PID 1535) vede RAPL.
+       FIX VALIDAT COMPLET la boot real (nu doar simulare udevadm trigger).
+
+Nota verificare: `journalctl -u thermald -b 0 | grep "NO RAPL"` arata MEREU
+2 linii (instanta pre-restart), chiar cand totul merge — instanta thermald
+de dupa restart e cea care conteaza si aceea vede RAPL. Verificare corecta:
+`journalctl -u thermald -u macbook-rapl-thermald.service -b 0 | tail -8`
+→ reinit "Finished" urmat imediat de thermald "Started".
+
+## STATUS: REZOLVAT — RAPL race condition fix complet (v4 udev), validat la boot real.
    11. (optional, alt commit) B1+B2 din catalog — GNOME gsettings cleanup
    12. (optional) README section "Boot log triage" — known benign issues
 ```

@@ -127,9 +127,12 @@ systemctl is-active thermald macbook-rapl-thermald.service
 # The udev rule that sets RAPL on device appearance
 cat /etc/udev/rules.d/99-macbook-rapl.rules
 
-# Did thermald find RAPL this boot? ZERO matches = good (it only logs the
-# negative "NO RAPL sysfs present" case; absence means RAPL was present)
-journalctl -u thermald -b 0 | grep -i "NO RAPL"
+# How thermald picks up RAPL each boot: the first thermald instance starts
+# before the powercap device and logs "NO RAPL sysfs present" (2 lines, expected),
+# then the udev rule sets RAPL and restarts thermald. Confirm the restart happened
+# *after* RAPL was set — the running thermald instance is the one that sees RAPL:
+journalctl -u thermald -u macbook-rapl-thermald.service -b 0 | tail -8
+# Expected tail: "...reinit... Finished", immediately followed by thermald "Started".
 ```
 
 **Expected ranges on i5-7360U with PL1=22W / PL2=30W:**
