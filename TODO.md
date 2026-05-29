@@ -27,7 +27,7 @@ Toate sunt gsettings sau parametri kernel. Zero risc, dar și impact mic. Bune d
 
 | Item | Ce face | Fix |
 |---|---|---|
-| **hid_apple fn-mode** | F1-F12 ca media keys vs F-keys reale | parametru kernel `hid_apple.fnmode` |
+| **applespi fnmode** | F1-F12 ca media keys (curent) vs F-keys reale | `options applespi fnmode=2` în `/etc/modprobe.d/` + update-initramfs (MacBook 2017 = driver `applespi`, NU `hid_apple`) |
 | **GNOME hibernate keybinding** | scoate eroarea `gsd-media-keys: Failed to grab ... hibernate` din log | `gsettings set org.gnome.settings-daemon.plugins.media-keys hibernate "[]"` |
 | **GNOME usb-protection** | scoate eroarea `gsd-usb-protection: Failed to fetch USBGuard` | `gsettings set org.gnome.desktop.privacy usb-protection false` |
 
