@@ -53,13 +53,6 @@ Documentate ca să nu pierdem timp încercând.
 | **Apple ACPI noise** | `AE_ALREADY_EXISTS`, `_OSC/_PDC AE_NOT_FOUND`, SSDT duplicate — Apple nu implementează metode ACPI standard. Kernel-ul folosește fallback-uri. Pur cosmetic. |
 | **Intel SGX disabled** | dezactivat în Apple BIOS, irelevant pe MacBook |
 
-## ⛔ Ce NU recomand să adăugăm
-
-- **`mbpfan`** — vechi, instabil; fan control built-in pe MBP 2017 merge OK
-- **`tlp`** — incompatibil cu thermald pe acest hardware; poate intra în conflict cu setări existente
-- **GNOME extensions / Dash-to-Dock** — preferință pură, nu hardware fix
-- **Microphone gain custom** — codec-ul Cirrus se descurcă singur
-
 ---
 
 ## Anexă — catalog complet "log noise" (referință)
