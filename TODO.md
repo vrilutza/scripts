@@ -100,9 +100,15 @@ acum că UBSAN prinde accesul.
 
 **De urmărit**:
 - [x] Issue gata: `ISSUE_audio_kernel_7.0.10.md` (de postat pe davidjo/snd_hda_macbookpro + Debian)
-- [x] Kernel 7.0.11 changelog verificat (4 iun) — vezi mai jos, NU repară audio
-- [ ] Test 7.1-rc5 din Debian experimental (cod HDA diferit, poate reparat)
-- [ ] Decizie: GRUB default pe 7.0.9 până apare fix driver? (reversibil, recomandabil)
+- [x] Kernel 7.0.11 changelog verificat (4 iun) — NU repară audio (3 commit-uri ASoC irelevante)
+- [x] Test 7.1-rc5 (4 iun) — neconcludent (build-script driver fail pe RC; vezi mai jos). 7.1
+      scos, sistem curățat. **DECIZIE: așteptăm 7.1 RELEASED stabil** ca să-l testăm corect.
+- [ ] Când 7.1 iese stabil în Debian: reinstalează + testează dacă audio HDA e reparat
+- [ ] Decizie: GRUB default pe 7.0.9 până apare fix audio? (reversibil, recomandabil)
+
+**Cleanup experimental (rulat 4 iun)**: 7.1-rc5 scos, meta-pachete readuse la forky 7.0.10.
+Repo experimental rămâne configurat (pinned prioritate 1 — nu trage nimic automat). Pentru a-l
+scoate complet: `sudo rm /etc/apt/sources.list.d/experimental.list /etc/apt/preferences.d/experimental`.
 
 **Comparație changelog kerneluri (pt audio HDA)**:
 - **7.0.11** (kernel.org, 1 iun): 3 commit-uri sunet, TOATE ASoC (`cs-amp-lib`, `cs35l56` —
