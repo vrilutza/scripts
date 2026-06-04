@@ -25,30 +25,78 @@ boot-uri** la 22M/30M. Detaliile tehnice complete sunt în istoricul git (commit
 **Simptom**: pe kernel `7.0.10+deb14-amd64`, niciun sound card (`/proc/asound/cards` = "no soundcards",
 `/dev/snd/` doar seq+timer). Pe `7.0.9` audio funcționează perfect.
 
-**Cauză** (stack trace din jurnal pe boot 7.0.10):
-```
-cs8409_probe → snd_hda_gen_parse_auto_config → UBSAN array-index-out-of-bounds
-  sound/hda/codecs/generic.c:3294   (index 18 pe auto_pin_cfg_item[18])
-  sound/hda/common/auto_parser.c:579 (index 41 pe char*[36])
-→ probe FAILED → cardul nu se înregistrează
-```
-Driverul CS8409 (DKMS davidjo/snd_hda_macbookpro) trimite o config de pini care depășește
-limitele array-urilor din parser-ul HDA **in-tree**. Codul HDA in-tree s-a schimbat în 7.0.10
-(sau UBSAN nou activat) → out-of-bounds-ul rupe înregistrarea cardului. **NU e bug în script.**
+**Cauză exactă (debugging complet pe sistem real, 4 iunie):**
 
-**Status fix**:
-- Driver upstream: ultimul commit 2026-05-05 (cb27cc4) — **fără fix** pentru 7.0.10. Rerun script NU ajută.
-- Diferit de regresia RAPL: aici e cod **in-tree kernel** + driver OOT, nu config-ul nostru.
+Stack trace pe boot 7.0.10:
+```
+cs8409.c:32  snd_hda_gen_parse_auto_config(codec, &spec->gen.autocfg)
+  → hda_get_autocfg_input_label (auto_parser.c:579,582,583,588,589)
+  → snd_hda_gen_parse_auto_config (generic.c:3294,3304,3305,3311,3312)
+  → UBSAN array-index-out-of-bounds → probe FAILED → niciun card
+```
 
-**Workaround imediat**: boot kernel 7.0.9 din GRUB → Advanced options (încă instalat, audio OK).
+UBSAN raportează indici **garbage** pe array-uri fixe:
+- `index 18, 40, 41, 42` pe `auto_pin_cfg_item inputs[18]` (AUTO_CFG_MAX_INS=18 în kernel 7.0.10)
+- `index 40, 41, 223` pe `char *[36]` (input labels) și `int [36]`
+
+**Root cause** — confirmat din sursa driverului (`patch_cirrus/cirrus_apple.h:1860`):
+```
+// as of 5.13 the definition of AUTO_CFG_MAX_INS has been increased to handle the 8409
+// so we need to hack this code because we have more adcs than AUTO_CFG_MAX_INS
+// adcs (8) - actual number is 18
+```
+Driverul CS8409 are **mai multe ADC-uri/input pins decât AUTO_CFG_MAX_INS (18)** și setează
+intenționat `cfg->num_inputs` peste limita array-ului `inputs[18]`. Parser-ul HDA **in-tree**
+iterează `for (i=0; i < cfg->num_inputs; i++) cfg->inputs[i]` → accesează `inputs[18..42]` și
+calculează indici de label garbage (223) din memorie de după array. Acest "hack" a fost tolerat
+până la 7.0.10, când **UBSAN array-bounds checking** (nou activat în config-ul Debian) îl prinde
+ȘI accesul out-of-bounds rupe înregistrarea cardului.
+
+**Clasificare reală**: bug în **driver** (hack-ul care depășește AUTO_CFG_MAX_INS), latent ani de
+zile, expus de UBSAN-ul mai strict din kernel 7.0.10. NU e config-ul nostru, NU e bug script.
+
+**Fix posibil din 2 direcții**:
+1. **Driver** (davidjo/snd_hda_macbookpro): să nu mai depășească `cfg->num_inputs > AUTO_CFG_MAX_INS`
+   — fix-ul corect. Upstream ultimul commit 2026-05-05, fără el încă.
+2. **Kernel**: AUTO_CFG_MAX_INS crescut peste 18, SAU UBSAN bounds dezactivat (improbabil/nedorit).
+
+**Workaround imediat**: boot 7.0.9 din GRUB → Advanced options (audio OK, 0 UBSAN).
+
+**Testare kerneluri noi (răspuns la întrebarea: merită 7.0.11 / experimental?)**:
+- Multi-kernel în paralel e SIGUR — Debian păstrează mai multe `linux-image-*`, GRUB le listează pe toate. Zero risc să ai 7.0.9 + 7.0.10 + 7.0.11 simultan.
+- DAR: fix-ul e **driver-side**. Un kernel mai nou repară audio DOAR dacă întâmplător crește
+  AUTO_CFG_MAX_INS sau relaxează bounds — nu garantat. 7.0.11 cu același AUTO_CFG_MAX_INS=18 +
+  UBSAN va rupe audio la fel. Merită testat, dar nu te baza pe el ca soluție.
+- Sursă kernel mai nou: Debian `experimental`/`unstable`, sau build din kernel.org.
+
+**Pentru issue upstream** — include: kernel 7.0.10 cu UBSAN bounds, driver commit cb27cc4,
+hardware MacBookPro14,1, stack trace de mai sus, și citatul din cirrus_apple.h:1860 (hack-ul
+AUTO_CFG_MAX_INS). Întrebare cheie pt mainaineri: cum să gestioneze >18 ADC pins fără overflow
+acum că UBSAN prinde accesul.
 
 **De urmărit**:
-- [ ] Kernel 7.0.11 — posibil fix in-tree HDA (verifică UBSAN dispare)
-- [ ] Commit nou pe davidjo/snd_hda_macbookpro care patch-uiește pin config pt 7.0.10
-- [ ] Eventual: raportează issue upstream cu stack trace-ul de mai sus
-- [ ] Decizie: `apt-mark hold linux-image-amd64` la 7.0.9 până apare fix? (sau GRUB default pe 7.0.9)
+- [ ] Issue/PR pe davidjo/snd_hda_macbookpro cu root cause-ul de mai sus
+- [ ] Kernel 7.0.11 când intră în Debian — testează dacă UBSAN dispare (probabil NU)
+- [ ] Decizie: GRUB default pe 7.0.9 până apare fix driver? (reversibil, recomandabil)
 
-Clasificare: regresie kernel↔driver, **temporară**, workaround = boot 7.0.9. Nu necesită schimbare în script.
+---
+
+## 🔵 Bluetooth DOWN după upgrade 7.0.10 — clarificare (NU e 7.0.10)
+
+User a observat BT mort după reboot-ul de upgrade la 7.0.10, deși mergea înainte. Comparație jurnal:
+
+| Boot | Kernel | BT init | Rezultat |
+|---|---|---|---|
+| -2 (2 iun) | 7.0.9 | `baudrate (-16)` EBUSY, dar apoi `BCM4350C0 build 1532` | ✅ BT OK |
+| 0 (4 iun) | 7.0.10 | `0xfc18 tx timeout`, `baudrate (-110)`, `Reset failed (-110)` | ❌ BT DOWN |
+
+Diferența `-16` (busy, cip răspunde) vs `-110` (timeout, cip mut) = **starea cip-ului Broadcom după
+warm reboot**, NU kernelul. Upgrade-ul a necesitat un reboot → exact ce declanșează starea proastă
+Broadcom (vezi secțiunea Broadcom warm-reboot din Categoria C). **NU e regresie 7.0.10.**
+
+**Test de confirmare** (pentru a fi 100% siguri): `shutdown -h now` complet → pornire → boot 7.0.10.
+Dacă BT revine `UP RUNNING` pe 7.0.10 după power-off → confirmat warm-reboot, nu kernel. (Dacă
+rămâne mort și după power-off curat pe 7.0.10 → atunci ar fi regresie kernel, investigăm separat.)
 
 ---
 
