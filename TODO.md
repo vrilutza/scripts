@@ -108,10 +108,20 @@ acum că UBSAN prinde accesul.
 - **7.0.11** (kernel.org, 1 iun): 3 commit-uri sunet, TOATE ASoC (`cs-amp-lib`, `cs35l56` —
   drivere SoundWire amp, nu codec HDA CS8409). **Zero** fix în parser-ul HDA generic. NU repară.
   În plus, **nu e în Debian** (forky=7.0.10, experimental=7.1-rc5). Inutil pt cazul nostru.
-- **7.1-rc5** (Debian experimental, `7.1~rc5-1~exp1`): kernel major nou (RC). Cod HDA potențial
-  schimbat/reparat față de 7.0.10. Singurul kernel mai nou disponibil în Debian. Merită testat
-  (RC = mai puțin stabil; fallback 7.0.9 rămâne). DKMS va încerca rebuild cs8409+facetimehd —
-  poate eșua pe API-uri 7.1 noi; dacă da, audio/camera nu merg pe 7.1-rc dar 7.0.9 e intact.
+- **7.1-rc5** (Debian experimental, `7.1~rc5-1~exp1`): TESTAT 4 iun — **neconcludent pentru audio**.
+  - facetimehd (camera) DKMS: ✅ build OK pe 7.1
+  - snd_hda_macbookpro (audio) DKMS: ❌ **eșec de BUILD-SCRIPT, nu de cod**:
+    `install.cirrus.driver.sh:167` caută `/usr/src/linux-source-7.1.tar.bz2` dar Debian livrează
+    `.tar.xz` → nu-l găsește → cade pe download kernel.org `linux-7.1.tar.xz` → **404** (7.1 e RC,
+    fără tarball stabil) → "kernel could not be downloaded...exiting" → make eșuează ("external
+    module directory does not exist"). Driverul NICI n-a atins cod HDA → testul regresiei e nul.
+  - Efect secundar: postinst eșuat → **7.1 fără initrd** (`/boot/initrd.img-7.1` lipsă) → NU
+    bootabil + 4 pachete dpkg half-configured (iF/iU). Necesită cleanup.
+  - **Concluzie**: nu putem testa dacă 7.1 repară HDA până când (a) 7.1 e RELEASED (tarball stabil
+    pe kernel.org), SAU (b) patch-uim build-script-ul driverului să accepte `.tar.xz` + sursa
+    locală. Bug-ul de build-script (`.bz2` hardcodat) e o problemă separată, raportabilă și ea.
+  - **De reținut**: driverul snd_hda_macbookpro nu suportă kerneluri RC (download-ul presupune
+    tarball stabil) și presupune sursă `.bz2` (Ubuntu-style), nu `.xz` (Debian).
 
 ---
 
