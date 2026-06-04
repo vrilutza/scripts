@@ -20,6 +20,38 @@ boot-uri** la 22M/30M. Detaliile tehnice complete sunt în istoricul git (commit
 
 ---
 
+## ⚠️ REGRESIE ACTIVĂ — Audio rupt pe kernel 7.0.10 (din 4 iunie 2026)
+
+**Simptom**: pe kernel `7.0.10+deb14-amd64`, niciun sound card (`/proc/asound/cards` = "no soundcards",
+`/dev/snd/` doar seq+timer). Pe `7.0.9` audio funcționează perfect.
+
+**Cauză** (stack trace din jurnal pe boot 7.0.10):
+```
+cs8409_probe → snd_hda_gen_parse_auto_config → UBSAN array-index-out-of-bounds
+  sound/hda/codecs/generic.c:3294   (index 18 pe auto_pin_cfg_item[18])
+  sound/hda/common/auto_parser.c:579 (index 41 pe char*[36])
+→ probe FAILED → cardul nu se înregistrează
+```
+Driverul CS8409 (DKMS davidjo/snd_hda_macbookpro) trimite o config de pini care depășește
+limitele array-urilor din parser-ul HDA **in-tree**. Codul HDA in-tree s-a schimbat în 7.0.10
+(sau UBSAN nou activat) → out-of-bounds-ul rupe înregistrarea cardului. **NU e bug în script.**
+
+**Status fix**:
+- Driver upstream: ultimul commit 2026-05-05 (cb27cc4) — **fără fix** pentru 7.0.10. Rerun script NU ajută.
+- Diferit de regresia RAPL: aici e cod **in-tree kernel** + driver OOT, nu config-ul nostru.
+
+**Workaround imediat**: boot kernel 7.0.9 din GRUB → Advanced options (încă instalat, audio OK).
+
+**De urmărit**:
+- [ ] Kernel 7.0.11 — posibil fix in-tree HDA (verifică UBSAN dispare)
+- [ ] Commit nou pe davidjo/snd_hda_macbookpro care patch-uiește pin config pt 7.0.10
+- [ ] Eventual: raportează issue upstream cu stack trace-ul de mai sus
+- [ ] Decizie: `apt-mark hold linux-image-amd64` la 7.0.9 până apare fix? (sau GRUB default pe 7.0.9)
+
+Clasificare: regresie kernel↔driver, **temporară**, workaround = boot 7.0.9. Nu necesită schimbare în script.
+
+---
+
 ## 🟢 Categoria A — Cosmetic / curățire log (risc zero, win mic)
 
 Toate sunt gsettings sau parametri kernel. Zero risc, dar și impact mic. Bune de făcut împreună
