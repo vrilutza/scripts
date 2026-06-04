@@ -99,9 +99,19 @@ AUTO_CFG_MAX_INS). Întrebare cheie pt mainaineri: cum să gestioneze >18 ADC pi
 acum că UBSAN prinde accesul.
 
 **De urmărit**:
-- [ ] Issue/PR pe davidjo/snd_hda_macbookpro cu root cause-ul de mai sus
-- [ ] Kernel 7.0.11 când intră în Debian — testează dacă UBSAN dispare (probabil NU)
+- [x] Issue gata: `ISSUE_audio_kernel_7.0.10.md` (de postat pe davidjo/snd_hda_macbookpro + Debian)
+- [x] Kernel 7.0.11 changelog verificat (4 iun) — vezi mai jos, NU repară audio
+- [ ] Test 7.1-rc5 din Debian experimental (cod HDA diferit, poate reparat)
 - [ ] Decizie: GRUB default pe 7.0.9 până apare fix driver? (reversibil, recomandabil)
+
+**Comparație changelog kerneluri (pt audio HDA)**:
+- **7.0.11** (kernel.org, 1 iun): 3 commit-uri sunet, TOATE ASoC (`cs-amp-lib`, `cs35l56` —
+  drivere SoundWire amp, nu codec HDA CS8409). **Zero** fix în parser-ul HDA generic. NU repară.
+  În plus, **nu e în Debian** (forky=7.0.10, experimental=7.1-rc5). Inutil pt cazul nostru.
+- **7.1-rc5** (Debian experimental, `7.1~rc5-1~exp1`): kernel major nou (RC). Cod HDA potențial
+  schimbat/reparat față de 7.0.10. Singurul kernel mai nou disponibil în Debian. Merită testat
+  (RC = mai puțin stabil; fallback 7.0.9 rămâne). DKMS va încerca rebuild cs8409+facetimehd —
+  poate eșua pe API-uri 7.1 noi; dacă da, audio/camera nu merg pe 7.1-rc dar 7.0.9 e intact.
 
 ---
 
