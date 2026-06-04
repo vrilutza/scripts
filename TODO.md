@@ -52,13 +52,37 @@ calculează indici de label garbage (223) din memorie de după array. Acest "hac
 până la 7.0.10, când **UBSAN array-bounds checking** (nou activat în config-ul Debian) îl prinde
 ȘI accesul out-of-bounds rupe înregistrarea cardului.
 
-**Clasificare reală**: bug în **driver** (hack-ul care depășește AUTO_CFG_MAX_INS), latent ani de
-zile, expus de UBSAN-ul mai strict din kernel 7.0.10. NU e config-ul nostru, NU e bug script.
+**Clasificare reală — CORECȚIE după debugging profund**: e o **regresie de cod în parser-ul HDA
+in-tree între 7.0.9 și 7.0.10**, NU "UBSAN nou activat" (greșeala mea inițială).
 
-**Fix posibil din 2 direcții**:
-1. **Driver** (davidjo/snd_hda_macbookpro): să nu mai depășească `cfg->num_inputs > AUTO_CFG_MAX_INS`
-   — fix-ul corect. Upstream ultimul commit 2026-05-05, fără el încă.
-2. **Kernel**: AUTO_CFG_MAX_INS crescut peste 18, SAU UBSAN bounds dezactivat (improbabil/nedorit).
+Dovadă decisivă:
+- `CONFIG_UBSAN_BOUNDS_STRICT=y` în **AMBELE** kerneluri (`/boot/config-7.0.9` și `7.0.10`)
+- Boot 7.0.9: **0** erori UBSAN audio, audio merge
+- Boot 7.0.10: **10** erori UBSAN audio, audio rupt
+- Deci sanitizer-ul era mereu acolo; codul HDA in-tree (`sound/hda/codecs/generic.c` +
+  `common/auto_parser.c`) s-a schimbat în 7.0.10 și acum produce `cfg->num_inputs` umflat.
+
+Mecanismul exact (din sursa 7.0.10):
+- `cs8409_parse_auto_config` (patch_cs8409.c:22) e un wrapper minimal standard: apelează
+  `snd_hda_parse_pin_defcfg` (num_inputs=2, corect — logat "inputs: Internal Mic, Mic")
+  apoi `snd_hda_gen_parse_auto_config` (in-tree).
+- ÎN INTERIORUL `snd_hda_gen_parse_auto_config` (in-tree 7.0.10), bucla de input labels
+  (generic.c:3293 `for i < cfg->num_inputs`) ajunge la index 18, 40, 41, 42 pe `inputs[18]`
+  și label index garbage 223 pe `input_labels[36]` → num_inputs se umflă peste limite ÎN
+  codul in-tree, nu în driver.
+- Driverul doar consumă API-ul standard; bug-ul e in-tree.
+
+**Fix — direcții (corectate)**:
+1. **Kernel**: regresia e în codul HDA in-tree 7.0.10. Fix corect = bug report kernel + patch
+   in-tree (sau revert al schimbării care umflă num_inputs). Cel mai probabil un kernel viitor
+   (7.0.11+) îl repară DACĂ schimbarea e recunoscută ca regresie.
+2. **Driver** (davidjo/snd_hda_macbookpro): ar putea adăuga un workaround (ex: clamp defensiv),
+   dar bug-ul nu e în logica lui — wrapper-ul e standard.
+
+**Pas decisiv pentru patch exact**: diff `sound/hda/codecs/generic.c` + `common/auto_parser.c`
+între sursa 7.0.9 și 7.0.10. Sursa 7.0.9 NU e disponibilă local (pachetul `linux-source-7.0` e
+deja 7.0.10; fără deb-src). Ar trebui din snapshot.debian.org sau git kernel. Acel diff arată
+exact ce s-a schimbat → patch in-tree precis. Fără el, orice patch driver e ghicit.
 
 **Workaround imediat**: boot 7.0.9 din GRUB → Advanced options (audio OK, 0 UBSAN).
 
