@@ -164,6 +164,36 @@ missing sound card.
 
 Boot **7.0.9** (GRUB → Advanced options) — audio works, zero UBSAN reports.
 
+## Possible mitigation (driver-side, needs your verification)
+
+I'm not certain whether `cfg->num_inputs` is being inflated **inside** the in-tree
+`snd_hda_gen_parse_auto_config` on 7.0.10, or whether it's a struct/layout mismatch — I couldn't
+diff 7.0.9 vs 7.0.10 of `generic.c` / `auto_parser.c` locally. Two candidate directions:
+
+1. **Driver-side defensive clamp** — in `cs8409_parse_auto_config`, bound `num_inputs` to the
+   array size before the generic parser walks it:
+   ```c
+   err = snd_hda_parse_pin_defcfg(codec, &spec->gen.autocfg, NULL, 0);
+   if (err < 0)
+       return err;
+   /* 7.0.10: guard against the input-label loop walking past inputs[AUTO_CFG_MAX_INS] */
+   if (spec->gen.autocfg.num_inputs > AUTO_CFG_MAX_INS)
+       spec->gen.autocfg.num_inputs = AUTO_CFG_MAX_INS;
+   err = snd_hda_gen_parse_auto_config(codec, &spec->gen.autocfg);
+   ```
+   This is only useful **if** `num_inputs` is already > `AUTO_CFG_MAX_INS` at that point. On my
+   system `snd_hda_parse_pin_defcfg` logged only 2 inputs, yet the in-tree loop reached index 40+
+   — which suggests the count is inflated *inside* `snd_hda_gen_parse_auto_config`, in which case
+   this clamp won't help and the fix has to be in-tree.
+
+2. **In-tree fix** — if the regression is in the 7.0.10 `generic.c` input-label loop /
+   `hda_get_autocfg_input_label` (e.g. the loop bound or a virtual-input addition no longer
+   respecting `AUTO_CFG_MAX_INS`), that's where it should be corrected.
+
+The decisive next step is a diff of `sound/hda/codecs/generic.c` and
+`sound/hda/common/auto_parser.c` between 7.0.9 and 7.0.10. I'm happy to capture exact values
+(e.g. instrument `num_inputs` before the loop) on the affected hardware if that helps.
+
 ## Questions for maintainers
 
 1. What changed in the in-tree HDA generic parser (`generic.c` input-label loop /
