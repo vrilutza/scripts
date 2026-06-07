@@ -127,6 +127,23 @@ seq  timer
 
 No playback/capture devices; `snd_hda_codec_cs8409` is loaded but no card is created.
 
+## Severity: not just UBSAN warnings — it can hard-crash (GP fault)
+
+On at least one boot the out-of-bounds read produced a garbage pointer that was then dereferenced
+by `strcmp`, faulting `modprobe` during codec load:
+
+```
+Oops: general protection fault, probably for non-canonical address 0x25002400000002: 0000 [#1] SMP PTI
+RIP: 0010:strcmp+0x28/0x50
+note: modprobe[896] exited with irqs disabled
+note: modprobe[896] exited with preempt_count 1
+```
+
+This matches `generic.c:3305` `!strcmp(spec->input_labels[j], label)` reading
+`spec->input_labels[]` past its bounds (UBSAN reported index 223 on `char *[36]`): the garbage
+entry is used as a pointer and `strcmp` dereferences it. So the regression can range from "no
+sound card" to a kernel general-protection fault depending on what the out-of-bounds memory holds.
+
 ## Workaround
 
 Boot **7.0.9** (GRUB → Advanced options) — audio works, zero UBSAN reports.

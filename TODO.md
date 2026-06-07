@@ -150,6 +150,47 @@ rămâne mort și după power-off curat pe 7.0.10 → atunci ar fi regresie kern
 
 ---
 
+## 🔴 REGRESIE ACTIVĂ — reboot hang + suspend hang (Apple S3/reset quirks, 7 iun)
+
+Două probleme hardware Apple distincte, ambele = "OS face totul curat, dar hardware-ul nu
+execută reset/resume". Pe MacBookPro14,1.
+
+### 3a. Reboot hang la "Rebooting."
+
+`systemctl reboot` oprește OS-ul complet (unmount, sync, "Rebooting.") dar **hardware-ul nu se
+resetează** → blocat, necesită power-off manual. Intermitent (uneori reboot-ul merge).
+- Cmdline NU are `reboot=` → metoda default de reset nu e fiabilă pe Apple.
+- **Fix**: `reboot=pci` în GRUB (forțează reset via PCI port 0xcf9). Alternative dacă nu merge:
+  `reboot=efi`, `reboot=acpi`. Test empiric necesar (greu de prezis care merge pe Apple).
+- NU e cauzat de pachete — `apt upgrade` din 7 iun a fost doar userspace (LibreOffice etc.).
+
+### 3b. suspend-then-hibernate → S3 nu se trezește (ETAPA 5 incomplet)
+
+7 iun 01:04 lid closed → 05:27 `systemd-suspend-then-hibernate.service` → `PM: suspend entry
+(deep)` → jurnal se oprește (S3 no-wake) → force power-off. Config ETAPA 5 e INTACT (logind
+lid=lock, gsettings sleep-inactive=nothing) dar **o cale de suspend tot a scăpat** (probabil idle
+lung pe baterie). Auto-suspend-ul nostru via gsettings + lid nu acoperă TOATE căile (logind
+idle action / battery / suspend-then-hibernate target).
+- **Fix bulletproof**: MASK target-urile de sleep (S3 e nefiabil pe acest hardware, deci blocăm
+  complet orice suspend):
+  ```
+  sudo systemctl mask sleep.target suspend.target hibernate.target suspend-then-hibernate.target
+  ```
+  Asta face IMPOSIBIL orice suspend/hibernate — nimic nu mai poate declanșa S3. Reversibil cu
+  `systemctl unmask`. Mai robust decât gsettings (care a scăpat această cale).
+- Trade-off: blochează și suspend-ul manual (dar S3 oricum nu se trezește → nu pierzi nimic real).
+- **Candidat pentru ETAPA 5 în script** (înlocuiește/completează gsettings disable).
+
+### 3c. Confirmare: strcmp GP-fault (4 iun) = bug-ul audio 7.0.10
+
+Poza 4 iun: `Oops: general protection fault ... non-canonical address 0x25002400000002 / RIP:
+strcmp+0x28 / modprobe exited with irqs disabled`. Pointer-ul garbage vine din citirea
+out-of-bounds `input_labels[223]` (generic.c:3305 `strcmp(input_labels[j], label)`). Deci
+regresia audio 7.0.10 nu doar warn-uiește UBSAN — poate **hard-crash kernelul** (GP fault în
+modprobe la load cs8409). De adăugat în ISSUE_audio_kernel_7.0.10.md ca dovadă de severitate.
+
+---
+
 ## 🟢 Categoria A — Cosmetic / curățire log (risc zero, win mic)
 
 Toate sunt gsettings sau parametri kernel. Zero risc, dar și impact mic. Bune de făcut împreună
