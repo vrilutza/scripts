@@ -11,7 +11,14 @@ mai 2026). Ce urmează aici sunt opționale, organizate pe categorii ca să poț
 |---|---|---|
 | 1-6 | Hardware base | deps, audio CS8409, camera FaceTime HD, GRUB/suspend fixes, VA-API |
 | 7 | Touchpad UX | tap-to-click + natural scroll + disable-while-typing |
-| 8 | Thermal management | thermald + lm-sensors + RAPL PL1=22W/PL2=30W |
+| 8 | Thermal management | thermald + lm-sensors + RAPL PL1=22W/PL2=30W + fan floor 3500 RPM |
+
+**Fan floor (`fan1_min=3500`) — adăugat 7 iun (ETAPA 8c).** Curba SMC stock ține fan-ul la ~1200
+RPM chiar la 80°C (silence-first). Ridicăm podeaua la 3500 via udev (`fan1_manual` rămâne 0 → SMC
+ramp automat peste podea intact). **Testat live pe MacBookPro14,1**: idle 80→74°C; sub load fan
+urcă automat 3500→4525→5400+; zero throttle. Bonus: mai puțină căldură = menajează bateria uzată
+(64% health). Caveat: SMC reacționează lent → spike-uri scurte ~94°C la load brusc (inerent SMC,
+sub TJmax). Reversibil: `fan1_min=1200`. Explicație completă în README secțiunea thermal.
 
 **RAPL race condition — REZOLVAT.** A trecut prin 4 iterații (tmpfiles → ConditionPathExists →
 .path unit → **udev rule**). Versiunea finală (regula udev + thermald reinit) validată **8/8

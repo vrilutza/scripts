@@ -120,6 +120,11 @@ To live-debug events (e.g., "did my tap register as click?"): `sudo libinput deb
 # Live temps + fan speed (Ctrl+C to exit)
 watch -n 1 'sensors | grep -E "Core|fan"'
 
+# Fan floor active? (should be 3500; SMC auto-ramps above it under load)
+cat /sys/devices/platform/applesmc.768/fan1_min
+cat /sys/devices/platform/applesmc.768/fan1_input   # current RPM
+cat /etc/udev/rules.d/99-macbook-fan.rules          # the persistent floor rule
+
 # One-shot read of all sensors (CPU, battery, ambient)
 sensors
 
@@ -164,6 +169,35 @@ journalctl -u thermald -u macbook-rapl-thermald.service -b 0 | tail -8
 3. **v3 — `.path` unit + `.service`**: also failed. `.path` units use **inotify**, and sysfs does *not* reliably emit inotify creation events — so the trigger only fired when the file already existed at `.path` start time (still a race). Plus `After=thermald.service` on a `.path` unit created an ordering cycle (paths.target is ordered *before* basic.target, thermald *after*).
 4. **v4 (current) — udev rule**: `ACTION=="add", SUBSYSTEM=="powercap", KERNEL=="intel-rapl:0"` writes the limits directly via `ATTR{constraint_*_power_limit_uw}=`. udev fires on the kernel's *real* device-add uevent (reliable, unlike inotify on sysfs), so the values are set deterministically the moment the device appears — on any kernel. `TAG+="systemd"` + `ENV{SYSTEMD_WANTS}+="macbook-rapl-thermald.service"` pulls in a tiny oneshot that `try-restart`s thermald so it reinitialises and discovers RAPL. Verified empirically: `udevadm trigger --action=add` re-applies 100W→22W, and thermald restarted after RAPL is set no longer logs `NO RAPL sysfs present`.
 
+**Fan floor (`fan1_min=3500`).** The Apple SMC's stock fan curve is silence-first to a fault — it
+keeps the single exhaust fan at its floor (~1200 RPM) even at 80°C. The script raises the floor to
+3500 RPM (the noise sweet spot on the A1708) via a udev rule:
+
+```
+ACTION=="add", SUBSYSTEM=="platform", KERNEL=="applesmc.768", ATTR{fan1_min}="3500"
+```
+
+Crucially this only raises the *floor* — `fan1_manual` stays `0`, so the SMC keeps full automatic
+control and still ramps **above** 3500 (up to 7200) under load. It is *not* a fixed-speed override
+(`fan1_manual=1` would pin the fan and disable the safety ramp — never do that). Measured on
+MacBookPro14,1:
+
+| Phase | Fan | Package temp |
+|---|---|---|
+| Baseline (stock floor 1200) | 1197 RPM | 80°C |
+| Floor 3500, idle | ~3500 RPM | 74°C (−6°C) |
+| Floor 3500, 4-core load | ramps 3500 → 4525 → 5400+ | peaks ~94°C, **no throttle** |
+
+So the floor keeps the common idle/light case noticeably cooler (and reduces heat soak into the
+worn battery — heat is the #1 killer of lithium cells), while the SMC's auto-ramp above the floor
+keeps heavy load safe. One honest caveat: the SMC reacts *slowly*, so a sudden 100% load still
+spikes to ~94°C for ~20-30 s before the fan ramps meaningfully — that lag is inherent to the SMC,
+not the floor, and it stays under TJmax (100°C). To change the floor, edit
+`/etc/udev/rules.d/99-macbook-fan.rules` then `sudo udevadm control --reload && sudo udevadm
+trigger --action=add /sys/devices/platform/applesmc.768`. To revert to stock: set it back to
+`1200` (or just `echo 1200 | sudo tee /sys/devices/platform/applesmc.768/fan1_min` — resets on
+reboot anyway).
+
 ### WiFi & Bluetooth
 
 ```bash
@@ -202,7 +236,7 @@ Full setup for MacBook Pro 13" 2017 on a fresh Debian Testing install. Runs in 8
 | 5 — System fixes | Backlight (`acpi_backlight=native`) + `reboot=pci` + sleep targets masked (suspend/hibernate blocked — see below) |
 | 6 — VA-API | `intel-media-va-driver` + `i965-va-driver` — hardware video acceleration for Intel Iris Plus 640 |
 | 7 — Touchpad UX | `tap-to-click` + `natural-scroll` + `disable-while-typing` via gsettings — macOS-like out of the box |
-| 8 — Thermal management | `thermald` + `lm-sensors` + RAPL PL1=22W / PL2=30W (Apple-like) via udev rule + thermald reinit |
+| 8 — Thermal management | `thermald` + `lm-sensors` + RAPL PL1=22W / PL2=30W (Apple-like) via udev rule + thermald reinit + fan floor (`fan1_min=3500` RPM) |
 
 The two DKMS modules (audio, camera) auto-rebuild on kernel updates. The script is idempotent — safe
 to re-run, skips already completed stages.

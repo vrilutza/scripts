@@ -14,8 +14,8 @@
 #    5. Fix sistem: luminozitate, reboot=pci, sleep targets masked (suspend blocat, S3 unreliable)
 #    6. Accelerare video hardware VA-API (Intel Iris Plus 640 / Kaby Lake)
 #    7. Touchpad UX (tap-to-click + natural scroll + disable-while-typing)
-#    8. Thermal management: thermald + RAPL PL1/PL2 (22W/30W Apple-like)
-#       via macbook-rapl.service (ordered after thermald — tmpfiles abandonat)
+#    8. Thermal management: thermald + RAPL PL1/PL2 (22W/30W Apple-like, udev) +
+#       fan floor (fan1_min=3500 RPM via udev — rece la idle, SMC ramp auto deasupra)
 #
 #  Notă touchpad: nu mai aplicăm patch out-of-tree pentru "Touch jump detected and discarded".
 #  libinput protejează în userspace (discard event corupt) — cursorul nu sare vizibil.
@@ -529,13 +529,14 @@ fi
 
 
 # =============================================================================
-# ETAPA 8/8 — Thermal management: thermald + RAPL PL1/PL2
+# ETAPA 8/8 — Thermal management: thermald + RAPL PL1/PL2 + fan floor
 #
 # Problema: RAPL pe MBP 2017 sub Linux nu are limite sane (Apple EFI lasa
 # PL1=100W, PL2=125W pe un chip cu TDP nominal 15W). Chip-ul ruleaza
 # unrestricted pana cand kernel-ul face emergency thermal throttle la TJmax.
+# Plus: curba SMC stock tine fan-ul prea jos (lent), laptopul sta inutil cald.
 #
-# Fix in 2 parti:
+# Fix in 3 parti:
 #   8a) thermald 2.5.10 din apt — daemon dinamic care reduce P-state cand
 #       temperaturile cresc. Plus lm-sensors pentru monitoring manual.
 #   8b) Regula udev (scrie RAPL via ATTR) + macbook-rapl-thermald.service:
@@ -561,7 +562,7 @@ fi
 #           Testat empiric: udevadm trigger --action=add re-aplica 100M→22M;
 #           thermald restartat dupa RAPL set nu mai logheaza "NO RAPL sysfs".
 # =============================================================================
-CURRENT_STEP="ETAPA 8/8 — Thermal management (thermald + RAPL)"
+CURRENT_STEP="ETAPA 8/8 — Thermal management (thermald + RAPL + fan floor)"
 step "$CURRENT_STEP"
 
 # --- 8a: thermald + lm-sensors via apt ---
@@ -669,6 +670,53 @@ else
     warn "RAPL: valori curente nu corespund (PL1=$PL1_READ vs $PL1_UW, PL2=$PL2_READ vs $PL2_UW). Vor fi aplicate la urmatorul boot prin regula udev. Verifica: cat $RAPL_BASE/constraint_0_power_limit_uw"
 fi
 
+# --- 8c: Fan floor — ridica fan1_min ca laptopul sa stea mai rece ---
+# Curba SMC stock e "lenoasa": tine fan-ul la minim (~1200 RPM) chiar si la 80°C,
+# prioritizand linistea. Ridicam podeaua la 3500 RPM (sweet spot zgomot pe A1708):
+#   - fan1_manual ramane 0 → SMC pastreaza controlul automat
+#   - fan1_min=3500 → SMC nu coboara sub 3500, dar URCA liber peste (pana la 7200) la load
+# Testat pe MacBookPro14,1: idle 80→74°C; sub load fan urca automat 3500→4500→5400+;
+# zero throttle. "Best of both": rece+linistit la idle, ramp de siguranta intact la load.
+# Bonus: mai putina caldura in sasiu = menajeaza bateria (heat = ucigasul #1 al litiu).
+# Persistat via udev (fan1_min e volatil, se reseteaza la reboot).
+FAN_MIN_RPM=3500
+FAN_SMC="/sys/devices/platform/applesmc.768"
+
+if [ ! -e "$FAN_SMC/fan1_min" ]; then
+    warn "applesmc fan1_min lipseste ($FAN_SMC) — sar peste fan floor (modul applesmc neincarcat?)."
+else
+    info "Configurare fan floor: fan1_min=$FAN_MIN_RPM RPM (SMC ramane auto deasupra)..."
+    FAN_RULE="/etc/udev/rules.d/99-macbook-fan.rules"
+
+    # Regula udev: la aparitia device-ului platform applesmc, scrie fan1_min direct.
+    sudo tee "$FAN_RULE" > /dev/null << FANEOF
+# MacBook Pro 13" 2017 (A1708) — fan floor
+# Ridica podeaua fan-ului la $FAN_MIN_RPM RPM (curba SMC stock e prea lenesa: tine fan-ul
+# la ~1200 RPM chiar si la 80°C). fan1_manual ramane 0 → SMC pastreaza ramp-up automat
+# deasupra podelei (pana la 7200 RPM la load). Doar ridicam minimul.
+ACTION=="add", SUBSYSTEM=="platform", KERNEL=="applesmc.768", ATTR{fan1_min}="$FAN_MIN_RPM"
+FANEOF
+
+    if [ -f "$FAN_RULE" ]; then
+        ok "Regula udev fan scrisa: $FAN_RULE"
+    else
+        fail "Nu am putut scrie $FAN_RULE."
+    fi
+
+    info "Reload udev + aplicare imediata (udevadm trigger)..."
+    sudo udevadm control --reload || warn "udevadm control --reload a returnat eroare."
+    sudo udevadm trigger --action=add /sys/devices/platform/applesmc.768 2>/dev/null \
+        || warn "udevadm trigger a returnat eroare."
+    sleep 1
+
+    FAN_MIN_READ=$(cat "$FAN_SMC/fan1_min" 2>/dev/null)
+    if [ "$FAN_MIN_READ" = "$FAN_MIN_RPM" ]; then
+        ok "Fan floor aplicat: fan1_min=$FAN_MIN_READ RPM (SMC auto deasupra)."
+    else
+        warn "Fan floor: fan1_min=$FAN_MIN_READ (asteptat $FAN_MIN_RPM). Se aplica la urmatorul boot prin udev. Verifica: cat $FAN_SMC/fan1_min"
+    fi
+fi
+
 
 # =============================================================================
 # REZUMAT FINAL
@@ -691,6 +739,7 @@ echo -e "  ${GREEN}✓${NC}  Touchpad UX — tap-to-click + natural scroll + dis
 echo -e "  ${GREEN}✓${NC}  Accelerare video VA-API — intel-media-va-driver + i965-va-driver"
 echo -e "  ${GREEN}✓${NC}  thermald (Intel thermal daemon) + lm-sensors"
 echo -e "  ${GREEN}✓${NC}  RAPL: PL1=22W / PL2=30W (Apple-like) prin regula udev + thermald reinit"
+echo -e "  ${GREEN}✓${NC}  Fan floor: fan1_min=3500 RPM (rece la idle, SMC ramp auto deasupra)"
 echo ""
 echo -e "  ${YELLOW}⚠${NC}  Necesar: ${BOLD}sudo reboot${NC} pentru a activa toate modificarile."
 echo ""
