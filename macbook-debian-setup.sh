@@ -11,7 +11,7 @@
 #       https://github.com/patjak/facetimehd-firmware
 #    4. Driver kernel camera FaceTime HD cu DKMS
 #       https://github.com/patjak/facetimehd
-#    5. Fix sistem: luminozitate, sleep hooks defensive, auto-suspend dezactivat (S3 unreliable)
+#    5. Fix sistem: luminozitate, reboot=pci, sleep targets masked (suspend blocat, S3 unreliable)
 #    6. Accelerare video hardware VA-API (Intel Iris Plus 640 / Kaby Lake)
 #    7. Touchpad UX (tap-to-click + natural scroll + disable-while-typing)
 #    8. Thermal management: thermald + RAPL PL1/PL2 (22W/30W Apple-like)
@@ -265,6 +265,9 @@ step "$CURRENT_STEP"
 # nvme.noacpi=1               — dezactiveaza ACPI PM pentru Apple NVMe proprietar
 # i915.enable_dc=0            — dezactiveaza Intel Display C-states; previne crash i915/DMC la resume
 # nvme_core.default_ps_max_latency_us=0 — tine Apple NVMe in PS0; power states mai inalte nu revin corect
+# reboot=pci                  — forteaza reset via PCI port 0xcf9; metoda default nu reseteaza
+#                               fiabil hardware-ul Apple (reboot ramane blocat la "Rebooting.").
+#                               Testat pe MacBookPro14,1: rezolva reboot hang. Alt. reboot=efi/acpi.
 info "Verificare parametri GRUB..."
 
 GRUB_FILE="/etc/default/grub"
@@ -279,7 +282,7 @@ if grep -q "mem_sleep_default=s2idle" "$GRUB_FILE"; then
 fi
 
 for param in "acpi_backlight=native" "mem_sleep_default=deep" "nvme.noacpi=1" \
-             "i915.enable_dc=0" "nvme_core.default_ps_max_latency_us=0"; do
+             "i915.enable_dc=0" "nvme_core.default_ps_max_latency_us=0" "reboot=pci"; do
     if grep -q "$param" "$GRUB_FILE"; then
         info "Prezent: $param"
     else
@@ -297,7 +300,7 @@ if [ "$GRUB_NEEDS_UPDATE" = true ]; then
 fi
 
 for param in "acpi_backlight=native" "mem_sleep_default=deep" "nvme.noacpi=1" \
-             "i915.enable_dc=0" "nvme_core.default_ps_max_latency_us=0"; do
+             "i915.enable_dc=0" "nvme_core.default_ps_max_latency_us=0" "reboot=pci"; do
     if ! grep -q "$param" "$GRUB_FILE"; then
         fail "Parametrul '$param' nu a fost scris corect in $GRUB_FILE."
     fi
@@ -429,6 +432,29 @@ if [ -f "$LOGIND_OVERRIDE" ]; then
     ok "logind override: $LOGIND_OVERRIDE"
 else
     fail "logind override nu a fost creat la $LOGIND_OVERRIDE."
+fi
+
+# --- 5e: Mask sleep targets — blocare totala suspend/hibernate ---
+# gsettings (5d) + logind lid=lock NU acopera TOATE caile de suspend: observat empiric ca
+# systemd-suspend-then-hibernate.service tot a rulat pe idle lung (lid inchis pe baterie) →
+# PM: suspend entry (deep) → S3 nu s-a trezit → hang, force power-off.
+# Pe acest hardware S3 e nefiabil prin design, deci nu il "reparam" — il blocam complet.
+# Mask pe target-urile de sleep face IMPOSIBIL orice suspend/hibernate (nimic nu le mai poate
+# declansa). Reversibil cu: sudo systemctl unmask sleep.target suspend.target ...
+info "Mask sleep targets (blocare totala suspend/hibernate — S3 nefiabil pe acest hardware)..."
+
+SLEEP_TARGETS="sleep.target suspend.target hibernate.target suspend-then-hibernate.target"
+sudo systemctl mask $SLEEP_TARGETS >/dev/null 2>&1 \
+    || warn "Mask sleep targets a returnat eroare."
+
+MASKED_OK=true
+for t in $SLEEP_TARGETS; do
+    [ "$(systemctl is-enabled $t 2>/dev/null)" = "masked" ] || MASKED_OK=false
+done
+if [ "$MASKED_OK" = true ]; then
+    ok "Sleep targets masked: niciun suspend/hibernate posibil (S3 hang prevenit)."
+else
+    warn "Unele sleep targets nu sunt masked. Verifica: systemctl is-enabled sleep.target"
 fi
 
 
@@ -656,7 +682,8 @@ echo -e "  ${GREEN}✓${NC}  Driver audio Cirrus CS8409 — DKMS"
 echo -e "  ${GREEN}✓${NC}  Firmware FaceTime HD — /usr/lib/firmware/facetimehd/"
 echo -e "  ${GREEN}✓${NC}  Driver camera FaceTime HD — DKMS"
 echo -e "  ${GREEN}✓${NC}  Luminozitate ecran — acpi_backlight=native in GRUB"
-echo -e "  ${GREEN}✓${NC}  Auto-suspend dezactivat — S3 nu se trezeste fiabil pe Apple hardware"
+echo -e "  ${GREEN}✓${NC}  Reboot fix — reboot=pci in GRUB (reset fiabil pe Apple hardware)"
+echo -e "  ${GREEN}✓${NC}  Suspend/hibernate blocat complet — sleep targets masked (S3 nefiabil)"
 echo -e "  ${GREEN}✓${NC}  Lid close = lock screen (logind), nu suspend"
 echo -e "  ${GREEN}✓${NC}  Sleep hooks (facetimehd + brcmfmac PCI unbind) — defensive pt suspend manual"
 echo -e "  ${GREEN}✓${NC}  Touchpad: libinput protejeaza in userspace (nu mai aplicam patch DKMS)"

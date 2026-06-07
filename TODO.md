@@ -155,14 +155,14 @@ rămâne mort și după power-off curat pe 7.0.10 → atunci ar fi regresie kern
 Două probleme hardware Apple distincte, ambele = "OS face totul curat, dar hardware-ul nu
 execută reset/resume". Pe MacBookPro14,1.
 
-### 3a. Reboot hang la "Rebooting."
+### 3a. Reboot hang la "Rebooting." — ✅ REZOLVAT + în script
 
 `systemctl reboot` oprește OS-ul complet (unmount, sync, "Rebooting.") dar **hardware-ul nu se
 resetează** → blocat, necesită power-off manual. Intermitent (uneori reboot-ul merge).
-- Cmdline NU are `reboot=` → metoda default de reset nu e fiabilă pe Apple.
-- **Fix**: `reboot=pci` în GRUB (forțează reset via PCI port 0xcf9). Alternative dacă nu merge:
-  `reboot=efi`, `reboot=acpi`. Test empiric necesar (greu de prezis care merge pe Apple).
-- NU e cauzat de pachete — `apt upgrade` din 7 iun a fost doar userspace (LibreOffice etc.).
+- Cmdline NU avea `reboot=` → metoda default de reset nu e fiabilă pe Apple.
+- **Fix `reboot=pci`** (reset via PCI port 0xcf9) — **TESTAT 7 iun, rezolvă reboot hang**. Adăugat
+  în script ETAPA 5a (parametrii GRUB). Alternative dacă cedează vreodată: `reboot=efi`/`reboot=acpi`.
+- NU era cauzat de pachete — `apt upgrade` din 7 iun a fost doar userspace (LibreOffice etc.).
 
 ### 3b. suspend-then-hibernate → S3 nu se trezește (ETAPA 5 incomplet)
 
@@ -171,15 +171,16 @@ resetează** → blocat, necesită power-off manual. Intermitent (uneori reboot-
 lid=lock, gsettings sleep-inactive=nothing) dar **o cale de suspend tot a scăpat** (probabil idle
 lung pe baterie). Auto-suspend-ul nostru via gsettings + lid nu acoperă TOATE căile (logind
 idle action / battery / suspend-then-hibernate target).
-- **Fix bulletproof**: MASK target-urile de sleep (S3 e nefiabil pe acest hardware, deci blocăm
-  complet orice suspend):
+- **Fix bulletproof — ✅ adăugat în script ETAPA 5e**: MASK target-urile de sleep:
   ```
   sudo systemctl mask sleep.target suspend.target hibernate.target suspend-then-hibernate.target
   ```
-  Asta face IMPOSIBIL orice suspend/hibernate — nimic nu mai poate declanșa S3. Reversibil cu
+  Face IMPOSIBIL orice suspend/hibernate — nimic nu mai poate declanșa S3. Reversibil cu
   `systemctl unmask`. Mai robust decât gsettings (care a scăpat această cale).
 - Trade-off: blochează și suspend-ul manual (dar S3 oricum nu se trezește → nu pierzi nimic real).
-- **Candidat pentru ETAPA 5 în script** (înlocuiește/completează gsettings disable).
+- **NB pe sistemul user (7 iun)**: încă NU aplicat manual (targets="static", nu "masked") — de
+  rulat comanda de mai sus, SAU re-rulează scriptul (ETAPA 5e o face). Documentat în README
+  secțiunea "Suspend / sleep / hibernation" cu explicația completă de ce S3+hibernare = dead end.
 
 ### 3c. Confirmare: strcmp GP-fault (4 iun) = bug-ul audio 7.0.10
 

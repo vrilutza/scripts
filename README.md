@@ -191,7 +191,7 @@ Full setup for MacBook Pro 13" 2017 on a fresh Debian Testing install. Runs in 8
 | 2 — Audio driver | [davidjo/snd_hda_macbookpro](https://github.com/davidjo/snd_hda_macbookpro) — Cirrus CS8409 patched driver via DKMS |
 | 3 — Camera firmware | [patjak/facetimehd-firmware](https://github.com/patjak/facetimehd-firmware) — extracted from Apple OS X driver |
 | 4 — Camera driver | [patjak/facetimehd](https://github.com/patjak/facetimehd) — kernel module via DKMS |
-| 5 — System fixes | Backlight (`acpi_backlight=native`) + sleep hooks (defensive) + auto-suspend disabled (see below) |
+| 5 — System fixes | Backlight (`acpi_backlight=native`) + `reboot=pci` + sleep targets masked (suspend/hibernate blocked — see below) |
 | 6 — VA-API | `intel-media-va-driver` + `i965-va-driver` — hardware video acceleration for Intel Iris Plus 640 |
 | 7 — Touchpad UX | `tap-to-click` + `natural-scroll` + `disable-while-typing` via gsettings — macOS-like out of the box |
 | 8 — Thermal management | `thermald` + `lm-sensors` + RAPL PL1=22W / PL2=30W (Apple-like) via udev rule + thermald reinit |
@@ -224,25 +224,63 @@ cure. libinput's secondary filtering is sufficient.
 - Camera: Broadcom 720p FaceTime HD [14e4:1570]
 - WiFi/Bluetooth: Broadcom BCM4350 (WiFi) / BCM4350C0 (Bluetooth, UART on serial0/ttyS4)
 
-## Suspend / sleep
+## Suspend / sleep / hibernation — why it's blocked, not fixed
 
-**Auto-suspend on idle is disabled.** S3 deep suspend does not wake reliably on this hardware
-(Apple proprietary NVMe + Apple EFI). Tested with all the usual fixes (`nvme.noacpi=1`,
-`i915.enable_dc=0`, `nvme_core.default_ps_max_latency_us=0`, brcmfmac PCI unbind hook):
-short suspends sometimes wake, longer ones (>20 min) leave the system frozen, only power
-button recovers — which causes data loss risk.
+**Short version: S3 sleep and hibernation cannot be made reliable on this MacBook, so the script
+blocks all sleep entirely. The laptop is meant to run always-on; closing the lid only locks the
+screen.**
 
-Stage 5 configures:
+### Why S3 (suspend-to-RAM) can't be fixed
 
-- GNOME `sleep-inactive-ac-type` / `sleep-inactive-battery-type` → `nothing` (no auto-suspend)
-- logind override at `/etc/systemd/logind.conf.d/macbook-no-suspend.conf`:
-  - `HandleLidSwitch=lock` — closing the lid locks the screen, does not suspend
-  - `HandleLidSwitchExternalPower=lock`
-  - `HandleLidSwitchDocked=ignore`
-- Screen still blanks/locks after idle (GNOME `idle-delay=300`); the laptop stays running.
+S3 "deep" suspend does not wake reliably on MacBookPro14,1 (Apple proprietary NVMe + Apple EFI).
+The kernel enters `PM: suspend entry (deep)` fine, but the hardware often never generates a wake
+event — the machine stays frozen and only a forced power-off recovers it (data-loss risk). This
+was tested with every standard fix and none make it dependable:
 
-The GRUB suspend params and sleep hooks (facetimehd, brcmfmac) remain installed — they are
-defensive, in case you want to test manual `systemctl suspend`.
+- `mem_sleep_default=deep` (S3 instead of the s2idle that crashes Apple NVMe)
+- `nvme.noacpi=1`, `nvme_core.default_ps_max_latency_us=0` (Apple NVMe power-state quirks)
+- `i915.enable_dc=0` (Intel display C-states crash on resume)
+- brcmfmac PCI-unbind sleep hook
+
+Result: short suspends sometimes wake, longer ones (>20 min) freeze. It is a firmware/hardware
+limitation of how Apple implements power management — there is no software-only cure.
+
+### Why hibernation (S4, suspend-to-disk) won't save you either
+
+Hibernation is a *different* mechanism (write RAM to swap, power off, restore on next boot), so
+it's tempting to think it sidesteps the S3 wake problem. In practice it doesn't, on this hardware:
+
+1. **It inherits the same Apple resume path** — restoring from hibernation still goes through the
+   Apple EFI + NVMe bring-up that's unreliable.
+2. **It needs swap ≥ RAM** set up as a resume device, plus a `resume=` kernel param — extra config
+   that this minimal setup doesn't ship.
+3. **The Apple NVMe quirks** (`nvme.noacpi`, PS0 pinning) that we apply for stability also work
+   against the clean low-power state hibernation expects.
+
+So chasing hibernation here is a dead end. That's the honest answer: **don't try to "enable
+hibernation" on this MacBook — it will cost you hours and still not be dependable.**
+
+### What the script does instead (Stage 5)
+
+Since sleep is unfixable, the script *prevents* it so the machine can never hang trying:
+
+- GNOME `sleep-inactive-ac-type` / `sleep-inactive-battery-type` → `nothing` (no idle auto-suspend)
+- logind override `/etc/systemd/logind.conf.d/macbook-no-suspend.conf`: `HandleLidSwitch=lock`
+  (+ ExternalPower=lock, Docked=ignore) — lid close locks the screen, does not suspend
+- **`systemctl mask sleep.target suspend.target hibernate.target suspend-then-hibernate.target`**
+  — the bulletproof layer. gsettings + lid alone proved insufficient: a `suspend-then-hibernate`
+  still fired once on long idle (lid closed, on battery) and hung S3. Masking the sleep targets
+  makes *any* suspend/hibernate impossible — nothing can trigger it.
+- `reboot=pci` in GRUB — the default reset method does not reliably reset Apple hardware (reboot
+  hangs at "Rebooting."); `reboot=pci` forces a reset via PCI port 0xcf9. Tested working on
+  MacBookPro14,1. (If a future kernel breaks it, alternatives are `reboot=efi` / `reboot=acpi`.)
+
+The screen still blanks/locks after idle; the laptop just stays running. The sleep hooks
+(facetimehd, brcmfmac) remain installed but are now moot while sleep is masked — they only matter
+if you ever `unmask` the targets to experiment.
+
+**To experiment with suspend anyway** (knowing it may hang):
+`sudo systemctl unmask sleep.target suspend.target hibernate.target suspend-then-hibernate.target`
 
 ## Bluetooth
 
