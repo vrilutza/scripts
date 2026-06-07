@@ -189,6 +189,24 @@ idle action / battery / suspend-then-hibernate target).
   rulat comanda de mai sus, SAU re-rulează scriptul (ETAPA 5e o face). Documentat în README
   secțiunea "Suspend / sleep / hibernation" cu explicația completă de ce S3+hibernare = dead end.
 
+### 3d. udevadm settle hang în script pe 7.0.10 — ✅ FIXAT (efect al bug-ului audio)
+
+La re-rularea scriptului pe 7.0.10, ETAPA 8b a stat blocată ~1 min la `udevadm settle`
+("Timed out while waiting for udev queue to empty"). Cauză (din jurnal 13:04):
+```
+systemd-udevd: hdaudioC0D0: Worker [390] ... killed.
+kernel: BUG: unable to handle page fault ... supervisor write ... RIP: strcmp+0x28
+  Modules linked in: ... snd_hda_codec_cs8409(OE+) ...
+```
+udev face coldplug la device-ul audio → încarcă cs8409 → probe → page fault (bug-ul audio 7.0.10)
+→ **omoară worker-ul udev** → coada nu se golește → `udevadm settle` așteaptă până la timeout.
+Pe 7.0.9 (audio OK) settle revine instant — diferența confirmă cauza.
+
+**Fix în script (ETAPA 8b)**: `udevadm settle` → `udevadm settle --timeout=5`. Nu avem nevoie să
+golim toată coada (declanșăm un singur device + verificăm direct rezultatul); bound la 5s elimină
+hang-ul pe orice kernel cu coadă aglomerată. RAPL + fan floor se aplică oricum corect (verificat:
+22/30 + fan1_min=3500 active pe 7.0.10). Încă o dovadă (write page fault) adăugată în issue.
+
 ### 3c. Confirmare: strcmp GP-fault (4 iun) = bug-ul audio 7.0.10
 
 Poza 4 iun: `Oops: general protection fault ... non-canonical address 0x25002400000002 / RIP:

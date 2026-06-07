@@ -658,7 +658,11 @@ sudo udevadm control --reload || fail "udevadm control --reload a esuat."
 # Pe sistem live device-ul exista deja; trigger-ul re-fire-uieste regula acum.
 sudo udevadm trigger --action=add /sys/class/powercap/intel-rapl:0 \
     || warn "udevadm trigger a returnat eroare."
-sudo udevadm settle
+# settle --timeout=5: pe kerneluri cu coada udev aglomerata (ex 7.0.10, unde
+# coldplug-ul audio rupt o tine ocupata) un `udevadm settle` fara timeout
+# blocheaza ~1-2 min. Nu avem nevoie sa golim TOATA coada — am declansat un
+# singur device si verificam rezultatul direct mai jos. Bound la 5s.
+sudo udevadm settle --timeout=5 2>/dev/null || true
 sleep 1
 
 PL1_READ=$(cat "$RAPL_BASE/constraint_0_power_limit_uw" 2>/dev/null)

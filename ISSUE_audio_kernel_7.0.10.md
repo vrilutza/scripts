@@ -144,6 +144,22 @@ This matches `generic.c:3305` `!strcmp(spec->input_labels[j], label)` reading
 entry is used as a pointer and `strcmp` dereferences it. So the regression can range from "no
 sound card" to a kernel general-protection fault depending on what the out-of-bounds memory holds.
 
+It also faults when the codec is **coldplugged by udev** (not just manual modprobe). When a
+`udevadm trigger` re-adds the HDA device, the udev worker loads `snd_hda_codec_cs8409` and faults
+mid-probe, killing the worker:
+
+```
+systemd-udevd[331]: hdaudioC0D0: Worker [390] processing SEQNUM=3227 killed.
+kernel: BUG: unable to handle page fault for address: ffffd2890333fd80
+kernel: #PF: supervisor write access in kernel mode
+kernel: RIP: 0010:idempotent_init_module+0x232/0x310   ... RIP: 0010:strcmp+0x28/0x50
+kernel: Modules linked in: ... snd_hda_codec_cs8409(OE+) snd_hda_codec_generic ...
+```
+
+(The `(OE+)` marks the module loading at fault time.) A killed udev worker leaves the udev queue
+non-empty, so any later `udevadm settle` blocks until timeout — a practical side effect beyond the
+missing sound card.
+
 ## Workaround
 
 Boot **7.0.9** (GRUB → Advanced options) — audio works, zero UBSAN reports.
