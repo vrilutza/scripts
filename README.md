@@ -39,7 +39,8 @@ sudo reboot
 | Bluetooth | Pair a device from GNOME Settings → Bluetooth (SMC reset first if needed) |
 | Touchpad | Tap, swipe, two-finger scroll — cursor should be smooth |
 | VA-API (video accel) | `vainfo` should print supported profiles |
-| Suspend | Auto-suspend is **disabled by design**. Closing the lid only locks the screen. |
+| Suspend | **Fully blocked by design** (sleep targets masked — S3 unreliable on this hardware). Lid close only locks the screen. See "Suspend / sleep / hibernation" below. |
+| Reboot | `sudo systemctl reboot` should reset cleanly (`reboot=pci`). If it ever hangs at "Rebooting.", see the reboot note below. |
 | DKMS rebuild | `sudo dkms status` — `snd_hda_macbookpro` and `facetimehd` should show `installed` |
 
 ## Diagnostics & monitoring per subsystem
@@ -57,6 +58,12 @@ aplay -l                                 # Playback devices visible to ALSA?
 
 Quick live test: from GNOME Settings → Sound, toggle output between Speakers and Headphones; both should respond. If audio dies after a kernel upgrade, run `sudo dkms status` first — DKMS rebuilds the module automatically against the new headers and a missing rebuild is the usual culprit.
 
+> ⚠️ **Known regression on kernel 7.0.10**: the CS8409 codec fails to register a sound card
+> (`/proc/asound/cards` → "no soundcards"). This is an in-tree HDA generic-parser change in
+> 7.0.10, not a DKMS rebuild failure — `dkms status` shows the module built fine. **Workaround:
+> boot 7.0.9** (GRUB → Advanced options). Full analysis in [TODO.md](TODO.md) and
+> [ISSUE_audio_kernel_7.0.10.md](ISSUE_audio_kernel_7.0.10.md).
+
 ### Camera (FaceTime HD)
 
 ```bash
@@ -72,12 +79,13 @@ Quick live test: `sudo apt install cheese && cheese` — webcam preview should a
 ### System fixes (backlight, suspend, lid behavior)
 
 ```bash
-cat /proc/cmdline                                                                # Kernel boot params currently active
-ls -la /usr/lib/systemd/system-sleep/                                            # Sleep hooks (facetimehd, brcmfmac) present?
+cat /proc/cmdline                                                                # Kernel boot params (expect acpi_backlight=native, reboot=pci, mem_sleep_default=deep, nvme.noacpi=1, i915.enable_dc=0, nvme_core...)
+grep -o reboot=pci /proc/cmdline                                                  # reboot fix active? (prevents "Rebooting." hang)
+systemctl is-enabled sleep.target suspend.target hibernate.target suspend-then-hibernate.target  # all should be 'masked' (suspend fully blocked)
+ls -la /usr/lib/systemd/system-sleep/                                            # Sleep hooks (facetimehd, brcmfmac) present (moot while masked)
 gsettings get org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type     # Should be 'nothing'
 gsettings get org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type # Should be 'nothing'
-cat /etc/systemd/logind.conf.d/macbook-no-suspend.conf                           # Lid switch override
-systemctl show systemd-logind | grep -i lid                                      # Effective lid behavior (Lock = correct)
+cat /etc/systemd/logind.conf.d/macbook-no-suspend.conf                           # Lid switch override (HandleLidSwitch=lock)
 ```
 
 To test the backlight keys: `Fn+F1` / `Fn+F2` — slider in GNOME panel should slide smoothly without jumps.
@@ -295,7 +303,7 @@ Bluetooth: hci0: BCM: Reset failed (-110)
 
 **Fix — SMC Reset (one time only, after first boot from macOS):**
 
-1. Shut down completely: `sudo shutdown -h now`
+1. Shut down completely: `sudo systemctl poweroff -i` (on this logind setup `shutdown -h now` may be refused; `-i` ignores inhibitors)
 2. Hold **Shift left + Control left + Option left + Power** simultaneously for 10 seconds
 3. Release all keys, then press **Power** to boot normally
 
@@ -318,7 +326,7 @@ and Bluetooth went unresponsive after the burst.
 **Recovery: a full power-off, not a warm reboot.**
 
 ```bash
-sudo shutdown -h now
+sudo systemctl poweroff -i    # 'shutdown -h now' may be refused on this logind setup; -i ignores inhibitors
 # wait ~10 seconds, then power on
 ```
 
@@ -329,4 +337,9 @@ means the chip is fully unresponsive and needs the power cycle.)
 
 ## Tested on
 
-Debian Testing — kernel `7.0.7+deb14-amd64` — May 2026.
+Debian Testing — kernel `7.0.9+deb14-amd64` — June 2026 (full hardware stack working).
+
+> **Kernel note:** `7.0.10+deb14-amd64` has a **known audio regression** — the CS8409 codec
+> fails to register a sound card (in-tree HDA generic-parser change; see TODO.md and
+> `ISSUE_audio_kernel_7.0.10.md`). **Boot 7.0.9 for working audio** (GRUB → Advanced options).
+> Everything else (camera, WiFi, VA-API, RAPL/thermal, touchpad) works on both.

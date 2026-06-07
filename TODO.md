@@ -144,7 +144,7 @@ Diferența `-16` (busy, cip răspunde) vs `-110` (timeout, cip mut) = **starea c
 warm reboot**, NU kernelul. Upgrade-ul a necesitat un reboot → exact ce declanșează starea proastă
 Broadcom (vezi secțiunea Broadcom warm-reboot din Categoria C). **NU e regresie 7.0.10.**
 
-**Test de confirmare** (pentru a fi 100% siguri): `shutdown -h now` complet → pornire → boot 7.0.10.
+**Test de confirmare** (pentru a fi 100% siguri): `sudo systemctl poweroff -i` complet → pornire → boot 7.0.10.
 Dacă BT revine `UP RUNNING` pe 7.0.10 după power-off → confirmat warm-reboot, nu kernel. (Dacă
 rămâne mort și după power-off curat pe 7.0.10 → atunci ar fi regresie kernel, investigăm separat.)
 
@@ -218,7 +218,7 @@ Documentate ca să nu pierdem timp încercând.
 
 | Item | De ce nu se poate |
 |---|---|
-| **Suspend S3 / hibernare** | S3 nu se trezește fiabil pe NVMe+EFI Apple (deja dezactivat by design în ETAPA 5). Hibernarea (suspend-to-disk) ar necesita swap ≥ RAM + ar moșteni aceleași probleme de resume Apple — nefiabil. |
+| **Suspend S3 / hibernare** | S3 nu se trezește fiabil pe NVMe+EFI Apple. Blocat complet via `systemctl mask` pe sleep targets (ETAPA 5e). Hibernarea (suspend-to-disk) ar necesita swap ≥ RAM + ar moșteni aceleași probleme de resume Apple — nefiabil. Explicație completă în README "Suspend / sleep / hibernation". |
 | **Broadcom WiFi/BT la warm reboot** | `sudo reboot` nu power-cycle-ază cip-ul Broadcom → poate rămâne mut (`MMIO read failed` / `Reset failed -110`). Recuperare = power-off complet, nu reboot. Hardware, nu software. |
 | **facetimehd PLL lock** | `Failed to lock S2 PLL` — bug în driverul upstream patjak/facetimehd; camera merge pe PLL alternativ. Fără workaround user-side. |
 | **ASPM PCIe** | `can't disable ASPM` — Apple BIOS restricționează; `pcie_aspm=off` ar strica bateria. Trade-off rău. |
