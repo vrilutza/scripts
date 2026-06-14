@@ -10,11 +10,15 @@ The DKMS pre-build step (`install.cirrus.driver.sh`) obtains the kernel's `sound
 
 Both paths fail on **Debian** and on **release-candidate** kernels:
 
-- **Debian ships the kernel source as `.tar.xz`, not `.tar.bz2`.** The local-source check looks
-  only for `.tar.bz2`, so it never finds the Debian `linux-source-*` package and falls through to
-  the download path.
-- **The download path 404s for RC kernels.** For an `-rc` kernel there is no stable
-  `linux-<ver>.tar.xz` on kernel.org (only `testing/linux-<ver>-rcN.tar.gz`), so the build aborts.
+- **On Debian the local-source path is never even reached.** The `/usr/src/linux-source-*.tar.bz2`
+  check lives inside the `if [ $isubuntu -ge 1 ]` branch, so non-Ubuntu distros skip it entirely and
+  go straight to the kernel.org download branch — the installed Debian source is ignored. (It is also
+  `.tar.xz`, not the `.tar.bz2` the Ubuntu branch looks for.)
+- **The download path 404s for RC kernels (and mis-parses the Debian version).** `kernel_version` is
+  `uname -r` cut at the first `-`, which on Debian keeps the ABI suffix: `7.0.10+deb14-amd64` →
+  `7.0.10+deb14`. So it first fetches `linux-7.0.10+deb14.tar.xz` (404), then falls back to
+  `linux-<major>.<minor>.tar.xz`. That base tarball exists for *released* kernels but **not for an
+  `-rc`** (kernel.org only has `testing/linux-<ver>-rcN.tar.gz`), so the build aborts.
 
 Net effect on a Debian box running an `-rc` kernel (e.g. from `experimental`): the module never
 even reaches the HDA source — it fails before compiling anything.
@@ -74,18 +78,22 @@ Two problems:
 Prefer the locally installed Debian/Ubuntu source and accept both compressions before downloading:
 
 ```sh
-# Find a local kernel source tarball regardless of compression
+# Debian names the source package by the X.Y base version (e.g. linux-source-7.0),
+# ships it as /usr/src/linux-source-<X.Y>.tar.xz, archive top dir is linux-source-<X.Y>/.
+# Prefer it: exact patched source, no network, and the only workable source for -rc.
+src_ver=$major_version.$minor_version          # e.g. 7.0  (NOT 7.0.10+deb14)
 local_src=""
 for ext in tar.xz tar.bz2 tar.gz; do
-    if [ -e "/usr/src/linux-source-$kernel_version.$ext" ]; then
-        local_src="/usr/src/linux-source-$kernel_version.$ext"
+    if [ -e "/usr/src/linux-source-$src_ver.$ext" ]; then
+        local_src="/usr/src/linux-source-$src_ver.$ext"
         break
     fi
 done
 
 if [ -n "$local_src" ]; then
+    # tar -xf auto-detects xz/bz2/gz
     tar --strip-components=2 -xf "$local_src" --directory=build/ \
-        "linux-source-$kernel_version/sound/hda"
+        "linux-source-$src_ver/sound/hda"
 else
     # fall back to kernel.org download (released kernels only)
     ...
