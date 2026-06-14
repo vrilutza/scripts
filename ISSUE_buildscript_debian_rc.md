@@ -59,14 +59,14 @@ the local `.tar.bz2` was not present — Debian's file is `.tar.xz`).
 ...
 181:   tar … -xvf /usr/src/linux-source-$kernel_version.tar.bz2 … sound/hda   # only .bz2
 ...
-188:   wget -c https://cdn.kernel.org/pub/linux/kernel/v$major_version.x/linux-$kernel_version.tar.xz …
+189:   wget -c https://cdn.kernel.org/pub/linux/kernel/v$major_version.x/linux-$kernel_version.tar.xz …
 201:   [[ $? -ne 0 ]] && echo "kernel could not be downloaded...exiting" && exit
 ```
 
 Two problems:
 1. The local-source check/extract (lines 167, 181) is hard-coded to `.tar.bz2`. Debian's
    `linux-source-*` package provides `.tar.xz`.
-2. The download fallback (line 188) assumes a released kernel; `-rc` kernels have no stable
+2. The download fallback (line 189) assumes a released kernel; `-rc` kernels have no stable
    `linux-<ver>.tar.xz` at that URL.
 
 ## Suggested fix

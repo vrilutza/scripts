@@ -94,6 +94,23 @@ generic.c:3312:25   index 41  out of range for 'int [36]'
 generic.c:3305:34   index 223 out of range for 'char *[36]'
 ```
 
+## Source path confirms the bug is in-tree (Debian kernel build tree)
+
+Every UBSAN report names the **kernel package's own source tree**, not the out-of-tree CS8409 driver:
+
+```
+UBSAN: array-index-out-of-bounds in /build/reproducible-path/linux-7.0.10/sound/hda/codecs/generic.c:3294:30
+UBSAN: array-index-out-of-bounds in /build/reproducible-path/linux-7.0.10/sound/hda/common/auto_parser.c:579:24
+```
+
+`/build/reproducible-path/linux-7.0.10/…` is the Debian `linux-7.0.10` source build path — i.e. the
+in-tree HDA generic parser. This is direct evidence the regression is **in the kernel**, not in the
+driver; the CS8409 codec only triggers it. The out-of-tree driver (davidjo/snd_hda_macbookpro) builds
+via DKMS and loads fine — the fault is entirely inside `snd_hda_gen_parse_auto_config`.
+
+Reproduced deterministically on a clean boot (2026-06-14, `7.0.10+deb14-amd64`): all 10 reports above
+appear on every boot with identical line:column.
+
 ## Representative stack trace
 
 ```
