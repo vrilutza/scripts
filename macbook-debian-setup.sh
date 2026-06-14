@@ -691,33 +691,70 @@ if [ ! -e "$FAN_SMC/fan1_min" ]; then
 else
     info "Configurare fan floor: fan1_min=$FAN_MIN_RPM RPM (SMC ramane auto deasupra)..."
     FAN_RULE="/etc/udev/rules.d/99-macbook-fan.rules"
+    FAN_SVC="/etc/systemd/system/macbook-fan-floor.service"
+    FAN_HELPER="/usr/local/sbin/macbook-fan-floor"
 
-    # Regula udev: la aparitia device-ului platform applesmc, scrie fan1_min direct.
+    # IMPORTANT (corectat 14 iun 2026): fan1_min NU exista inca la evenimentul `add` al
+    # platform device-ului applesmc — e creat mai tarziu, la probe-ul hwmon. Scrierea
+    # ATTR{fan1_min} direct in regula udev da RACE si esueaza la boot:
+    #   "Could not chase sysfs attribute .../fan1_min ... No such file or directory"
+    # → fan1_min ramane 1200 (stock). Solutie (acelasi model ca RAPL): regula udev
+    # declanseaza un service oneshot care ASTEAPTA sa apara atributul, apoi scrie podeaua.
+
+    # Helper: asteapta pana la 5s ca fan1_min sa existe, apoi scrie podeaua.
+    sudo tee "$FAN_HELPER" > /dev/null << FANHLP
+#!/bin/sh
+F=$FAN_SMC/fan1_min
+i=0
+while [ "\$i" -lt 50 ]; do
+    [ -e "\$F" ] && { echo $FAN_MIN_RPM > "\$F"; exit 0; }
+    i=\$((i + 1)); sleep 0.1
+done
+echo "macbook-fan-floor: \$F nu a aparut in 5s" >&2; exit 1
+FANHLP
+    sudo chmod +x "$FAN_HELPER"
+
+    sudo tee "$FAN_SVC" > /dev/null << FANSVCEOF
+[Unit]
+Description=MacBook fan floor (fan1_min=$FAN_MIN_RPM) — set after applesmc exposes the attribute
+Documentation=https://github.com/vrilutza/scripts
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=$FAN_HELPER
+
+[Install]
+WantedBy=multi-user.target
+FANSVCEOF
+
     sudo tee "$FAN_RULE" > /dev/null << FANEOF
 # MacBook Pro 13" 2017 (A1708) — fan floor
-# Ridica podeaua fan-ului la $FAN_MIN_RPM RPM (curba SMC stock e prea lenesa: tine fan-ul
-# la ~1200 RPM chiar si la 80°C). fan1_manual ramane 0 → SMC pastreaza ramp-up automat
-# deasupra podelei (pana la 7200 RPM la load). Doar ridicam minimul.
-ACTION=="add", SUBSYSTEM=="platform", KERNEL=="applesmc.768", ATTR{fan1_min}="$FAN_MIN_RPM"
+# fan1_min NU exista la evenimentul \`add\` al applesmc (creat tarziu, la probe) →
+# ATTR{fan1_min} direct da race. Declansam in schimb service-ul oneshot, care scrie
+# $FAN_MIN_RPM dupa ce device-ul e gata (acelasi model ca regula RAPL).
+ACTION=="add", SUBSYSTEM=="platform", KERNEL=="applesmc.768", TAG+="systemd", ENV{SYSTEMD_WANTS}+="macbook-fan-floor.service"
 FANEOF
 
-    if [ -f "$FAN_RULE" ]; then
-        ok "Regula udev fan scrisa: $FAN_RULE"
+    if [ -f "$FAN_HELPER" ] && [ -f "$FAN_SVC" ] && [ -f "$FAN_RULE" ]; then
+        ok "Helper + service + regula udev fan scrise."
     else
-        fail "Nu am putut scrie $FAN_RULE."
+        fail "Nu am putut scrie helper/service/regula fan."
     fi
 
-    info "Reload udev + aplicare imediata (udevadm trigger)..."
+    info "Reload systemd + udev, enable + start service..."
+    sudo systemctl daemon-reload
+    sudo systemctl enable macbook-fan-floor.service > /dev/null 2>&1 \
+        || warn "enable macbook-fan-floor.service a returnat eroare."
     sudo udevadm control --reload || warn "udevadm control --reload a returnat eroare."
-    sudo udevadm trigger --action=add /sys/devices/platform/applesmc.768 2>/dev/null \
-        || warn "udevadm trigger a returnat eroare."
-    sleep 1
+    sudo systemctl start macbook-fan-floor.service \
+        || warn "start macbook-fan-floor.service a returnat eroare."
 
     FAN_MIN_READ=$(cat "$FAN_SMC/fan1_min" 2>/dev/null)
     if [ "$FAN_MIN_READ" = "$FAN_MIN_RPM" ]; then
         ok "Fan floor aplicat: fan1_min=$FAN_MIN_READ RPM (SMC auto deasupra)."
     else
-        warn "Fan floor: fan1_min=$FAN_MIN_READ (asteptat $FAN_MIN_RPM). Se aplica la urmatorul boot prin udev. Verifica: cat $FAN_SMC/fan1_min"
+        warn "Fan floor: fan1_min=$FAN_MIN_READ (asteptat $FAN_MIN_RPM). Verifica dupa reboot: cat $FAN_SMC/fan1_min"
     fi
 fi
 

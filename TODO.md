@@ -5,6 +5,27 @@ mai 2026). Ce urmează aici sunt opționale, organizate pe categorii ca să poț
 
 ---
 
+## 🔎 Audit jurnal — 13 iunie 2026 (ce s-a schimbat din 7 iun)
+
+Re-analiză completă a logurilor (kernel + userspace) pe sistemul real, rulând pe **7.0.9** (kernelul
+audio-OK). Sumar:
+
+- **Problemă găsită ȘI REZOLVATĂ (14 iun)**: fan floor-ul (ETAPA 8c) nu se aplica la boot (regula udev
+  dădea race pe `fan1_min`). Reparat cu un oneshot service care așteaptă atributul — verificat la reboot
+  (`fan1_min=3500`, fără „Could not chase"). Detalii în secțiunea "Implementate" de mai jos (marcată ✅).
+  Restul thermal e OK: RAPL **22W/30W activ** și verificat, thermald + macbook-rapl-thermald active.
+- **GNOME 49 → 50.2** (upgrade 13 iun): sesiune OK, fără regresie funcțională. Cosmetic nou:
+  `gsd-media-keys: Failed to grab accelerator ... playback-repeat` (pe lângă `hibernate` deja
+  documentat) — același tip de zgomot benign Categoria A.
+- **`firmware-brcm80211` 20260410 → 20260519** (upgrade 11 iun): **fără schimbare de comportament** BT —
+  `BCM.hcd` tot lipsește, baudrate tot `-16` (EBUSY = chip răspunde = BT OK). Rămâne Categoria B.
+- **Audio**: perfect pe 7.0.9 (card 0 CS8409/CS42L83). 7.0.10 rămâne instalat (audio rupt — neschimbat).
+- **Suspend mask (ETAPA 5e)**: ✅ acum APLICAT (toate 4 target-urile `masked`).
+- **Igienă sistem**: zero pachete half-configured (cleanup 7.1-rc5 complet), zero crash/oops/segfault
+  în boot-ul curent. Restul zgomotului de log = identic cu catalogul din Anexă (Apple ACPI/DMAR/SGX).
+
+---
+
 ## ✅ Implementate (în script)
 
 | # | Ce | Detaliu |
@@ -13,12 +34,35 @@ mai 2026). Ce urmează aici sunt opționale, organizate pe categorii ca să poț
 | 7 | Touchpad UX | tap-to-click + natural scroll + disable-while-typing |
 | 8 | Thermal management | thermald + lm-sensors + RAPL PL1=22W/PL2=30W + fan floor 3500 RPM |
 
-**Fan floor (`fan1_min=3500`) — adăugat 7 iun (ETAPA 8c).** Curba SMC stock ține fan-ul la ~1200
-RPM chiar la 80°C (silence-first). Ridicăm podeaua la 3500 via udev (`fan1_manual` rămâne 0 → SMC
-ramp automat peste podea intact). **Testat live pe MacBookPro14,1**: idle 80→74°C; sub load fan
-urcă automat 3500→4525→5400+; zero throttle. Bonus: mai puțină căldură = menajează bateria uzată
-(64% health). Caveat: SMC reacționează lent → spike-uri scurte ~94°C la load brusc (inerent SMC,
-sub TJmax). Reversibil: `fan1_min=1200`. Explicație completă în README secțiunea thermal.
+**✅ Fan floor (`fan1_min=3500`) — REZOLVAT (14 iun). Race-ul udev înlocuit cu un oneshot service.**
+Intenție (ETAPA 8c, 7 iun): curba SMC stock ține fan-ul la ~1200 RPM chiar la 80°C (silence-first);
+ridicăm podeaua la 3500 via udev (`99-macbook-fan.rules`), `fan1_manual` rămâne 0 → SMC ramp automat
+peste podea intact.
+
+**PROBLEMĂ (100% confirmată pe sistemul real, 13 iun)**: regula scrie `ATTR{fan1_min}="3500"` pe
+evenimentul `add` al platform device-ului `applesmc.768`, dar atributul `fan1_min` **nu există încă**
+în acel moment (applesmc îl creează mai târziu, la înregistrarea hwmon din probe). Jurnal boot:
+```
+(udev-worker): applesmc.768: /etc/udev/rules.d/99-macbook-fan.rules:5 ATTR{fan1_min}="3500":
+  Could not chase sysfs attribute ".../applesmc.768/fan1_min", ignoring: No such file or directory
+```
+Rezultat: `fan1_min` rămâne **1200** (stock) la fiecare boot — verificat live (`cat fan1_min` = 1200)
++ eroarea apare pe **7/7** boot-uri unde regula e logată; niciodată nu reușește. Exact aceeași clasă
+de race ca RAPL v1 (ATTR scris înainte ca device-ul să fie gata) — dar regula RAPL **reușește** pentru
+că device-ul `powercap intel-rapl:0` expune atributele sincron la `add`, pe când applesmc nu.
+
+Testul "live" din `fantest.md` (idle 80→74°C, ramp 3500→5400) a fost cu `fan1_min` setat **manual**,
+apoi revert — deci dovedește că hardware-ul acceptă floor-ul, NU că udev-ul îl aplică la boot. De aceea
+afirmația inițială "activ/testat" era greșită: floor-ul nu a fost niciodată persistent la boot.
+
+**Fix aplicat + VERIFICAT la reboot (14 iun)**: floor-ul se aplică acum printr-un oneshot service
+(modelul dovedit de la RAPL). Regula udev `99-macbook-fan.rules` doar **declanșează** serviciul
+(`TAG+="systemd", ENV{SYSTEMD_WANTS}+="macbook-fan-floor.service"`); serviciul rulează helper-ul
+`/usr/local/sbin/macbook-fan-floor`, care **așteaptă** până apare `fan1_min` (max 5s), apoi scrie 3500.
+Pornit și de udev (devreme), și de `multi-user.target` (rezervă). Implementat în ETAPA 8c din script.
+Dovadă post-reboot pe sistemul real: `fan1_min=3500` live, `fan1_manual=0` (curba SMC intactă), service
+`active (exited) SUCCESS` pornit la boot, **zero** „Could not chase" în jurnal. Reversibil: dezactivează
+serviciul + `fan1_min=1200`. Explicație thermal completă în README.
 
 **RAPL race condition — REZOLVAT.** A trecut prin 4 iterații (tmpfiles → ConditionPathExists →
 .path unit → **udev rule**). Versiunea finală (regula udev + thermald reinit) validată **8/8
@@ -185,8 +229,8 @@ idle action / battery / suspend-then-hibernate target).
   Face IMPOSIBIL orice suspend/hibernate — nimic nu mai poate declanșa S3. Reversibil cu
   `systemctl unmask`. Mai robust decât gsettings (care a scăpat această cale).
 - Trade-off: blochează și suspend-ul manual (dar S3 oricum nu se trezește → nu pierzi nimic real).
-- **NB pe sistemul user (7 iun)**: încă NU aplicat manual (targets="static", nu "masked") — de
-  rulat comanda de mai sus, SAU re-rulează scriptul (ETAPA 5e o face). Documentat în README
+- **NB pe sistemul user**: ✅ APLICAT (confirmat 13 iun) — toate 4 target-urile sunt `masked`
+  (symlink-uri `-> /dev/null` în `/etc/systemd/system/`, datate 7 iun 09:34). Documentat în README
   secțiunea "Suspend / sleep / hibernation" cu explicația completă de ce S3+hibernare = dead end.
 
 ### 3d. udevadm settle hang în script pe 7.0.10 — ✅ FIXAT (efect al bug-ului audio)
