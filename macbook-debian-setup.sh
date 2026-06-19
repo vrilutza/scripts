@@ -16,6 +16,8 @@
 #    7. Touchpad UX (tap-to-click + natural scroll + disable-while-typing)
 #    8. Thermal management: thermald + RAPL PL1/PL2 (22W/30W Apple-like, udev) +
 #       fan floor (fan1_min=3500 RPM via udev — rece la idle, SMC ramp auto deasupra)
+#    9. Cosmetic / curatire jurnal: GNOME media-keys (hibernate/playback-repeat goale) +
+#       usb-protection off (USBGuard neinstalat) + applespi fnmode=1 (default explicit)
 #
 #  Notă touchpad: nu mai aplicăm patch out-of-tree pentru "Touch jump detected and discarded".
 #  libinput protejează în userspace (discard event corupt) — cursorul nu sare vizibil.
@@ -77,9 +79,9 @@ info "Log salvat in: $LOGFILE"
 
 
 # =============================================================================
-# ETAPA 1/8 — Dependente
+# ETAPA 1/9 — Dependente
 # =============================================================================
-CURRENT_STEP="ETAPA 1/8 — Dependente"
+CURRENT_STEP="ETAPA 1/9 — Dependente"
 step "$CURRENT_STEP"
 
 PKGS=(build-essential linux-headers-amd64 linux-source dkms git patch wget curl cpio xz-utils libssl-dev)
@@ -102,10 +104,10 @@ ok "Toate dependentele sunt instalate."
 
 
 # =============================================================================
-# ETAPA 2/8 — Driver audio Cirrus Logic CS8409
+# ETAPA 2/9 — Driver audio Cirrus Logic CS8409
 # https://github.com/davidjo/snd_hda_macbookpro
 # =============================================================================
-CURRENT_STEP="ETAPA 2/8 — Driver audio"
+CURRENT_STEP="ETAPA 2/9 — Driver audio"
 step "$CURRENT_STEP"
 info "Proiect: https://github.com/davidjo/snd_hda_macbookpro"
 
@@ -143,10 +145,10 @@ fi
 
 
 # =============================================================================
-# ETAPA 3/8 — Firmware camera FaceTime HD
+# ETAPA 3/9 — Firmware camera FaceTime HD
 # https://github.com/patjak/facetimehd-firmware
 # =============================================================================
-CURRENT_STEP="ETAPA 3/8 — Firmware camera FaceTime HD"
+CURRENT_STEP="ETAPA 3/9 — Firmware camera FaceTime HD"
 step "$CURRENT_STEP"
 info "Proiect: https://github.com/patjak/facetimehd-firmware"
 
@@ -182,10 +184,10 @@ fi
 
 
 # =============================================================================
-# ETAPA 4/8 — Driver kernel camera FaceTime HD cu DKMS
+# ETAPA 4/9 — Driver kernel camera FaceTime HD cu DKMS
 # https://github.com/patjak/facetimehd
 # =============================================================================
-CURRENT_STEP="ETAPA 4/8 — Driver camera FaceTime HD (DKMS)"
+CURRENT_STEP="ETAPA 4/9 — Driver camera FaceTime HD (DKMS)"
 step "$CURRENT_STEP"
 info "Proiect: https://github.com/patjak/facetimehd"
 
@@ -255,9 +257,9 @@ fi
 
 
 # =============================================================================
-# ETAPA 5/8 — Fix sistem: luminozitate ecran + suspend stabil + WiFi dupa sleep
+# ETAPA 5/9 — Fix sistem: luminozitate ecran + suspend stabil + WiFi dupa sleep
 # =============================================================================
-CURRENT_STEP="ETAPA 5/8 — Fix luminozitate + auto-suspend dezactivat (S3 unreliable)"
+CURRENT_STEP="ETAPA 5/9 — Fix luminozitate + auto-suspend dezactivat (S3 unreliable)"
 step "$CURRENT_STEP"
 
 # --- 5a: GRUB — luminozitate + suspend stabil pe Apple hardware ---
@@ -459,12 +461,12 @@ fi
 
 
 # =============================================================================
-# ETAPA 6/8 — Accelerare video hardware VA-API (Intel Iris Plus 640)
+# ETAPA 6/9 — Accelerare video hardware VA-API (Intel Iris Plus 640)
 # Problema: "vaInitialize failed: unknown libva error" in VS Code / Chrome
 # Cauza:    driver-ele VA-API pentru Intel Kaby Lake nu sunt instalate
 # Fix:      intel-media-va-driver (iHD, Kaby Lake+) + i965-va-driver (fallback)
 # =============================================================================
-CURRENT_STEP="ETAPA 6/8 — Accelerare video hardware VA-API"
+CURRENT_STEP="ETAPA 6/9 — Accelerare video hardware VA-API"
 step "$CURRENT_STEP"
 info "Intel Iris Plus 640 (Kaby Lake) — instalare drivere VA-API..."
 
@@ -500,10 +502,10 @@ fi
 
 
 # =============================================================================
-# ETAPA 7/8 — Touchpad UX (tap-to-click + natural scroll + disable-while-typing)
+# ETAPA 7/9 — Touchpad UX (tap-to-click + natural scroll + disable-while-typing)
 # Comportament macOS-like out of the box, doar gsettings, fara modificari kernel.
 # =============================================================================
-CURRENT_STEP="ETAPA 7/8 — Touchpad UX"
+CURRENT_STEP="ETAPA 7/9 — Touchpad UX"
 step "$CURRENT_STEP"
 info "Configurare GNOME touchpad: tap-to-click + natural scroll + disable-while-typing..."
 
@@ -529,7 +531,7 @@ fi
 
 
 # =============================================================================
-# ETAPA 8/8 — Thermal management: thermald + RAPL PL1/PL2 + fan floor
+# ETAPA 8/9 — Thermal management: thermald + RAPL PL1/PL2 + fan floor
 #
 # Problema: RAPL pe MBP 2017 sub Linux nu are limite sane (Apple EFI lasa
 # PL1=100W, PL2=125W pe un chip cu TDP nominal 15W). Chip-ul ruleaza
@@ -562,7 +564,7 @@ fi
 #           Testat empiric: udevadm trigger --action=add re-aplica 100M→22M;
 #           thermald restartat dupa RAPL set nu mai logheaza "NO RAPL sysfs".
 # =============================================================================
-CURRENT_STEP="ETAPA 8/8 — Thermal management (thermald + RAPL + fan floor)"
+CURRENT_STEP="ETAPA 8/9 — Thermal management (thermald + RAPL + fan floor)"
 step "$CURRENT_STEP"
 
 # --- 8a: thermald + lm-sensors via apt ---
@@ -760,6 +762,67 @@ fi
 
 
 # =============================================================================
+# ETAPA 9/9 — Cosmetic / curatire jurnal (GNOME media-keys + usb-protection + fnmode)
+#
+# Zero impact functional — doar silentiaza erori benigne care apar la fiecare boot:
+#   - gsd-media-keys "Failed to grab accelerator ... hibernate / playback-repeat":
+#     keybinding-urile veneau setate la [''] (string gol invalid) → grab esueaza.
+#     Le golim ([]) ca plugin-ul sa nu mai incerce. Hibernate e oricum mascat (S3 dead).
+#   - gsd-usb-protection "Failed to fetch USBGuard parameters": USBGuard nu e instalat,
+#     deci plugin-ul interogheaza un serviciu D-Bus inexistent. Oprim functia (e no-op).
+#   - applespi fnmode=1: fixeaza EXPLICIT comportamentul default (taste media primare pe
+#     F1-F12; tii Fn pentru F-taste reale). Nu schimba nimic vizibil — doar documenteaza.
+#     fnmode=2 = invers (F-taste primare). MacBook 2017 = driver applespi, NU hid_apple.
+# =============================================================================
+CURRENT_STEP="ETAPA 9/9 — Cosmetic / curatire jurnal"
+step "$CURRENT_STEP"
+
+# --- GNOME gsettings (per-user; scriptul ruleaza ca user normal, nu root) ---
+if command -v gsettings >/dev/null 2>&1; then
+    info "Silentiez erori GNOME benigne (media-keys hibernate/playback-repeat, usb-protection)..."
+    gsettings set org.gnome.settings-daemon.plugins.media-keys hibernate "[]" \
+        || warn "Nu am putut goli keybinding-ul hibernate."
+    gsettings set org.gnome.settings-daemon.plugins.media-keys playback-repeat "[]" \
+        || warn "Nu am putut goli keybinding-ul playback-repeat."
+    gsettings set org.gnome.desktop.privacy usb-protection false \
+        || warn "Nu am putut dezactiva usb-protection."
+
+    HIB=$(gsettings get org.gnome.settings-daemon.plugins.media-keys hibernate 2>/dev/null)
+    USBP=$(gsettings get org.gnome.desktop.privacy usb-protection 2>/dev/null)
+    case "$HIB" in *"[]"*) HIB_OK=1 ;; *) HIB_OK=0 ;; esac
+    if [ "$HIB_OK" = "1" ] && [ "$USBP" = "false" ]; then
+        ok "GNOME cosmetic: hibernate/playback-repeat golite, usb-protection off."
+    else
+        warn "GNOME cosmetic: verificare partiala (hibernate=$HIB, usb-protection=$USBP)."
+    fi
+else
+    warn "gsettings nu este disponibil — sari peste curatirea GNOME."
+fi
+
+# --- applespi fnmode=1 (default explicit: taste media primare, Fn pentru F1-F12) ---
+APPLESPI_CONF="/etc/modprobe.d/applespi.conf"
+info "Fixez explicit applespi fnmode=1 in $APPLESPI_CONF..."
+sudo tee "$APPLESPI_CONF" > /dev/null << 'APPLESPIEOF'
+# MacBook Pro 13" 2017 (A1708) — tastatura Apple SPI (driver applespi)
+# fnmode=1 (default): taste media (volum/luminozitate) primare pe F1-F12; tii Fn
+#   pentru F1-F12 reale. Setat explicit ca sa documenteze comportamentul.
+# fnmode=2 = invers (F1-F12 primare, Fn pentru media). Schimba aici daca preferi.
+options applespi fnmode=1
+APPLESPIEOF
+
+if [ -f "$APPLESPI_CONF" ]; then
+    ok "applespi fnmode=1 scris in $APPLESPI_CONF."
+    if sudo update-initramfs -u > /dev/null 2>&1; then
+        ok "initramfs regenerat (fnmode activ la boot)."
+    else
+        warn "update-initramfs a esuat — ruleaza manual: sudo update-initramfs -u"
+    fi
+else
+    warn "Nu am putut scrie $APPLESPI_CONF."
+fi
+
+
+# =============================================================================
 # REZUMAT FINAL
 # =============================================================================
 echo ""
@@ -781,6 +844,7 @@ echo -e "  ${GREEN}✓${NC}  Accelerare video VA-API — intel-media-va-driver +
 echo -e "  ${GREEN}✓${NC}  thermald (Intel thermal daemon) + lm-sensors"
 echo -e "  ${GREEN}✓${NC}  RAPL: PL1=22W / PL2=30W (Apple-like) prin regula udev + thermald reinit"
 echo -e "  ${GREEN}✓${NC}  Fan floor: fan1_min=3500 RPM (rece la idle, SMC ramp auto deasupra)"
+echo -e "  ${GREEN}✓${NC}  Cosmetic: GNOME media-keys/usb-protection silentiate + applespi fnmode=1"
 echo ""
 echo -e "  ${YELLOW}⚠${NC}  Necesar: ${BOLD}sudo reboot${NC} pentru a activa toate modificarile."
 echo ""

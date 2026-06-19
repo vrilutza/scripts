@@ -1,7 +1,27 @@
 # TODO — îmbunătățiri opționale
 
-Hardware-ul de bază e **complet funcțional și stabil** (testat pe Debian Testing, kernel 7.0.9,
-mai 2026). Ce urmează aici sunt opționale, organizate pe categorii ca să poți decide ce merită.
+Hardware-ul de bază e **complet funcțional și stabil** (testat pe Debian Testing/forky, kernel
+**7.0.12**, iunie 2026 — inclusiv audio, după ce regresia din 7.0.10 a fost reparată upstream).
+Ce urmează aici sunt opționale, organizate pe categorii ca să poți decide ce merită.
+
+---
+
+## 🔎 Audit jurnal — 19 iunie 2026 (upgrade 7.0.12, audio REPARAT)
+
+Re-analiză completă a logurilor pe sistemul real, acum pe **`7.0.12+deb14.1-amd64`** (forky). Sumar:
+
+- **AUDIO REPARAT ✅** — regresia in-tree din 7.0.10 a dispărut în 7.0.12. Verificat live: card 0 =
+  `Cirrus Logic CS8409/CS42L83`, `pcmC0D0c/p` prezent, **0 erori UBSAN**. Dovadă decisivă din scanarea
+  **tuturor** boot-urilor păstrate: fiecare boot pe 7.0.10 = 30 linii UBSAN (10 rapoarte → card rupt),
+  fiecare boot pe 7.0.9 = 0, fiecare pe 7.0.7 = 0, boot-ul pe 7.0.12 = 0. Bug-ul a fost **exclusiv**
+  7.0.10 și e reparat upstream. Driverul davidjo n-a avut nevoie de modificare (cum am documentat).
+- **Kernel 7.0.10 dezinstalat** — devenise „automatically installed, no longer required" după ce meta
+  `linux-image-amd64` a trecut la 7.0.12 → `autoremove` l-a scos. A rămas `7.0.9` (instalat **manual**,
+  rezervă) + `7.0.12` (curent). DKMS a recompilat curat `snd_hda_macbookpro` + `facetimehd` pe 7.0.12.
+- **Restul fix-urilor — toate active pe 7.0.12** (verificat live): fan floor `fan1_min=3500` (service
+  `active SUCCESS`), RAPL `22W/30W`, suspend mask (4/4 `masked`), `reboot=pci`.
+- **Zgomot rămas**: doar Categoria A (GNOME `hibernate`/`playback-repeat`, `usb-protection/USBGuard`) +
+  catalogul Apple ACPI/firmware din Anexă. Zero crash/oops/UBSAN.
 
 ---
 
@@ -71,10 +91,16 @@ boot-uri** la 22M/30M. Detaliile tehnice complete sunt în istoricul git (commit
 
 ---
 
-## ⚠️ REGRESIE ACTIVĂ — Audio rupt pe kernel 7.0.10 (din 4 iunie 2026)
+## ✅ REZOLVAT — Audio rupt pe kernel 7.0.10 (regresie 4 iun → reparat în 7.0.12, 19 iun)
 
-**Simptom**: pe kernel `7.0.10+deb14-amd64`, niciun sound card (`/proc/asound/cards` = "no soundcards",
-`/dev/snd/` doar seq+timer). Pe `7.0.9` audio funcționează perfect.
+> **STARE 19 iun 2026: REZOLVAT.** Regresia exista **doar** pe 7.0.10. Kernelul **7.0.12** (forky)
+> repară parser-ul HDA in-tree: audio funcționează (card 0 CS8409/CS42L83, **0 UBSAN**), iar 7.0.10
+> e dezinstalat. Driverul davidjo n-a avut nevoie de patch — bug-ul era 100% in-tree, exact cum a
+> arătat analiza. Secțiunea de mai jos e păstrată ca **arhivă tehnică** (debugging-ul complet care a
+> dus la diagnostic), nu mai e o problemă activă.
+
+**Simptom (istoric)**: pe kernel `7.0.10+deb14-amd64`, niciun sound card (`/proc/asound/cards` = "no
+soundcards", `/dev/snd/` doar seq+timer). Pe `7.0.9` și `7.0.12` audio funcționează perfect.
 
 **Cauză exactă (debugging complet pe sistem real, 4 iunie):**
 
@@ -154,8 +180,8 @@ acum că UBSAN prinde accesul.
 - [x] Kernel 7.0.11 changelog verificat (4 iun) — NU repară audio (3 commit-uri ASoC irelevante)
 - [x] Test 7.1-rc5 (4 iun) — neconcludent (build-script driver fail pe RC; vezi mai jos). 7.1
       scos, sistem curățat. **DECIZIE: așteptăm 7.1 RELEASED stabil** ca să-l testăm corect.
-- [ ] Când 7.1 iese stabil în Debian: reinstalează + testează dacă audio HDA e reparat
-- [ ] Decizie: GRUB default pe 7.0.9 până apare fix audio? (reversibil, recomandabil)
+- [x] **7.0.12 (forky, 19 iun) REPARĂ audio** — nu a mai fost nevoie de 7.1. Verificat: 0 UBSAN, card OK.
+- [x] Decizie GRUB default — **N/A**: 7.0.12 e default-ul bun (audio merge); 7.0.9 rămâne ca rezervă în GRUB.
 
 **Cleanup experimental (rulat 4 iun)**: 7.1-rc5 scos, meta-pachete readuse la forky 7.0.10.
 Repo experimental rămâne configurat (pinned prioritate 1 — nu trage nimic automat). Pentru a-l
