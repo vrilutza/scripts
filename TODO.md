@@ -53,6 +53,7 @@ audio-OK). Sumar:
 | 1-6 | Hardware base | deps, audio CS8409, camera FaceTime HD, GRUB/suspend fixes, VA-API |
 | 7 | Touchpad UX | tap-to-click + natural scroll + disable-while-typing |
 | 8 | Thermal management | thermald + lm-sensors + RAPL PL1=22W/PL2=30W + fan floor 3500 RPM |
+| 9 | Cosmetic / jurnal | GNOME media-keys (hibernate/playback-repeat) + usb-protection off + applespi fnmode=1 |
 
 **✅ Fan floor (`fan1_min=3500`) — REZOLVAT (14 iun). Race-ul udev înlocuit cu un oneshot service.**
 Intenție (ETAPA 8c, 7 iun): curba SMC stock ține fan-ul la ~1200 RPM chiar la 80°C (silence-first);
@@ -71,7 +72,7 @@ Rezultat: `fan1_min` rămâne **1200** (stock) la fiecare boot — verificat liv
 de race ca RAPL v1 (ATTR scris înainte ca device-ul să fie gata) — dar regula RAPL **reușește** pentru
 că device-ul `powercap intel-rapl:0` expune atributele sincron la `add`, pe când applesmc nu.
 
-Testul "live" din `fantest.md` (idle 80→74°C, ramp 3500→5400) a fost cu `fan1_min` setat **manual**,
+Un test "live" anterior (idle 80→74°C, ramp 3500→5400) a fost cu `fan1_min` setat **manual**,
 apoi revert — deci dovedește că hardware-ul acceptă floor-ul, NU că udev-ul îl aplică la boot. De aceea
 afirmația inițială "activ/testat" era greșită: floor-ul nu a fost niciodată persistent la boot.
 
@@ -149,62 +150,15 @@ Mecanismul exact (din sursa 7.0.10):
   codul in-tree, nu în driver.
 - Driverul doar consumă API-ul standard; bug-ul e in-tree.
 
-**Fix — direcții (corectate)**:
-1. **Kernel**: regresia e în codul HDA in-tree 7.0.10. Fix corect = bug report kernel + patch
-   in-tree (sau revert al schimbării care umflă num_inputs). Cel mai probabil un kernel viitor
-   (7.0.11+) îl repară DACĂ schimbarea e recunoscută ca regresie.
-2. **Driver** (davidjo/snd_hda_macbookpro): ar putea adăuga un workaround (ex: clamp defensiv),
-   dar bug-ul nu e în logica lui — wrapper-ul e standard.
+**Rezolvare (19 iun 2026)**: kernelul **7.0.12** (forky) repară parser-ul HDA in-tree — bug-ul a
+fost corectat upstream între 7.0.10 și 7.0.12. Verificat pe sistemul real: audio OK, **0 UBSAN** pe
+7.0.12 (vs 30 linii / 10 rapoarte pe fiecare boot 7.0.10, scanat pe toate boot-urile păstrate).
+**Nu** a fost nevoie de patch în driver (bug-ul era 100% in-tree, exact cum a arătat analiza) și nici
+de 7.1. 7.0.10 e dezinstalat; 7.0.9 rămâne rezervă în GRUB. Analiza de mai sus rămâne ca arhivă tehnică.
 
-**Pas decisiv pentru patch exact**: diff `sound/hda/codecs/generic.c` + `common/auto_parser.c`
-între sursa 7.0.9 și 7.0.10. Sursa 7.0.9 NU e disponibilă local (pachetul `linux-source-7.0` e
-deja 7.0.10; fără deb-src). Ar trebui din snapshot.debian.org sau git kernel. Acel diff arată
-exact ce s-a schimbat → patch in-tree precis. Fără el, orice patch driver e ghicit.
-
-**Workaround imediat**: boot 7.0.9 din GRUB → Advanced options (audio OK, 0 UBSAN).
-
-**Testare kerneluri noi (răspuns la întrebarea: merită 7.0.11 / experimental?)**:
-- Multi-kernel în paralel e SIGUR — Debian păstrează mai multe `linux-image-*`, GRUB le listează pe toate. Zero risc să ai 7.0.9 + 7.0.10 + 7.0.11 simultan.
-- DAR: fix-ul e **driver-side**. Un kernel mai nou repară audio DOAR dacă întâmplător crește
-  AUTO_CFG_MAX_INS sau relaxează bounds — nu garantat. 7.0.11 cu același AUTO_CFG_MAX_INS=18 +
-  UBSAN va rupe audio la fel. Merită testat, dar nu te baza pe el ca soluție.
-- Sursă kernel mai nou: Debian `experimental`/`unstable`, sau build din kernel.org.
-
-**Pentru issue upstream** — include: kernel 7.0.10 cu UBSAN bounds, driver commit cb27cc4,
-hardware MacBookPro14,1, stack trace de mai sus, și citatul din cirrus_apple.h:1860 (hack-ul
-AUTO_CFG_MAX_INS). Întrebare cheie pt mainaineri: cum să gestioneze >18 ADC pins fără overflow
-acum că UBSAN prinde accesul.
-
-**De urmărit**:
-- [x] Issue gata: `ISSUE_audio_kernel_7.0.10.md` (de postat pe davidjo/snd_hda_macbookpro + Debian)
-- [x] Kernel 7.0.11 changelog verificat (4 iun) — NU repară audio (3 commit-uri ASoC irelevante)
-- [x] Test 7.1-rc5 (4 iun) — neconcludent (build-script driver fail pe RC; vezi mai jos). 7.1
-      scos, sistem curățat. **DECIZIE: așteptăm 7.1 RELEASED stabil** ca să-l testăm corect.
-- [x] **7.0.12 (forky, 19 iun) REPARĂ audio** — nu a mai fost nevoie de 7.1. Verificat: 0 UBSAN, card OK.
-- [x] Decizie GRUB default — **N/A**: 7.0.12 e default-ul bun (audio merge); 7.0.9 rămâne ca rezervă în GRUB.
-
-**Cleanup experimental (rulat 4 iun)**: 7.1-rc5 scos, meta-pachete readuse la forky 7.0.10.
-Repo experimental rămâne configurat (pinned prioritate 1 — nu trage nimic automat). Pentru a-l
-scoate complet: `sudo rm /etc/apt/sources.list.d/experimental.list /etc/apt/preferences.d/experimental`.
-
-**Comparație changelog kerneluri (pt audio HDA)**:
-- **7.0.11** (kernel.org, 1 iun): 3 commit-uri sunet, TOATE ASoC (`cs-amp-lib`, `cs35l56` —
-  drivere SoundWire amp, nu codec HDA CS8409). **Zero** fix în parser-ul HDA generic. NU repară.
-  În plus, **nu e în Debian** (forky=7.0.10, experimental=7.1-rc5). Inutil pt cazul nostru.
-- **7.1-rc5** (Debian experimental, `7.1~rc5-1~exp1`): TESTAT 4 iun — **neconcludent pentru audio**.
-  - facetimehd (camera) DKMS: ✅ build OK pe 7.1
-  - snd_hda_macbookpro (audio) DKMS: ❌ **eșec de BUILD-SCRIPT, nu de cod**:
-    `install.cirrus.driver.sh:167` caută `/usr/src/linux-source-7.1.tar.bz2` dar Debian livrează
-    `.tar.xz` → nu-l găsește → cade pe download kernel.org `linux-7.1.tar.xz` → **404** (7.1 e RC,
-    fără tarball stabil) → "kernel could not be downloaded...exiting" → make eșuează ("external
-    module directory does not exist"). Driverul NICI n-a atins cod HDA → testul regresiei e nul.
-  - Efect secundar: postinst eșuat → **7.1 fără initrd** (`/boot/initrd.img-7.1` lipsă) → NU
-    bootabil + 4 pachete dpkg half-configured (iF/iU). Necesită cleanup.
-  - **Concluzie**: nu putem testa dacă 7.1 repară HDA până când (a) 7.1 e RELEASED (tarball stabil
-    pe kernel.org), SAU (b) patch-uim build-script-ul driverului să accepte `.tar.xz` + sursa
-    locală. Bug-ul de build-script (`.bz2` hardcodat) e o problemă separată, raportabilă și ea.
-  - **De reținut**: driverul snd_hda_macbookpro nu suportă kerneluri RC (download-ul presupune
-    tarball stabil) și presupune sursă `.bz2` (Ubuntu-style), nu `.xz` (Debian).
+Istoricul detaliat al debugging-ului (testare 7.0.11 / 7.1-rc5, bug-ul de build-script al driverului →
+raportat upstream ca issue #187 + PR #189, prep issue audio) e în git history + fostul fișier
+`ISSUE_audio_kernel_7.0.10.md` (șters după rezolvare — nu mai avea rost).
 
 ---
 
@@ -275,28 +229,28 @@ Pe 7.0.9 (audio OK) settle revine instant — diferența confirmă cauza.
 **Fix în script (ETAPA 8b)**: `udevadm settle` → `udevadm settle --timeout=5`. Nu avem nevoie să
 golim toată coada (declanșăm un singur device + verificăm direct rezultatul); bound la 5s elimină
 hang-ul pe orice kernel cu coadă aglomerată. RAPL + fan floor se aplică oricum corect (verificat:
-22/30 + fan1_min=3500 active pe 7.0.10). Încă o dovadă (write page fault) adăugată în issue.
+22/30 + fan1_min=3500 active pe 7.0.10). Moot acum (7.0.10 dezinstalat) — fix-ul `--timeout=5`
+rămâne în script ca apărare generală, util pe orice kernel cu coadă udev aglomerată.
 
 ### 3c. Confirmare: strcmp GP-fault (4 iun) = bug-ul audio 7.0.10
 
 Poza 4 iun: `Oops: general protection fault ... non-canonical address 0x25002400000002 / RIP:
 strcmp+0x28 / modprobe exited with irqs disabled`. Pointer-ul garbage vine din citirea
 out-of-bounds `input_labels[223]` (generic.c:3305 `strcmp(input_labels[j], label)`). Deci
-regresia audio 7.0.10 nu doar warn-uiește UBSAN — poate **hard-crash kernelul** (GP fault în
-modprobe la load cs8409). De adăugat în ISSUE_audio_kernel_7.0.10.md ca dovadă de severitate.
+regresia audio 7.0.10 nu doar warn-uiește UBSAN — putea **hard-crash kernelul** (GP fault în
+modprobe la load cs8409). Istoric — rezolvat în 7.0.12 (vezi secțiunea audio de mai sus).
 
 ---
 
-## 🟢 Categoria A — Cosmetic / curățire log (risc zero, win mic)
+## 🟢 Categoria A — Cosmetic / curățire log — ✅ IMPLEMENTATĂ (ETAPA 9/9, 19 iun)
 
-Toate sunt gsettings sau parametri kernel. Zero risc, dar și impact mic. Bune de făcut împreună
-într-un commit dacă vrei jurnal curat.
+Toate 3 sunt acum în script (ETAPA 9/9) + aplicate live pe sistem. Zero risc, doar jurnal mai curat.
 
-| Item | Ce face | Fix |
+| Item | Ce face | Stare |
 |---|---|---|
-| **applespi fnmode** | F1-F12 ca media keys (curent) vs F-keys reale | `options applespi fnmode=2` în `/etc/modprobe.d/` + update-initramfs (MacBook 2017 = driver `applespi`, NU `hid_apple`) |
-| **GNOME hibernate keybinding** | scoate eroarea `gsd-media-keys: Failed to grab ... hibernate` din log | `gsettings set org.gnome.settings-daemon.plugins.media-keys hibernate "[]"` |
-| **GNOME usb-protection** | scoate eroarea `gsd-usb-protection: Failed to fetch USBGuard` | `gsettings set org.gnome.desktop.privacy usb-protection false` |
+| **GNOME hibernate/playback-repeat** | scoate erorile `gsd-media-keys: Failed to grab accelerator ...` (keybinding-urile veneau `['']` invalid) | ✅ `gsettings ...media-keys hibernate/playback-repeat "[]"` |
+| **GNOME usb-protection** | scoate eroarea `gsd-usb-protection: Failed to fetch USBGuard` (USBGuard neinstalat) | ✅ `gsettings ...desktop.privacy usb-protection false` |
+| **applespi fnmode=1** | fixează explicit default-ul (media keys primare; Fn pentru F1-F12) | ✅ `options applespi fnmode=1` în `/etc/modprobe.d/applespi.conf` + update-initramfs (MacBook 2017 = `applespi`, NU `hid_apple`; `fnmode=2` = invers) |
 
 ## 🟡 Categoria B — Posibil util, dar complex sau cu trade-off (de evaluat caz cu caz)
 

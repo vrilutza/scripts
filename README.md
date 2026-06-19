@@ -58,11 +58,11 @@ aplay -l                                 # Playback devices visible to ALSA?
 
 Quick live test: from GNOME Settings → Sound, toggle output between Speakers and Headphones; both should respond. If audio dies after a kernel upgrade, run `sudo dkms status` first — DKMS rebuilds the module automatically against the new headers and a missing rebuild is the usual culprit.
 
-> ⚠️ **Known regression on kernel 7.0.10**: the CS8409 codec fails to register a sound card
-> (`/proc/asound/cards` → "no soundcards"). This is an in-tree HDA generic-parser change in
-> 7.0.10, not a DKMS rebuild failure — `dkms status` shows the module built fine. **Workaround:
-> boot 7.0.9** (GRUB → Advanced options). Full analysis in [TODO.md](TODO.md) and
-> [ISSUE_audio_kernel_7.0.10.md](ISSUE_audio_kernel_7.0.10.md).
+> ✅ **Audio regression on kernel 7.0.10 — RESOLVED in 7.0.12.** Kernel `7.0.10` briefly broke the
+> CS8409 codec (no sound card; an in-tree HDA generic-parser change, **not** a DKMS rebuild failure).
+> It was **fixed upstream in `7.0.12`** — audio registers normally again (verified: 0 UBSAN, card OK).
+> 7.0.10 is no longer shipped. If you're still on it for any reason, `sudo apt full-upgrade` (or boot
+> 7.0.9). Background in [TODO.md](TODO.md).
 
 ### Camera (FaceTime HD)
 
@@ -371,9 +371,10 @@ means the chip is fully unresponsive and needs the power cycle.)
 
 ## Tested on
 
-Debian Testing — kernel `7.0.9+deb14-amd64` — June 2026 (full hardware stack working).
+Debian Testing/forky — kernel `7.0.12+deb14.1-amd64` — June 2026 (full hardware stack working,
+audio included).
 
-> **Kernel note:** `7.0.10+deb14-amd64` has a **known audio regression** — the CS8409 codec
-> fails to register a sound card (in-tree HDA generic-parser change; see TODO.md and
-> `ISSUE_audio_kernel_7.0.10.md`). **Boot 7.0.9 for working audio** (GRUB → Advanced options).
-> Everything else (camera, WiFi, VA-API, RAPL/thermal, touchpad) works on both.
+> **Kernel note:** the audio regression on `7.0.10+deb14-amd64` (CS8409 codec failed to register a
+> sound card — in-tree HDA generic-parser change) was **fixed upstream in `7.0.12`**; audio works
+> again. 7.0.9 is kept as a fallback GRUB entry. Everything else (camera, WiFi, VA-API,
+> RAPL/thermal, touchpad) works across all three.
