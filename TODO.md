@@ -7,13 +7,17 @@ Hardware-ul de bază e **complet funcțional și stabil** pe Debian Testing/fork
 
 ---
 
-## 🧪 În testare — Kernel 7.1.1 (experimental) — instalat 22 iun 2026
+## 🧪 În testare — Kernel 7.1.2 (experimental) — instalat 29 iun 2026
 
-Instalat `linux-image-7.1-amd64 = 7.1.1-1~exp1` din **experimental**, **lângă** 7.0.12 (care rămâne
-default de fallback în GRUB). E primul 7.1 **final** (nu RC). Îl țin **în teste cel puțin 1 săptămână**
-de uz real înainte să decid dacă devine standard — fiind din experimental, nu-l bag încă în script.
+Instalat `linux-image-7.1-amd64 = 7.1.2-1~exp1` din **experimental**, **lângă** 7.0.12 (care rămâne
+default de fallback în GRUB). 7.1.1 a mers fără probleme ~1 săptămână (22→29 iun); 7.1.2 e point release
+de bugfix peste el — același slot ABI `7.1-amd64`, deci **a suprascris 7.1.1, fără intrare GRUB nouă**.
+Îl țin în continuare **în teste cel puțin 1 săptămână** de uz real — fiind din experimental, nu-l bag în script.
 
-**Audit live pe `7.1-amd64` (22 iun, boot 20:10) — TOT verde:**
+> Context: seria 7.0 e EOL upstream; forky (testing) a urcat la `7.0.13`, dar 7.1 e încă doar în
+> experimental. Când 7.1.x ajunge în forky, `~exp1` se reconciliază curat (`7.1.x-1` > `7.1.x-1~exp1`).
+
+**Audit live pe `7.1.2` / `7.1-amd64` (29 iun) — TOT verde:**
 
 | Verificare | Rezultat |
 |---|---|
@@ -32,13 +36,14 @@ de uz real înainte să decid dacă devine standard — fiind din experimental, 
 **De făcut / de decis după ~1 săptămână de teste:**
 
 - [ ] Uz real: sunet (căști + boxe + mic), cameră, termic sub load, **baterie/idle**, câteva reboot-uri.
-- [ ] **NU rula `apt autoremove`** cât testezi — meta `linux-image-amd64` a urcat la `7.1.1-1~exp1`,
+- [ ] **NU rula `apt autoremove`** cât testezi — meta `linux-image-amd64` a urcat la `7.1.2-1~exp1`,
       deci 7.0.12 ar putea deveni eligibil de ștergere. Păstrează-l ca fallback până ești convins.
+      (Recomandat: `apt-mark manual linux-image-7.0.12+deb14.1-amd64 linux-headers-7.0.12+deb14.1-amd64`.)
 - [ ] Dacă stabil → decide dacă 7.1 rămâne standard. Când `7.1.x` ajunge în **forky** (testing), meta
-      se reconciliază curat (`7.1.1-1` > `7.1.1-1~exp1`, upgrade normal) și se aliniază cu scriptul.
+      se reconciliază curat (`7.1.x-1` > `7.1.x-1~exp1`, upgrade normal) și se aliniază cu scriptul.
 - [ ] Dacă apare ceva → reboot, alegi `7.0.12` din GRUB (Advanced options); nimic de dezinstalat.
 
-**Scriptul rămâne țintit pe 7.0.12 (forky)** până 7.1 migrează în forky.
+**Scriptul rămâne țintit pe kernelul din forky (acum `7.0.13`)** până 7.1 migrează în forky.
 
 ---
 
@@ -49,8 +54,31 @@ Lucruri care s-ar *putea* face, dar nu se justifică acum. Aici stă „viitorul
 | Item | Ce ar rezolva | De ce nu (încă) |
 |---|---|---|
 | **DMAR I2C messages** | `DMAR: Failed to find handle ... I2C0/I2C2/UA00` (3×/boot) | fix = `intel_iommu=off`, dar dezactivează IOMMU (trade-off de securitate) — nu merită doar pt log |
-| **BCM4350 BT baudrate** | `failed to write update baudrate (-16)` la boot | workaround custom complex; BT funcționează oricum la 115200 |
+| **BCM4350 BT baudrate + `.hcd`** | `failed to write update baudrate (-16)` + `BCM.hcd` lipsă la boot | cauza = ACPI Apple incomplet + firmware Apple ne-redistribuibil; BT merge oricum (vezi detaliu jos) |
 | **Apple WiFi/BT firmware** | mesajele `brcmfmac: failed to load ...MacBookPro14,1.bin/.txt/.clm_blob` | nvram/CLM trebuie extras din macOS → risc legal de redistribuire; firmware generic merge OK |
+
+**Detaliu — Bluetooth BCM4350 (cele 2 mesaje err de la fiecare boot, ambele benigne):**
+
+Cip combo WiFi+BT Broadcom **BCM4350C0**; partea BT e atașată pe **UART** (serial, nu USB), driver
+`hci_uart` + `btbcm`. Live: controllerul e `Powered: yes`, stack-ul BNEP/MGMT/RFCOMM urcă normal.
+
+- `BCM: failed to write update baudrate (-16)` → `Failed to set baudrate`. La init, `btbcm` încearcă să
+  urce viteza UART de la default (115200) la una mai mare, printr-o comandă HCI vendor Broadcom, apoi
+  reconfigurează UART-ul gazdă să se potrivească. Pe Apple, ACPI nu descrie complet device-ul
+  (`hci_uart_bcm: Unexpected ACPI gpio_int_idx: -1` / `No reset resource, using default baud rate`),
+  deci reconfigurarea nu se poate aplica → `-16` = **`-EBUSY`** → **rămâne pe 115200**. BT funcționează;
+  115200 e destul pt mouse/tastatură/căști (A2DP ok). Doar throughput-ul maxim teoretic ar fi limitat —
+  imperceptibil în uz.
+- `firmware: failed to load brcm/BCM.hcd (-2)` → `Patch file not found`. Broadcom poate încărca un patch
+  firmware **opțional** (`.hcd`, „patch RAM") care aplică fix-uri peste ROM-ul controllerului. Debian
+  (`firmware-brcm80211`) **nu** livrează `.hcd`-ul Apple (blob distribuit de Apple, extractibil din macOS,
+  **ne-redistribuibil legal** — exact ca nvram/clm_blob de pe partea WiFi). `-2` = `-ENOENT` (fișier lipsă);
+  fără el, `btbcm` **continuă pe ROM-ul built-in**, complet funcțional.
+
+Ambele au aceeași rădăcină ca `brcmfmac: failed to load ...MacBookPro14,1.*` de pe WiFi: Apple ține
+firmware/calibrare custom în macOS, Linux cade pe generic/ROM și merge. Fix-ul „curat" ar cere extras
+blob-urile din macOS (risc legal) pt 2 linii de log — nejustificat. **Altă** poveste (nu asta) e BT mut
+după *warm reboot* — cipul nu e power-cycle-at → vezi secțiunea won't-fix.
 
 ---
 
