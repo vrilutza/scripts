@@ -206,9 +206,11 @@ nmcli device wifi               # Visible networks + current connection
 nmcli device status             # All network interfaces state
 systemctl status bluetooth      # Bluetooth daemon running?
 bluetoothctl show               # Adapter info; expect "Powered: yes"
+rfkill list bluetooth           # Blocked? expect "Soft blocked: no" (Stage 5f keeps it unblocked)
+systemctl status bluetooth-rfkill-unblock.service   # Boot unblock ran? expect status=0/SUCCESS
 ```
 
-Live BT debug: `journalctl -u bluetooth -f`, then try to pair from GNOME Settings — watch for `BCM: Reset failed` (means you need the SMC Reset described in [Bluetooth section below](#bluetooth)).
+Live BT debug: `journalctl -u bluetooth -f`, then try to pair from GNOME Settings — watch for `BCM: Reset failed` (means you need the SMC Reset described in [Bluetooth section below](#bluetooth)). If `bluetoothctl show` reports `Powered: no` and `rfkill` shows it soft-blocked, that's the rfkill soft-block trap — see [Bluetooth](#bluetooth).
 
 ### General health — anything failing this boot?
 
@@ -225,18 +227,19 @@ If `systemctl --failed` lists anything, drill in with `systemctl status <unit>` 
 
 ### `macbook-debian-setup.sh`
 
-Full setup for MacBook Pro 13" 2017 on a fresh Debian Testing install. Runs in 8 stages, each with auto-verification before proceeding.
+Full setup for MacBook Pro 13" 2017 on a fresh Debian Testing install. Runs in 9 stages, each with auto-verification before proceeding.
 
 | Stage | What it does |
 |---|---|
-| 1 — Dependencies | `build-essential`, `linux-headers-amd64`, `linux-source`, `dkms`, `git`, `patch`, `wget`, `curl`, `cpio`, `xz-utils`, `libssl-dev` |
+| 1 — Dependencies | `build-essential`, `linux-headers-amd64`, `linux-source`, `dkms`, `git`, `patch`, `wget`, `curl`, `cpio`, `xz-utils`, `libssl-dev`, `rfkill` |
 | 2 — Audio driver | [davidjo/snd_hda_macbookpro](https://github.com/davidjo/snd_hda_macbookpro) — Cirrus CS8409 patched driver via DKMS |
 | 3 — Camera firmware | [patjak/facetimehd-firmware](https://github.com/patjak/facetimehd-firmware) — extracted from Apple OS X driver |
 | 4 — Camera driver | [patjak/facetimehd](https://github.com/patjak/facetimehd) — kernel module via DKMS |
-| 5 — System fixes | Backlight (`acpi_backlight=native`) + `reboot=pci` + sleep targets masked (suspend/hibernate blocked — see below) |
+| 5 — System fixes | Backlight (`acpi_backlight=native`) + `reboot=pci` + sleep targets masked (suspend/hibernate blocked — see below) + Bluetooth rfkill unblock at boot + `AutoEnable` ([see below](#bluetooth)) |
 | 6 — VA-API | `intel-media-va-driver` + `i965-va-driver` — hardware video acceleration for Intel Iris Plus 640 |
 | 7 — Touchpad UX | `tap-to-click` + `natural-scroll` + `disable-while-typing` via gsettings — macOS-like out of the box |
 | 8 — Thermal management | `thermald` + `lm-sensors` + RAPL PL1=22W / PL2=30W (Apple-like) via udev rule + thermald reinit + fan floor (`fan1_min=3500` RPM) |
+| 9 — Cosmetic / journal | GNOME media-keys (`hibernate`/`playback-repeat`) + `usb-protection` off + `applespi fnmode=1` — silences benign per-boot log errors |
 
 The two DKMS modules (audio, camera) auto-rebuild on kernel updates. The script is idempotent — safe
 to re-run, skips already completed stages.
@@ -343,6 +346,47 @@ Bluetooth: hci0: BCM: Reset failed (-110)
 
 The SMC Reset power-cycles the chip back to 115200 baud. After that Linux initializes it correctly
 and resets it to 115200 on every shutdown — so subsequent boots work without SMC Reset.
+
+### "Bluetooth won't turn on at all" — rfkill soft-block persisted across boots (fixed by Stage 5f)
+
+The most common everyday failure here isn't hardware — it's a stuck rfkill soft-block. If you ever
+disable Bluetooth from GNOME (a natural reaction when a device won't pair), `systemd-rfkill` saves
+that "blocked" state to `/var/lib/systemd/rfkill/` and **restores it on every boot**. Result:
+`bluetoothctl show` reports `Powered: no`, GNOME shows Bluetooth off, and it stays dead across
+reboots.
+
+`AutoEnable=true` in `/etc/bluetooth/main.conf` does **not** fix this on its own — verified with a
+controlled A/B test on this hardware. `systemd-rfkill` restores the block *before* `bluetoothd`
+starts, and a soft-blocked adapter cannot be powered on:
+
+```
+systemd-rfkill.service   → restores soft=1 (from the saved "blocked" state)
+bluetooth.service        → bluetoothd starts; AutoEnable can't power a blocked adapter → Powered: no
+```
+
+**Fix (Stage 5f, automatic):** a oneshot unit `bluetooth-rfkill-unblock.service` runs
+`rfkill unblock bluetooth`, ordered `After=systemd-rfkill.service` and `Before=bluetooth.service`,
+so it clears the block in the window between the restore and `bluetoothd`. Together with
+`AutoEnable=true`, Bluetooth comes up `Powered: yes` every boot regardless of any saved block.
+
+Manual commands, if you ever need them:
+
+```bash
+rfkill list bluetooth                                # "Soft blocked: yes" = the trap
+sudo rfkill unblock bluetooth                        # clear it now
+bluetoothctl power on                                # power the adapter on
+systemctl status bluetooth-rfkill-unblock.service    # did the boot unblock run? (status=0/SUCCESS)
+cat /var/lib/systemd/rfkill/*bluetooth               # persisted state: 0 = unblocked, 1 = blocked
+```
+
+**Trade-off:** Bluetooth now always comes up available at boot — a deliberate *persistent* disable
+won't survive a reboot (disabling it within a session still works). On this hardware there's no
+working suspend and the laptop runs on AC, so this costs nothing. To opt out:
+`sudo systemctl disable bluetooth-rfkill-unblock.service`.
+
+> Note: this rfkill soft-block is a **software** state and is distinct from the two hardware issues
+> above (UART baudrate / SMC reset, and the warm-reboot `Reset failed (-110)`). Soft-block =
+> `Powered: no` with a clean adapter; hardware = `hci0` timing out or `DOWN`.
 
 ### Warm reboot can leave WiFi/Bluetooth unresponsive
 
