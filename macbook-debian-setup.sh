@@ -84,7 +84,7 @@ info "Log salvat in: $LOGFILE"
 CURRENT_STEP="ETAPA 1/9 — Dependente"
 step "$CURRENT_STEP"
 
-PKGS=(build-essential linux-headers-amd64 linux-source dkms git patch wget curl cpio xz-utils libssl-dev)
+PKGS=(build-essential linux-headers-amd64 linux-source dkms git patch wget curl cpio xz-utils libssl-dev rfkill)
 
 info "Actualizare lista de pachete..."
 sudo apt-get update -qq || fail "apt-get update a esuat."
@@ -257,9 +257,9 @@ fi
 
 
 # =============================================================================
-# ETAPA 5/9 — Fix sistem: luminozitate ecran + suspend stabil + WiFi dupa sleep
+# ETAPA 5/9 — Fix sistem: luminozitate ecran + suspend stabil + WiFi dupa sleep + Bluetooth
 # =============================================================================
-CURRENT_STEP="ETAPA 5/9 — Fix luminozitate + auto-suspend dezactivat (S3 unreliable)"
+CURRENT_STEP="ETAPA 5/9 — Fix luminozitate + auto-suspend dezactivat (S3 unreliable) + Bluetooth"
 step "$CURRENT_STEP"
 
 # --- 5a: GRUB — luminozitate + suspend stabil pe Apple hardware ---
@@ -457,6 +457,64 @@ if [ "$MASKED_OK" = true ]; then
     ok "Sleep targets masked: niciun suspend/hibernate posibil (S3 hang prevenit)."
 else
     warn "Unele sleep targets nu sunt masked. Verifica: systemctl is-enabled sleep.target"
+fi
+
+# --- 5f: Bluetooth — deblocare rfkill la boot + AutoEnable ---
+# Acelasi cip BCM4350 (WiFi+BT). Cand userul dezactiveaza BT din GUI (reactie naturala cand un
+# device nu se asociaza), systemd-rfkill SALVEAZA starea "blocat" in /var/lib/systemd/rfkill/ si o
+# RESTAUREAZA la fiecare boot → BT ramane soft-blocked, Powered: no, "nu merge deloc".
+# Testat empiric pe acest hardware (A/B pe aceeasi trapa): AutoEnable=true SINGUR nu invinge block-ul
+# — systemd-rfkill restaureaza soft=1 INAINTE ca bluetoothd sa faca power-on, iar un adapter
+# rfkill-blocked nu poate fi pornit. Fix dovedit: un oneshot `rfkill unblock`, ORDONAT dupa
+# systemd-rfkill.service si INAINTE de bluetooth.service, + AutoEnable pentru power-on.
+# Trade-off acceptat: BT porneste mereu disponibil la boot (un disable persistent nu supravietuieste
+# reboot-ului; oprirea in sesiune merge). Pe acest hardware nu exista suspend si laptopul e mereu pe
+# AC, deci irelevant.
+info "Bluetooth: deblocare rfkill la boot + AutoEnable (BCM4350)..."
+
+BT_UNBLOCK_SVC="/etc/systemd/system/bluetooth-rfkill-unblock.service"
+BT_MAIN_CONF="/etc/bluetooth/main.conf"
+
+sudo tee "$BT_UNBLOCK_SVC" > /dev/null << 'BTSVCEOF'
+[Unit]
+Description=Unblock Bluetooth rfkill before bluetoothd (MacBook BCM4350)
+Documentation=https://github.com/vrilutza/scripts
+After=systemd-rfkill.service
+Before=bluetooth.service
+Wants=systemd-rfkill.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/rfkill unblock bluetooth
+RemainAfterExit=yes
+
+[Install]
+WantedBy=bluetooth.service
+BTSVCEOF
+
+# AutoEnable=true sub [Policy] in main.conf (bluetoothd porneste adapterul dupa deblocare) — idempotent
+if [ ! -f "$BT_MAIN_CONF" ]; then
+    sudo mkdir -p "$(dirname "$BT_MAIN_CONF")"
+    printf '[Policy]\nAutoEnable=true\n' | sudo tee "$BT_MAIN_CONF" > /dev/null
+elif grep -qE '^[[:space:]]*#*[[:space:]]*AutoEnable[[:space:]]*=' "$BT_MAIN_CONF"; then
+    sudo sed -i 's/^[[:space:]]*#*[[:space:]]*AutoEnable[[:space:]]*=.*/AutoEnable=true/' "$BT_MAIN_CONF"
+elif grep -qE '^[[:space:]]*\[Policy\]' "$BT_MAIN_CONF"; then
+    sudo sed -i '/^[[:space:]]*\[Policy\]/a AutoEnable=true' "$BT_MAIN_CONF"
+else
+    printf '\n[Policy]\nAutoEnable=true\n' | sudo tee -a "$BT_MAIN_CONF" > /dev/null
+fi
+
+info "Reload systemd + enable/start serviciu unblock..."
+sudo systemctl daemon-reload || warn "daemon-reload a returnat eroare."
+sudo systemctl enable bluetooth-rfkill-unblock.service > /dev/null 2>&1 \
+    || warn "enable bluetooth-rfkill-unblock.service a returnat eroare."
+sudo systemctl start bluetooth-rfkill-unblock.service \
+    || warn "start bluetooth-rfkill-unblock.service a returnat eroare."
+
+if [ -f "$BT_UNBLOCK_SVC" ] && grep -qE '^AutoEnable=true' "$BT_MAIN_CONF"; then
+    ok "Bluetooth: serviciu unblock + AutoEnable=true (BT disponibil la fiecare boot)."
+else
+    warn "Bluetooth: verificare partiala. Verifica $BT_UNBLOCK_SVC si $BT_MAIN_CONF."
 fi
 
 
@@ -844,6 +902,7 @@ echo -e "  ${GREEN}✓${NC}  Accelerare video VA-API — intel-media-va-driver +
 echo -e "  ${GREEN}✓${NC}  thermald (Intel thermal daemon) + lm-sensors"
 echo -e "  ${GREEN}✓${NC}  RAPL: PL1=22W / PL2=30W (Apple-like) prin regula udev + thermald reinit"
 echo -e "  ${GREEN}✓${NC}  Fan floor: fan1_min=3500 RPM (rece la idle, SMC ramp auto deasupra)"
+echo -e "  ${GREEN}✓${NC}  Bluetooth: unblock rfkill la boot + AutoEnable (BCM4350, mereu disponibil)"
 echo -e "  ${GREEN}✓${NC}  Cosmetic: GNOME media-keys/usb-protection silentiate + applespi fnmode=1"
 echo ""
 echo -e "  ${YELLOW}⚠${NC}  Necesar: ${BOLD}sudo reboot${NC} pentru a activa toate modificarile."

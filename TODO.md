@@ -98,7 +98,7 @@ după *warm reboot* — cipul nu e power-cycle-at → vezi secțiunea won't-fix.
 
 | # | Ce | Detaliu |
 |---|---|---|
-| 1-6 | Hardware base | deps, audio CS8409, cameră FaceTime HD, GRUB/suspend fixes, VA-API |
+| 1-6 | Hardware base | deps (+rfkill), audio CS8409, cameră FaceTime HD, GRUB/suspend fixes, **Bluetooth unblock+AutoEnable (5f)**, VA-API |
 | 7 | Touchpad UX | tap-to-click + natural scroll + disable-while-typing |
 | 8 | Thermal | thermald + lm-sensors + RAPL PL1=22W/PL2=30W + fan floor 3500 RPM (oneshot service, race-safe) |
 | 9 | Cosmetic / jurnal | GNOME media-keys (hibernate/playback-repeat) + usb-protection off + applespi fnmode=1 |
@@ -120,6 +120,10 @@ Probleme deja închise, păstrate doar ca rezumat (nu mai sunt de făcut):
 - **Suspend hang S3** — toate sleep targets `masked` (ETAPA 5e), 4/4 confirmat.
 - **`udevadm settle` hang pe 7.0.10** — bound `--timeout=5` (ETAPA 8b); era efect al bug-ului audio.
 - **BT „down" după upgrade 7.0.10** — era stare Broadcom după warm-reboot, **nu** kernel (vezi won't-fix).
+- **BT „nu merge deloc" (soft-block persistat)** — `systemd-rfkill` restaura la fiecare boot un rfkill
+  soft-block salvat (de la un disable/enable din GUI). Dovedit **A/B** că `AutoEnable=true` singur NU-l
+  învinge (restaurarea vine înaintea power-on-ului). Fix: oneshot `bluetooth-rfkill-unblock.service`
+  (unblock ordonat între `systemd-rfkill` și `bluetooth`) + `AutoEnable=true`. **ETAPA 5f** + `rfkill` în deps.
 
 ---
 
