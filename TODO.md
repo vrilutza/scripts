@@ -82,12 +82,20 @@ NVRAM/CLM Apple, se desincronizează **cronic** de driver: `Invalid packet id` d
 **De făcut:**
 
 - [ ] Monitorizare: frecvența `journalctl -g 'Invalid packet id'` ar trebui să scadă cu power-save off.
-- [ ] **Fix definitiv = firmware Apple BCM4350 („faza 2")**: nvram `.txt` + `.clm_blob` + `.txcap_blob`
-      pentru MacBookPro14,1. Până acum era „nice to have" (5 GHz / canale); panica îi dă **prioritate
-      reală** (stabilitate). Debian-only, fără macOS instalat → surse de investigat: linux-firmware
-      upstream, repo-uri comunitare (t2linux/mbp), extragere din imagini de instalare/recovery macOS
-      (descărcabile de la Apple, pentru hardware-ul propriu). Rezultat **nesigur** — dacă nu iese,
-      fallback pragmatic: adaptor USB WiFi (~15€) care ocolește complet chipul Broadcom.
+- [x] ~~Fix definitiv = firmware Apple BCM4350 („faza 2")~~ — **investigat 8 iul 2026, verdict: fișierele
+      NU există nicăieri** (nici în macOS). Dovezi:
+      1. linux-firmware upstream + Debian: doar `.bin` generic pt 4350/4350c2, zero variante Apple;
+      2. comunitate: zero fișiere 4350c2 publice (arhiva aunali1 moartă; t2linux acoperă doar cipurile
+         T2: 4355/4364/4377); 3. reverse-engineering pe kext-ul macOS `AirPortBrcmNIC` (v1242.32.1a1,
+         extras de pe GitHub): pe Mac-urile **non-T2** Apple nu folosește fișiere separate — calibrarea
+         stă în **OTP-ul chipului** (pe care brcmfmac îl citește deja), iar datele regulatorii sunt
+         înglobate în firmware-ul lor „bmac" (arhitectură split-MAC, **incompatibil** cu brcmfmac).
+      **Impact real: aproape zero.** Test empiric pe hardware: `iw list` arată **toate canalele 5 GHz
+      active** (36–165 @ 20 dBm) și scanarea vede rețele 5 GHz ale vecinilor. Mesajul „limited channels"
+      e practic cosmetic. **Limitarea la 2,4 GHz vine de la router** (SSID-ul „vik" emite doar pe
+      canalul 1 / 2,4 GHz) → fix: activează banda 5 GHz în router (BCM4350 = 802.11ac 2x2, până la
+      867 Mbps PHY pe VHT80). Stabilitatea (desincronizarea cronică) rămâne acoperită de mitigările
+      de mai sus; dacă vreodată devine insuportabilă: adaptor USB WiFi (~15€).
 
 ---
 

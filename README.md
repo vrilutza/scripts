@@ -458,9 +458,14 @@ journalctl -g 'Invalid packet id' --no-pager     # desync frequency — should d
 sudo ls -la /var/lib/systemd/pstore/             # archived EFI crash dumps, if any new panic happened
 ```
 
-The definitive fix is the Apple BCM4350 firmware set (nvram `.txt` + `.clm_blob` + `.txcap_blob`
-for MacBookPro14,1) — tracked in `TODO.md` as "faza 2", promoted from nice-to-have (5 GHz) to real
-priority (stability) after this panic.
+**The Apple firmware files do not exist** — investigated Jul 2026 (see `TODO.md`): upstream
+linux-firmware and every community source only carry the generic `.bin`; on **non-T2** Macs, macOS
+itself has no separate nvram/CLM files either — calibration lives in the chip's OTP (which brcmfmac
+already reads) and regulatory data is embedded in Apple's own "bmac" firmware, which is
+architecturally incompatible with brcmfmac. The practical impact is near zero: despite the
+"limited channels" boot message, the full 5 GHz channel set (36–165) is enabled and 5 GHz networks
+are visible in scans — if you're stuck on 2.4 GHz, check the **router's** 5 GHz band, not this
+machine. The chronic desync remains a generic-firmware quirk, handled by the Stage 5g mitigations.
 
 ## Tested on
 
