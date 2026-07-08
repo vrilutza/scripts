@@ -84,7 +84,7 @@ info "Log salvat in: $LOGFILE"
 CURRENT_STEP="ETAPA 1/9 — Dependente"
 step "$CURRENT_STEP"
 
-PKGS=(build-essential linux-headers-amd64 linux-source dkms git patch wget curl cpio xz-utils libssl-dev rfkill)
+PKGS=(build-essential linux-headers-amd64 linux-source dkms git patch wget curl cpio xz-utils libssl-dev rfkill iw)
 
 info "Actualizare lista de pachete..."
 sudo apt-get update -qq || fail "apt-get update a esuat."
@@ -257,9 +257,9 @@ fi
 
 
 # =============================================================================
-# ETAPA 5/9 — Fix sistem: luminozitate ecran + suspend stabil + WiFi dupa sleep + Bluetooth
+# ETAPA 5/9 — Fix sistem: luminozitate ecran + suspend stabil + WiFi dupa sleep + Bluetooth + stabilitate WiFi
 # =============================================================================
-CURRENT_STEP="ETAPA 5/9 — Fix luminozitate + auto-suspend dezactivat (S3 unreliable) + Bluetooth"
+CURRENT_STEP="ETAPA 5/9 — Fix luminozitate + auto-suspend dezactivat (S3 unreliable) + Bluetooth + stabilitate WiFi"
 step "$CURRENT_STEP"
 
 # --- 5a: GRUB — luminozitate + suspend stabil pe Apple hardware ---
@@ -515,6 +515,62 @@ if [ -f "$BT_UNBLOCK_SVC" ] && grep -qE '^AutoEnable=true' "$BT_MAIN_CONF"; then
     ok "Bluetooth: serviciu unblock + AutoEnable=true (BT disponibil la fiecare boot)."
 else
     warn "Bluetooth: verificare partiala. Verifica $BT_UNBLOCK_SVC si $BT_MAIN_CONF."
+fi
+
+# --- 5g: WiFi BCM4350 — stabilitate: power-save off + panic auto-reboot ---
+# Firmware-ul generic Broadcom (2015, fara NVRAM/CLM Apple) se desincronizeaza cronic de driver:
+# DMAR fault (scriere DMA ilegala a chipului, blocata de IOMMU) + "brcmf_msgbuf_get_pktid:
+# Invalid packet id" — observat de 23 de ori in ~7 saptamani pe acest hardware. Pe 2026-07-07
+# desincronizarea a produs un skb corupt (125 fragmente, max 17) → GPF in memcpy in softirq →
+# kernel panic "Fatal exception in interrupt" (dovada completa in pstore EFI; vezi TODO.md).
+# Mitigare pana la firmware-ul Apple (fix definitiv, in TODO):
+#  1. WiFi power-save OFF — reduce tranzitiile de stare ale firmware-ului; laptop mereu pe AC.
+#  2. kernel.panic=10 — la panica, reboot automat dupa 10s in loc de freeze permanent (masina always-on).
+# NU dezactiva IOMMU (intel_iommu=off) ca sa "dispara" erorile DMAR: el blocheaza scrierile DMA
+# ilegale ale chipului; fara el aceleasi scrieri devin corupere silentioasa de memorie.
+info "WiFi BCM4350: power-save off (NetworkManager) + kernel.panic auto-reboot..."
+
+WIFI_PS_CONF="/etc/NetworkManager/conf.d/wifi-powersave-off.conf"
+PANIC_CONF="/etc/sysctl.d/99-panic-reboot.conf"
+
+if [ -f "$WIFI_PS_CONF" ] && grep -q 'wifi.powersave = 2' "$WIFI_PS_CONF"; then
+    warn "NetworkManager wifi.powersave=2 (off) deja configurat la $WIFI_PS_CONF."
+else
+    sudo mkdir -p "$(dirname "$WIFI_PS_CONF")" || fail "Nu am putut crea $(dirname "$WIFI_PS_CONF")."
+    sudo tee "$WIFI_PS_CONF" > /dev/null << 'WIFIPSEOF'
+# BCM4350: firmware-ul se desincronizeaza sub power-save (vezi TODO.md) — 2 = dezactivat
+[connection]
+wifi.powersave = 2
+WIFIPSEOF
+    sudo systemctl restart NetworkManager 2>/dev/null \
+        || warn "Restart NetworkManager a esuat — powersave off se aplica la urmatorul boot."
+fi
+
+# Aplica si pe interfata activa (efect imediat, fara sa astepte reconectarea NM)
+WIFI_IF=$(sudo iw dev 2>/dev/null | awk '$1=="Interface"{print $2; exit}')
+if [ -n "$WIFI_IF" ]; then
+    sudo iw dev "$WIFI_IF" set power_save off 2>/dev/null || true
+    PS_STATE=$(sudo iw dev "$WIFI_IF" get power_save 2>/dev/null)
+    if echo "$PS_STATE" | grep -q 'off'; then
+        ok "WiFi power-save: off pe $WIFI_IF (persistent via $WIFI_PS_CONF)."
+    else
+        warn "WiFi power-save: stare neconfirmata pe $WIFI_IF ($PS_STATE)."
+    fi
+else
+    warn "Nu am gasit interfata WiFi — powersave off se aplica la urmatorul boot via NetworkManager."
+fi
+
+if [ -f "$PANIC_CONF" ] && grep -q 'kernel.panic = 10' "$PANIC_CONF"; then
+    warn "kernel.panic=10 deja configurat la $PANIC_CONF."
+else
+    printf 'kernel.panic = 10\n' | sudo tee "$PANIC_CONF" > /dev/null
+    sudo sysctl -p "$PANIC_CONF" > /dev/null || warn "sysctl -p a returnat eroare."
+fi
+
+if [ "$(cat /proc/sys/kernel/panic 2>/dev/null)" = "10" ]; then
+    ok "kernel.panic=10 activ (reboot automat la 10s dupa panica)."
+else
+    warn "kernel.panic nu este 10 — verifica $PANIC_CONF."
 fi
 
 
@@ -903,6 +959,7 @@ echo -e "  ${GREEN}✓${NC}  thermald (Intel thermal daemon) + lm-sensors"
 echo -e "  ${GREEN}✓${NC}  RAPL: PL1=22W / PL2=30W (Apple-like) prin regula udev + thermald reinit"
 echo -e "  ${GREEN}✓${NC}  Fan floor: fan1_min=3500 RPM (rece la idle, SMC ramp auto deasupra)"
 echo -e "  ${GREEN}✓${NC}  Bluetooth: unblock rfkill la boot + AutoEnable (BCM4350, mereu disponibil)"
+echo -e "  ${GREEN}✓${NC}  WiFi stabilitate: power-save off + kernel.panic=10 (mitigare firmware BCM4350)"
 echo -e "  ${GREEN}✓${NC}  Cosmetic: GNOME media-keys/usb-protection silentiate + applespi fnmode=1"
 echo ""
 echo -e "  ${YELLOW}⚠${NC}  Necesar: ${BOLD}sudo reboot${NC} pentru a activa toate modificarile."

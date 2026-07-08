@@ -1,7 +1,7 @@
 # TODO — îmbunătățiri opționale & teste
 
-Hardware-ul de bază e **complet funcțional și stabil** pe Debian Testing/forky, kernel **7.0.12**
-(iunie 2026 — inclusiv audio). Acest fișier ține doar ce **urmează**: testul kernelului 7.1, opțiuni
+Hardware-ul de bază e **complet funcțional și stabil** pe Debian Testing/forky, kernel **7.0.13 + 7.1.2**
+(iulie 2026 — inclusiv audio). Acest fișier ține doar ce **urmează**: testul kernelului 7.1, opțiuni
 încă neimplementate (cu trade-off) și referință. Istoricul problemelor deja rezolvate e condensat jos
 + în git history / README.
 
@@ -16,6 +16,8 @@ de bugfix peste el — același slot ABI `7.1-amd64`, deci **a suprascris 7.1.1,
 
 > Context: seria 7.0 e EOL upstream; forky (testing) a urcat la `7.0.13`, dar 7.1 e încă doar în
 > experimental. Când 7.1.x ajunge în forky, `~exp1` se reconciliază curat (`7.1.x-1` > `7.1.x-1~exp1`).
+> Update 8 iul: `7.1.3-1` a intrat în **unstable** (changelog verificat: zero fix-uri brcmfmac);
+> migrarea spre forky e în curs — de acolo, upgrade normal via `apt dist-upgrade`.
 
 **Audit live pe `7.1.2` / `7.1-amd64` (29 iun) — TOT verde:**
 
@@ -47,6 +49,48 @@ de bugfix peste el — același slot ABI `7.1-amd64`, deci **a suprascris 7.1.1,
 
 ---
 
+## 🔧 În lucru — Stabilitate WiFi BCM4350 (kernel panic 7 iul 2026)
+
+**Incident:** 7 iul 2026, 06:08, pe 7.1.2 (dar **nu** e regresie 7.1.x — vezi frecvența mai jos):
+kernel panic `Fatal exception in interrupt`, capturat complet în **pstore EFI**
+(`/var/lib/systemd/pstore/`, dump Oops#1 + Panic#2). Lanțul, la milisecundă:
+
+1. `DMAR: [DMA Write] Request device [02:00.0] ... PTE Write access is not set` — chipul WiFi a
+   încercat o scriere DMA într-o zonă interzisă; IOMMU (VT-d) a blocat-o;
+2. `brcmf_msgbuf_get_pktid: Invalid packet id 48 (not in use)` — ring-ul firmware↔driver desincronizat;
+3. un skb corupt a scăpat în stiva de rețea: **125 fragmente într-un array de max 17**
+   (2× UBSAN `skbuff.h:2543`);
+4. GPF în `memcpy` (pointer non-canonic `0x473121e5...`) în **softirq** (`irq/65-brcmf_pc`) →
+   panic — irecuperabil în context de întrerupere. Colateral: applespi a murit imediat (-110).
+
+**Cauza-rădăcină:** firmware-ul generic Broadcom (nov 2015, `firmware-brcm80211`), rulat **fără**
+NVRAM/CLM Apple, se desincronizează **cronic** de driver: `Invalid packet id` de **23 de ori** între
+20 mai și 8 iul (~o dată la 1-3 zile, de obicei împreună cu un DMAR fault de la același device
+02:00.0), pe **toate** kernelele (7.0.x și 7.1.x). De obicei driverul recuperează silențios; pe
+7 iul corupția a ajuns în network stack. Deci: eveniment frecvent, consecință catastrofală rară.
+
+**Mitigare aplicată (8 iul, live pe sistem + ETAPA 5g în script):**
+
+- [x] WiFi **power-save off** — `iw set power_save off` + persistent `wifi.powersave = 2` în
+      `/etc/NetworkManager/conf.d/wifi-powersave-off.conf` (mai puține tranziții de stare în firmware;
+      laptopul e mereu pe AC, cost zero).
+- [x] **`kernel.panic = 10`** — `/etc/sysctl.d/99-panic-reboot.conf`: reboot automat la 10s după
+      panic în loc de freeze permanent (mașină always-on).
+- [x] IOMMU rămâne **pornit** — el a blocat scrierile DMA ilegale; `intel_iommu=off` le-ar
+      transforma în corupere silențioasă de memorie (vezi și rândul „DMAR I2C" din De evaluat).
+
+**De făcut:**
+
+- [ ] Monitorizare: frecvența `journalctl -g 'Invalid packet id'` ar trebui să scadă cu power-save off.
+- [ ] **Fix definitiv = firmware Apple BCM4350 („faza 2")**: nvram `.txt` + `.clm_blob` + `.txcap_blob`
+      pentru MacBookPro14,1. Până acum era „nice to have" (5 GHz / canale); panica îi dă **prioritate
+      reală** (stabilitate). Debian-only, fără macOS instalat → surse de investigat: linux-firmware
+      upstream, repo-uri comunitare (t2linux/mbp), extragere din imagini de instalare/recovery macOS
+      (descărcabile de la Apple, pentru hardware-ul propriu). Rezultat **nesigur** — dacă nu iese,
+      fallback pragmatic: adaptor USB WiFi (~15€) care ocolește complet chipul Broadcom.
+
+---
+
 ## 🟡 De evaluat — opțional, cu trade-off (neimplementate intenționat)
 
 Lucruri care s-ar *putea* face, dar nu se justifică acum. Aici stă „viitorul" real al proiectului.
@@ -55,7 +99,7 @@ Lucruri care s-ar *putea* face, dar nu se justifică acum. Aici stă „viitorul
 |---|---|---|
 | **DMAR I2C messages** | `DMAR: Failed to find handle ... I2C0/I2C2/UA00` (3×/boot) | fix = `intel_iommu=off`, dar dezactivează IOMMU (trade-off de securitate) — nu merită doar pt log |
 | **BCM4350 BT baudrate + `.hcd`** | `failed to write update baudrate (-16)` + `BCM.hcd` lipsă la boot | cauza = ACPI Apple incomplet + firmware Apple ne-redistribuibil; BT merge oricum (vezi detaliu jos) |
-| **Apple WiFi/BT firmware** | mesajele `brcmfmac: failed to load ...MacBookPro14,1.bin/.txt/.clm_blob` | nvram/CLM trebuie extras din macOS → risc legal de redistribuire; firmware generic merge OK |
+| **Apple WiFi/BT firmware** | mesajele `brcmfmac: failed to load ...MacBookPro14,1.bin/.txt/.clm_blob` | ~~firmware generic merge OK~~ **promovat la prioritate reală** după panica din 7 iul — firmware-ul generic s-a dovedit instabil sub load (vezi „În lucru" sus) |
 
 **Detaliu — Bluetooth BCM4350 (cele 2 mesaje err de la fiecare boot, ambele benigne):**
 
@@ -98,7 +142,7 @@ după *warm reboot* — cipul nu e power-cycle-at → vezi secțiunea won't-fix.
 
 | # | Ce | Detaliu |
 |---|---|---|
-| 1-6 | Hardware base | deps (+rfkill), audio CS8409, cameră FaceTime HD, GRUB/suspend fixes, **Bluetooth unblock+AutoEnable (5f)**, VA-API |
+| 1-6 | Hardware base | deps (+rfkill, iw), audio CS8409, cameră FaceTime HD, GRUB/suspend fixes, **Bluetooth unblock+AutoEnable (5f)**, **WiFi stabilitate: power-save off + kernel.panic=10 (5g)**, VA-API |
 | 7 | Touchpad UX | tap-to-click + natural scroll + disable-while-typing |
 | 8 | Thermal | thermald + lm-sensors + RAPL PL1=22W/PL2=30W + fan floor 3500 RPM (oneshot service, race-safe) |
 | 9 | Cosmetic / jurnal | GNOME media-keys (hibernate/playback-repeat) + usb-protection off + applespi fnmode=1 |
@@ -148,5 +192,6 @@ Pentru fiecare boot apar ~40 mesaje "error/warning", toate benigne și clasifica
 | A | `gsd-usb-protection: Failed to fetch USBGuard` | 2×/boot | rezolvat ETAPA 9 (usb-protection off) |
 | C | `x86/cpu: SGX disabled or unsupported by BIOS` | 1×/boot | Apple BIOS dezactivează SGX |
 
-**Concluzie**: zero crash/oops/UBSAN. Categoria A e deja curățată (ETAPA 9); restul sunt Apple
-ACPI/firmware quirks inevitabile (C) sau cu trade-off nejustificat (B).
+**Concluzie**: zero crash/oops/UBSAN la un boot normal. Categoria A e deja curățată (ETAPA 9); restul
+sunt Apple ACPI/firmware quirks inevitabile (C) sau cu trade-off nejustificat (B). Excepția rară (nu
+per-boot): desincronizarea brcmfmac `Invalid packet id` la ~1-3 zile → vezi secțiunea „În lucru" sus.

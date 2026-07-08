@@ -208,6 +208,9 @@ systemctl status bluetooth      # Bluetooth daemon running?
 bluetoothctl show               # Adapter info; expect "Powered: yes"
 rfkill list bluetooth           # Blocked? expect "Soft blocked: no" (Stage 5f keeps it unblocked)
 systemctl status bluetooth-rfkill-unblock.service   # Boot unblock ran? expect status=0/SUCCESS
+iw dev wlp2s0 get power_save    # expect "Power save: off" (Stage 5g — BCM4350 firmware stability)
+cat /proc/sys/kernel/panic      # expect 10 — auto-reboot 10s after a panic (Stage 5g)
+journalctl -g 'Invalid packet id' --no-pager   # brcmfmac firmware desync counter (see WiFi section)
 ```
 
 Live BT debug: `journalctl -u bluetooth -f`, then try to pair from GNOME Settings — watch for `BCM: Reset failed` (means you need the SMC Reset described in [Bluetooth section below](#bluetooth)). If `bluetoothctl show` reports `Powered: no` and `rfkill` shows it soft-blocked, that's the rfkill soft-block trap — see [Bluetooth](#bluetooth).
@@ -231,11 +234,11 @@ Full setup for MacBook Pro 13" 2017 on a fresh Debian Testing install. Runs in 9
 
 | Stage | What it does |
 |---|---|
-| 1 — Dependencies | `build-essential`, `linux-headers-amd64`, `linux-source`, `dkms`, `git`, `patch`, `wget`, `curl`, `cpio`, `xz-utils`, `libssl-dev`, `rfkill` |
+| 1 — Dependencies | `build-essential`, `linux-headers-amd64`, `linux-source`, `dkms`, `git`, `patch`, `wget`, `curl`, `cpio`, `xz-utils`, `libssl-dev`, `rfkill`, `iw` |
 | 2 — Audio driver | [davidjo/snd_hda_macbookpro](https://github.com/davidjo/snd_hda_macbookpro) — Cirrus CS8409 patched driver via DKMS |
 | 3 — Camera firmware | [patjak/facetimehd-firmware](https://github.com/patjak/facetimehd-firmware) — extracted from Apple OS X driver |
 | 4 — Camera driver | [patjak/facetimehd](https://github.com/patjak/facetimehd) — kernel module via DKMS |
-| 5 — System fixes | Backlight (`acpi_backlight=native`) + `reboot=pci` + sleep targets masked (suspend/hibernate blocked — see below) + Bluetooth rfkill unblock at boot + `AutoEnable` ([see below](#bluetooth)) |
+| 5 — System fixes | Backlight (`acpi_backlight=native`) + `reboot=pci` + sleep targets masked (suspend/hibernate blocked — see below) + Bluetooth rfkill unblock at boot + `AutoEnable` ([see below](#bluetooth)) + WiFi stability: power-save off + `kernel.panic=10` ([see below](#wifi-bcm4350--chronic-firmware-desync--the-july-2026-kernel-panic-mitigated-by-stage-5g)) |
 | 6 — VA-API | `intel-media-va-driver` + `i965-va-driver` — hardware video acceleration for Intel Iris Plus 640 |
 | 7 — Touchpad UX | `tap-to-click` + `natural-scroll` + `disable-while-typing` via gsettings — macOS-like out of the box |
 | 8 — Thermal management | `thermald` + `lm-sensors` + RAPL PL1=22W / PL2=30W (Apple-like) via udev rule + thermald reinit + fan floor (`fan1_min=3500` RPM) |
@@ -413,12 +416,58 @@ does **not** help — there is no software fix for an unresponsive chip. (Tip: t
 the log — error `-16` / EBUSY means the chip still answered and BT worked; error `-110` / timeout
 means the chip is fully unresponsive and needs the power cycle.)
 
+## WiFi (BCM4350) — chronic firmware desync & the July 2026 kernel panic (mitigated by Stage 5g)
+
+On 2026-07-07 this machine kernel-panicked (`Kernel panic - not syncing: Fatal exception in
+interrupt`) after ~63 minutes of uptime under normal WiFi load (streaming + Docker). The full chain
+was captured in the EFI pstore crash dump (archived to `/var/lib/systemd/pstore/`):
+
+1. `DMAR: [DMA Write] Request device [02:00.0] ... PTE Write access is not set` — the WiFi chip
+   attempted a DMA write to memory it doesn't own; the IOMMU (VT-d) blocked it.
+2. `brcmfmac: brcmf_msgbuf_get_pktid: Invalid packet id 48 (not in use)` — the firmware↔driver
+   message ring desynced.
+3. A corrupted skb escaped into the network stack claiming **125 fragments in a 17-slot array**
+   (two UBSAN out-of-bounds warnings in `skbuff.h`).
+4. `memcpy` dereferenced a garbage frag pointer → general protection fault in softirq context
+   (`irq/65-brcmf_pc`) — unrecoverable in interrupt context → panic.
+
+This is **not** a kernel regression: the precursor (`Invalid packet id`, usually paired with a DMAR
+fault from the same device `02:00.0`) fired **23 times between May 20 and Jul 8**, across both
+7.0.x and 7.1.x kernels. The driver normally recovers silently; on Jul 7 the corruption reached the
+network stack before recovery. Root cause: the generic Broadcom firmware (Nov 2015, from
+`firmware-brcm80211`) running without Apple's board-specific NVRAM/CLM data — the same gap behind
+the `failed to load ...MacBookPro14,1.txt/.clm_blob` boot messages and the 2.4 GHz channel limit.
+
+**Mitigations (Stage 5g, automatic):**
+
+- WiFi power management **off** — `wifi.powersave = 2` in
+  `/etc/NetworkManager/conf.d/wifi-powersave-off.conf` (fewer firmware state transitions; the
+  laptop always runs on AC, so this costs nothing).
+- `kernel.panic = 10` in `/etc/sysctl.d/99-panic-reboot.conf` — if it ever panics again, the
+  machine reboots itself after 10 s instead of freezing until someone holds the power button.
+- The IOMMU stays **on**. Do **not** use `intel_iommu=off` to silence the DMAR faults — the IOMMU
+  is exactly what blocks the chip's rogue DMA writes; without it they become silent memory
+  corruption.
+
+Manual checks:
+
+```bash
+iw dev wlp2s0 get power_save                     # expect "Power save: off"
+cat /proc/sys/kernel/panic                       # expect 10
+journalctl -g 'Invalid packet id' --no-pager     # desync frequency — should drop with power save off
+sudo ls -la /var/lib/systemd/pstore/             # archived EFI crash dumps, if any new panic happened
+```
+
+The definitive fix is the Apple BCM4350 firmware set (nvram `.txt` + `.clm_blob` + `.txcap_blob`
+for MacBookPro14,1) — tracked in `TODO.md` as "faza 2", promoted from nice-to-have (5 GHz) to real
+priority (stability) after this panic.
+
 ## Tested on
 
-Debian Testing/forky — kernel `7.0.12+deb14.1-amd64` — June 2026 (full hardware stack working,
-audio included).
+Debian Testing/forky — kernels `7.0.13+deb14-amd64` (forky) + `7.1.2-1~exp1` (experimental, GRUB
+default) — July 2026 (full hardware stack working, audio included).
 
 > **Kernel note:** the audio regression on `7.0.10+deb14-amd64` (CS8409 codec failed to register a
 > sound card — in-tree HDA generic-parser change) was **fixed upstream in `7.0.12`**; audio works
-> again. 7.0.9 is kept as a fallback GRUB entry. Everything else (camera, WiFi, VA-API,
-> RAPL/thermal, touchpad) works across all three.
+> again. Kernels currently installed: `7.0.13` (forky, fallback) + `7.1.2` (experimental, default).
+> Everything else (camera, WiFi, VA-API, RAPL/thermal, touchpad) works across both.
