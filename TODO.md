@@ -1,113 +1,99 @@
 # TODO — îmbunătățiri opționale & teste
 
-Hardware-ul de bază e **complet funcțional și stabil** pe Debian Testing/forky, kernel **7.0.13 + 7.1.2**
-(iulie 2026 — inclusiv audio). Acest fișier ține doar ce **urmează**: testul kernelului 7.1, opțiuni
-încă neimplementate (cu trade-off) și referință. Istoricul problemelor deja rezolvate e condensat jos
-+ în git history / README.
+Hardware-ul de bază e **complet funcțional și stabil** pe Debian Testing/forky, kernel **7.1.3**
+(single-kernel, din forky — verificat cap-coadă 11–12 iul 2026). Acest fișier ține doar ce **urmează**:
+bug-ul de cameră (de raportat upstream), monitorizarea WiFi, opțiuni neimplementate (cu trade-off)
+și referință. Istoricul problemelor deja rezolvate e condensat jos + în git history / README.
 
 ---
 
-## 🧪 În testare — Kernel 7.1.2 (experimental) — instalat 29 iun 2026
+## 🔧 În lucru — Camera: GNOME Snapshot îngheață la primul cadru (bug upstream PipeWire + Snapshot)
 
-Instalat `linux-image-7.1-amd64 = 7.1.2-1~exp1` din **experimental**, **lângă** 7.0.12 (care rămâne
-default de fallback în GRUB). 7.1.1 a mers fără probleme ~1 săptămână (22→29 iun); 7.1.2 e point release
-de bugfix peste el — același slot ABI `7.1-amd64`, deci **a suprascris 7.1.1, fără intrare GRUB nouă**.
-Îl țin în continuare **în teste cel puțin 1 săptămână** de uz real — fiind din experimental, nu-l bag în script.
+**Diagnosticat complet 11 iul 2026** (NU e kernel, NU e driver, NU e regresie pipewire 1.6.8 —
+diff-ul upstream 1.6.7→1.6.8 n-are schimbări de buffere): deadlock de buffer-starvation pe 3 straturi:
 
-> Context: seria 7.0 e EOL upstream; forky (testing) a urcat la `7.0.13`, dar 7.1 e încă doar în
-> experimental. Când 7.1.x ajunge în forky, `~exp1` se reconciliază curat (`7.1.x-1` > `7.1.x-1~exp1`).
-> Update 8 iul: `7.1.3-1` a intrat în **unstable** (changelog verificat: zero fix-uri brcmfmac);
-> migrarea spre forky e în curs — de acolo, upgrade normal via `apt dist-upgrade`.
+1. **facetimehd** limita V4L2 la 4 buffere (`FTHD_BUFFERS`) — **REPARAT local 11 iul**: patch 4→8 în
+   `/usr/src/facetimehd-0.7.0.1` (`fthd_drv.h` + `fthd_v4l2.c`), DKMS rebuilt; ISP streamează 8
+   buffere in-flight la 30.0 fps, 0 erori kernel. Driverul acordă acum 8 la cerere (re-verificat 12 iul).
+2. **PipeWire** (spa v4l2) negociază oricum default **4** buffere (hardcodat în `v4l2-source.c`,
+   indiferent cât suportă driverul), iar `pipewiresrc` aruncă **definitiv** frame-urile ne-reciclate
+   („buffer was not recycled", fără copy-fallback) — de-aia patch-ul de driver singur nu deblochează Snapshot.
+3. **Snapshot** ține ocupate simultan toate cele 4 buffere din pool (lanțul de afișare GL) →
+   viewfinder blocat permanent pe primul cadru, înregistrări goale.
 
-**Audit live pe `7.1.2` / `7.1-amd64` (29 iun) — TOT verde:**
+Empiric: client care ține 3 buffere = 30 fps la nesfârșit; ține 4 = fix 4 cadre apoi îngheț;
+`min-buffers=8` pe driverul patch-uit = merge chiar ținând 7 (146 cadre/6s).
+**Workaround până răspund upstream:** `guvcview` sau camera din Chrome (amândouă V4L2 direct, ocolesc PipeWire).
 
-| Verificare | Rezultat |
-|---|---|
-| DKMS | `facetimehd` + `snd_hda_macbookpro` recompilate **și semnate** pe 7.1 ("Autoinstall succeeded") |
-| Audio | card 0 `Cirrus Logic CS8409/CS42L83`, `pcm0c`+`pcm0p`, `cs8409` încărcat, **0 UBSAN** (pe 1224 linii log real) |
-| Cameră | `facetimehd` încărcat, `/dev/video0` prezent |
-| WiFi | `wlp2s0` **connected** (IP 192.168.1.2), firmware BCM4350 încărcat OK |
-| Drivere | toate cheie încărcate (i915, applespi, applesmc, intel_lpss, nvme, thunderbolt, btbcm…); **0** device PCI fără driver; **0** module eșuate |
-| Thermal | RAPL `22W/30W`, `thermald` active, `fan1_min=3500` (`macbook-fan-floor.service` active) |
-| Suspend | 4/4 target-uri `masked` |
-| Zgomot log | identic cu 7.0.12 (firmware-probe brcmfmac → cade pe generic, BT `BCM.hcd` lipsă, Apple ACPI/SGX/DMAR). **Nicio regresie nouă.** |
-
-> Taint `12352` = out-of-tree (module DKMS) + unsigned (cheia MOK ne-enrolled, Secure Boot off) +
-> user → **benign**, la fel ca pe orice kernel pe acest hardware.
-
-**De făcut / de decis după ~1 săptămână de teste:**
-
-- [ ] Uz real: sunet (căști + boxe + mic), cameră, termic sub load, **baterie/idle**, câteva reboot-uri.
-- [ ] **NU rula `apt autoremove`** cât testezi — meta `linux-image-amd64` a urcat la `7.1.2-1~exp1`,
-      deci 7.0.12 ar putea deveni eligibil de ștergere. Păstrează-l ca fallback până ești convins.
-      (Recomandat: `apt-mark manual linux-image-7.0.12+deb14.1-amd64 linux-headers-7.0.12+deb14.1-amd64`.)
-- [ ] Dacă stabil → decide dacă 7.1 rămâne standard. Când `7.1.x` ajunge în **forky** (testing), meta
-      se reconciliază curat (`7.1.x-1` > `7.1.x-1~exp1`, upgrade normal) și se aliniază cu scriptul.
-- [ ] Dacă apare ceva → reboot, alegi `7.0.12` din GRUB (Advanced options); nimic de dezinstalat.
-
-**Scriptul rămâne țintit pe kernelul din forky (acum `7.0.13`)** până 7.1 migrează în forky.
+- [ ] **Trimite bug-urile upstream** (manual, conturi deja logate; se leagă între ele — placeholder
+      `LINK-...` în fiecare): 1) PipeWire — text gata în [ISSUE_camera_pipewire.md](ISSUE_camera_pipewire.md)
+      → `gitlab.freedesktop.org/pipewire/pipewire`; 2) Snapshot — [ISSUE_camera_snapshot.md](ISSUE_camera_snapshot.md)
+      → `gitlab.gnome.org/GNOME/snapshot`. Reproducer-ul din issue-ul PipeWire e testat copy-paste (12 iul).
+- [ ] **Adaugă patch-ul `FTHD_BUFFERS` 4→8 în script (ETAPA 4)** — acum trăiește doar în `/usr/src`
+      și **se pierde la reinstalare** (scriptul re-clonează patjak/facetimehd). Două `sed`-uri + verificare.
+- [ ] Opțional: **PR upstream patjak/facetimehd** (4→8; testat stabil, bugetul propriu de 16 MB al
+      driverului ține 9 buffere la 720p) — de trimis după ce răspunde PipeWire.
+- [ ] Opțional, secundar (descoperit pe parcurs): **wireplumber 0.5.15** crash Lua
+      (`common-utils.lua:54`, `media.type` nil → „target not found") pt. stream-uri fără proprietatea
+      `media.type` — lovește doar clienți sintetici, nu aplicații reale. Raportare doar dacă e chef.
 
 ---
 
-## 🔧 În lucru — Stabilitate WiFi BCM4350 (kernel panic 7 iul 2026)
+## 🔧 Monitorizare — Stabilitate WiFi BCM4350 (kernel panic 7 iul 2026)
 
-**Incident:** 7 iul 2026, 06:08, pe 7.1.2 (dar **nu** e regresie 7.1.x — vezi frecvența mai jos):
-kernel panic `Fatal exception in interrupt`, capturat complet în **pstore EFI**
-(`/var/lib/systemd/pstore/`, dump Oops#1 + Panic#2). Lanțul, la milisecundă:
+**Incident:** 7 iul 2026, 06:08 (pe 7.1.2, dar **nu** e regresie 7.1.x — apărea pe toate kernelele):
+kernel panic `Fatal exception in interrupt`, capturat complet în **pstore EFI**. Lanțul:
 
-1. `DMAR: [DMA Write] Request device [02:00.0] ... PTE Write access is not set` — chipul WiFi a
-   încercat o scriere DMA într-o zonă interzisă; IOMMU (VT-d) a blocat-o;
-2. `brcmf_msgbuf_get_pktid: Invalid packet id 48 (not in use)` — ring-ul firmware↔driver desincronizat;
-3. un skb corupt a scăpat în stiva de rețea: **125 fragmente într-un array de max 17**
-   (2× UBSAN `skbuff.h:2543`);
-4. GPF în `memcpy` (pointer non-canonic `0x473121e5...`) în **softirq** (`irq/65-brcmf_pc`) →
-   panic — irecuperabil în context de întrerupere. Colateral: applespi a murit imediat (-110).
+1. `DMAR: [DMA Write] ... PTE Write access is not set` — chipul WiFi a încercat o scriere DMA
+   interzisă; IOMMU (VT-d) a blocat-o;
+2. `brcmf_msgbuf_get_pktid: Invalid packet id` — ring-ul firmware↔driver desincronizat;
+3. skb corupt scăpat în stiva de rețea (125 fragmente / max 17, 2× UBSAN `skbuff.h:2543`);
+4. GPF în `memcpy` în softirq → panic. Colateral: applespi mort imediat (-110).
 
-**Cauza-rădăcină:** firmware-ul generic Broadcom (nov 2015, `firmware-brcm80211`), rulat **fără**
-NVRAM/CLM Apple, se desincronizează **cronic** de driver: `Invalid packet id` de **23 de ori** între
-20 mai și 8 iul (~o dată la 1-3 zile, de obicei împreună cu un DMAR fault de la același device
-02:00.0), pe **toate** kernelele (7.0.x și 7.1.x). De obicei driverul recuperează silențios; pe
-7 iul corupția a ajuns în network stack. Deci: eveniment frecvent, consecință catastrofală rară.
+**Cauza-rădăcină:** firmware-ul generic Broadcom (nov 2015), fără NVRAM/CLM Apple, se desincronizează
+cronic de driver — înainte de mitigare: `Invalid packet id` de ~23 de ori între 20 mai și 8 iul
+(~o dată la 1–3 zile). De obicei recuperare silențioasă; pe 7 iul corupția a ajuns în network stack.
 
-**Mitigare aplicată (8 iul, live pe sistem + ETAPA 5g în script):**
+**Mitigare aplicată (8 iul, live + ETAPA 5g în script):**
 
-- [x] WiFi **power-save off** — `iw set power_save off` + persistent `wifi.powersave = 2` în
-      `/etc/NetworkManager/conf.d/wifi-powersave-off.conf` (mai puține tranziții de stare în firmware;
-      laptopul e mereu pe AC, cost zero).
-- [x] **`kernel.panic = 10`** — `/etc/sysctl.d/99-panic-reboot.conf`: reboot automat la 10s după
-      panic în loc de freeze permanent (mașină always-on).
-- [x] IOMMU rămâne **pornit** — el a blocat scrierile DMA ilegale; `intel_iommu=off` le-ar
-      transforma în corupere silențioasă de memorie (vezi și rândul „DMAR I2C" din De evaluat).
+- [x] WiFi **power-save off** (persistent, `wifi.powersave = 2` în NetworkManager) — mai puține
+      tranziții de stare în firmware; laptop mereu pe AC, cost zero.
+- [x] **`kernel.panic = 10`** — reboot automat la 10s după panic în loc de freeze permanent.
+- [x] IOMMU rămâne **pornit** — el a blocat scrierile DMA ilegale; `intel_iommu=off` le-ar transforma
+      în corupere silențioasă de memorie.
+- [x] ~~Fix definitiv = firmware Apple BCM4350 („faza 2")~~ — **investigat 8 iul, verdict: fișierele
+      NU există nicăieri** (nici în macOS: pe Mac-urile non-T2 calibrarea stă în OTP-ul cipului, pe
+      care brcmfmac îl citește deja, iar datele regulatorii sunt în firmware-ul Apple „bmac" —
+      split-MAC, incompatibil brcmfmac). Impact real ~zero: toate canalele 5 GHz active (36–165),
+      limitarea la 2,4 GHz vine de la router (SSID „vik" emite doar pe canalul 1). Mutat la won't-fix.
 
-**De făcut:**
+**Monitorizare (pasiv):**
 
-- [ ] Monitorizare: frecvența `journalctl -g 'Invalid packet id'` ar trebui să scadă cu power-save off.
-- [x] ~~Fix definitiv = firmware Apple BCM4350 („faza 2")~~ — **investigat 8 iul 2026, verdict: fișierele
-      NU există nicăieri** (nici în macOS). Dovezi:
-      1. linux-firmware upstream + Debian: doar `.bin` generic pt 4350/4350c2, zero variante Apple;
-      2. comunitate: zero fișiere 4350c2 publice (arhiva aunali1 moartă; t2linux acoperă doar cipurile
-         T2: 4355/4364/4377); 3. reverse-engineering pe kext-ul macOS `AirPortBrcmNIC` (v1242.32.1a1,
-         extras de pe GitHub): pe Mac-urile **non-T2** Apple nu folosește fișiere separate — calibrarea
-         stă în **OTP-ul chipului** (pe care brcmfmac îl citește deja), iar datele regulatorii sunt
-         înglobate în firmware-ul lor „bmac" (arhitectură split-MAC, **incompatibil** cu brcmfmac).
-      **Impact real: aproape zero.** Test empiric pe hardware: `iw list` arată **toate canalele 5 GHz
-      active** (36–165 @ 20 dBm) și scanarea vede rețele 5 GHz ale vecinilor. Mesajul „limited channels"
-      e practic cosmetic. **Limitarea la 2,4 GHz vine de la router** (SSID-ul „vik" emite doar pe
-      canalul 1 / 2,4 GHz) → fix: activează banda 5 GHz în router (BCM4350 = 802.11ac 2x2, până la
-      867 Mbps PHY pe VHT80). Stabilitatea (desincronizarea cronică) rămâne acoperită de mitigările
-      de mai sus; dacă vreodată devine insuportabilă: adaptor USB WiFi (~15€).
+- [ ] `journalctl -g 'Invalid packet id'` — **status 12 iul: ultimul eveniment 8 iul 06:50 (cu ~1h
+      înainte de aplicarea mitigării); 0 evenimente în cele 4 zile de după**, față de ~1 la 1–3 zile
+      înainte → mitigarea pare eficace. De re-verificat periodic; dacă vreodată redevine frecvent +
+      panici: adaptor USB WiFi (~15 €).
+
+---
+
+## 🧹 De făcut — curățenie repo experimental (rămas de la testarea 7.1.x)
+
+Kernelul vine acum din forky, dar fișierele repo-ului experimental **încă există** (verificat 12 iul).
+Inofensive (pin scăzut), dar nu mai au rost:
+
+```bash
+sudo rm /etc/apt/sources.list.d/experimental.sources /etc/apt/sources.list.d/experimental.list.bak /etc/apt/preferences.d/experimental
+sudo apt update
+```
 
 ---
 
 ## 🟡 De evaluat — opțional, cu trade-off (neimplementate intenționat)
 
-Lucruri care s-ar *putea* face, dar nu se justifică acum. Aici stă „viitorul" real al proiectului.
-
 | Item | Ce ar rezolva | De ce nu (încă) |
 |---|---|---|
 | **DMAR I2C messages** | `DMAR: Failed to find handle ... I2C0/I2C2/UA00` (3×/boot) | fix = `intel_iommu=off`, dar dezactivează IOMMU (trade-off de securitate) — nu merită doar pt log |
 | **BCM4350 BT baudrate + `.hcd`** | `failed to write update baudrate (-16)` + `BCM.hcd` lipsă la boot | cauza = ACPI Apple incomplet + firmware Apple ne-redistribuibil; BT merge oricum (vezi detaliu jos) |
-| **Apple WiFi/BT firmware** | mesajele `brcmfmac: failed to load ...MacBookPro14,1.bin/.txt/.clm_blob` | ~~firmware generic merge OK~~ **promovat la prioritate reală** după panica din 7 iul — firmware-ul generic s-a dovedit instabil sub load (vezi „În lucru" sus) |
 
 **Detaliu — Bluetooth BCM4350 (cele 2 mesaje err de la fiecare boot, ambele benigne):**
 
@@ -140,6 +126,7 @@ după *warm reboot* — cipul nu e power-cycle-at → vezi secțiunea won't-fix.
 |---|---|
 | **Suspend S3 / hibernare** | S3 nu se trezește fiabil pe NVMe+EFI Apple → blocat via `systemctl mask` pe sleep targets (ETAPA 5e). Hibernarea ar moșteni aceleași probleme de resume. Detalii în README. |
 | **Broadcom WiFi/BT la warm reboot** | `reboot` nu power-cycle-ază cip-ul → poate rămâne mut (`Reset failed -110`). Recuperare = power-off complet. Hardware. |
+| **Firmware Apple BCM4350 (WiFi/BT)** | Fișierele nu există public și nici în macOS pt. Mac-urile non-T2: calibrarea stă în OTP-ul cipului (citit deja de brcmfmac), datele regulatorii în firmware-ul Apple „bmac" (split-MAC, incompatibil brcmfmac). Investigat 8 iul 2026 — mesajele „failed to load ...MacBookPro14,1.*" rămân cosmetice. |
 | **facetimehd PLL lock** | `Failed to lock S2 PLL` — bug upstream patjak/facetimehd; camera merge pe PLL alternativ. |
 | **ASPM PCIe** | `can't disable ASPM` — Apple BIOS restricționează; `pcie_aspm=off` ar strica bateria. |
 | **Apple ACPI / SGX noise** | `AE_ALREADY_EXISTS`, `_OSC/_PDC AE_NOT_FOUND`, SSDT duplicate, SGX disabled — Apple nu implementează metode ACPI standard / dezactivează SGX. Pur cosmetic. |
@@ -161,6 +148,16 @@ după *warm reboot* — cipul nu e power-cycle-at → vezi secțiunea won't-fix.
 
 Probleme deja închise, păstrate doar ca rezumat (nu mai sunt de făcut):
 
+- **Kernel 7.1.3 (forky) — upgrade complet, single-kernel** — 7.1.1/7.1.2 testate din experimental
+  (22 iun → 11 iul, audit complet verde, zero regresii); `7.1.3-1` a intrat în forky și meta
+  `linux-image-amd64` s-a reconciliat curat (`7.1.3-1` > `7.1.2-1~exp1`); kernelurile vechi (7.0.13,
+  7.1.2~exp1) purjate complet (dpkg + /boot + /lib/modules + /usr/src). Verificat cap-coadă 11–12 iul:
+  DKMS recompilate + semnate, 0 UBSAN/oops/DMAR-fault, toate driverele încărcate, accelerare 3D (GBM
+  pe i915) + VA-API (iHD) funcționale. De-acum kernelul vine prin `apt dist-upgrade` normal.
+- **Luminozitate „fantomă"** (12 iul) — ecranul se închidea/deschidea singur deși era setat la maxim:
+  senzor ALS (`acpi-als`) + iio-sensor-proxy + GNOME „Automatic Screen Brightness"; percepția de
+  culori calde/reci era tot backlight-ul (2017 n-are True Tone). Fix: **ETAPA 5h** (ambient-enabled
+  + idle-dim off). Comenzi de toggle manual în README.
 - **Audio rupt pe 7.0.10** — regresie in-tree în parser-ul HDA (UBSAN array-index-out-of-bounds →
   card nereg.), **exclusiv** pe 7.0.10. Reparat upstream în **7.0.12** (0 UBSAN); 7.0.10 dezinstalat.
   Driverul davidjo n-a avut nevoie de patch (bug 100% in-tree). Analiza completă + stack trace:
@@ -191,7 +188,8 @@ Pentru fiecare boot apar ~40 mesaje "error/warning", toate benigne și clasifica
 | B | `DMAR: Failed to find handle ... I2C0/I2C2/UA00` | 3×/boot | Apple I2C ACPI paths non-standard pt VT-d |
 | B | `Bluetooth: hci0: BCM: failed to write update baudrate (-16)` | 1×/boot | BCM4350 refuză upgrade baud; rămâne 115200 OK |
 | B | `Bluetooth: hci0: BCM: firmware Patch file not found 'brcm/BCM.hcd'` | 1×/boot | firmware patch opțional, nu există în Debian |
-| B | `brcmfmac: failed to load ...MacBookPro14,1.bin/.txt/.clm_blob` | ~8×/boot | caută variante Apple, cade pe generic (WiFi OK) |
+| B | `brcmfmac: failed to load ...MacBookPro14,1.bin/.txt/.clm_blob` | ~8×/boot | caută variante Apple, cade pe generic (WiFi OK; fișierele nu există — vezi won't-fix) |
+| C | `nvme0n2: partition table beyond EOD, truncated` | 1×/boot | al 2-lea namespace al NVMe-ului Apple (proprietar/gol); prezent pe toate kernelurile |
 | C | `facetimehd: Failed to lock S2 PLL` | 1×/boot | bug upstream driver; camera merge pe PLL alt |
 | C | `facetimehd: can't disable ASPM` | 1×/boot | Apple BIOS restricționează ASPM |
 | C | `facetimehd: module verification failed - tainting kernel` | 1×/boot | DKMS nesemnat în keyring; benign fără Secure Boot |
@@ -202,4 +200,4 @@ Pentru fiecare boot apar ~40 mesaje "error/warning", toate benigne și clasifica
 
 **Concluzie**: zero crash/oops/UBSAN la un boot normal. Categoria A e deja curățată (ETAPA 9); restul
 sunt Apple ACPI/firmware quirks inevitabile (C) sau cu trade-off nejustificat (B). Excepția rară (nu
-per-boot): desincronizarea brcmfmac `Invalid packet id` la ~1-3 zile → vezi secțiunea „În lucru" sus.
+per-boot): desincronizarea brcmfmac `Invalid packet id` — sub mitigare din 8 iul, vezi „Monitorizare" sus.
