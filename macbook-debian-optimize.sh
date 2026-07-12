@@ -159,7 +159,11 @@ if [ "$OPT_DOCKER" = "1" ]; then
 
     # Orfanul csmbraila_db: containerele web/phpmyadmin ale stack-ului sunt
     # oprite din mai 2026, doar DB-ul mai porneste (restart=always) degeaba.
-    if docker ps -a --format '{{.Names}}' 2>/dev/null | grep -qx csmbraila_db; then
+    # Atentie: orice comanda docker trezeste daemonul prin socket — deci
+    # verificam orfanul DOAR daca daemonul e deja pornit (idempotenta fara
+    # efecte secundare la re-rulari).
+    if systemctl is-active --quiet docker.service \
+        && docker ps -a --format '{{.Names}}' 2>/dev/null | grep -qx csmbraila_db; then
         RESTART_POLICY=$(docker inspect --format '{{.HostConfig.RestartPolicy.Name}}' csmbraila_db 2>/dev/null)
         if [ "$RESTART_POLICY" != "no" ]; then
             docker update --restart=no csmbraila_db > /dev/null \
@@ -174,7 +178,7 @@ if [ "$OPT_DOCKER" = "1" ]; then
             ok "csmbraila_db oprit (repornesti cu: docker start csmbraila_db)."
         fi
     else
-        warn "Containerul csmbraila_db nu exista — sar peste."
+        warn "Docker inactiv sau containerul csmbraila_db inexistent — sar peste (orfanul e tratat la prima rulare)."
     fi
     info "Stack-urile alberto_caccia si pancronex urca automat la prima comanda docker."
 else
