@@ -34,13 +34,18 @@ Empiric: client care ține 3 buffere = 30 fps la nesfârșit; ține 4 = fix 4 ca
       în #367 (Snapshot) pune link-ul PipeWire de mai sus în locul `LINK-PIPEWIRE-ISSUE` (verificat
       12 iul: placeholder-ul e încă acolo); în #5363 (PipeWire) pune link-ul Snapshot în locul
       `LINK-SNAPSHOT-ISSUE`. Fișierele din repo au deja link-urile reale.
-- [ ] **Adaugă patch-ul `FTHD_BUFFERS` 4→8 în script (ETAPA 4)** — acum trăiește doar în `/usr/src`
-      și **se pierde la reinstalare** (scriptul re-clonează patjak/facetimehd). Două `sed`-uri + verificare.
+- [ ] **Script: decizie amânată (hotărât 12 iul)** — NU băgăm patch-ul `FTHD_BUFFERS` în script
+      deocamdată; așteptăm răspunsul upstream (PipeWire/Snapshot) și abia apoi decidem. Reminder:
+      patch-ul local trăiește doar în `/usr/src` și **se pierde la reinstalare** — de reținut la
+      reinstalarea plănuită.
 - [ ] Opțional: **PR upstream patjak/facetimehd** (4→8; testat stabil, bugetul propriu de 16 MB al
       driverului ține 9 buffere la 720p) — de trimis după ce răspunde PipeWire.
-- [ ] Opțional, secundar (descoperit pe parcurs): **wireplumber 0.5.15** crash Lua
-      (`common-utils.lua:54`, `media.type` nil → „target not found") pt. stream-uri fără proprietatea
-      `media.type` — lovește doar clienți sintetici, nu aplicații reale. Raportare doar dacă e chef.
+- [ ] **wireplumber — de trimis** (verificat 100% pe 12 iul: reprodus proaspăt, cod identic pe master,
+      niciun raport existent găsit): AMBELE hook-uri de linking crapă cu erori Lua pt. stream-uri fără
+      `media.type` (`common-utils.lua:54` concat pe nil + `find-best-target.lua:48` Constraint pe nil)
+      → clientul pică cu „target not found". Text gata în
+      [ISSUE_wireplumber_media_type.md](ISSUE_wireplumber_media_type.md) →
+      `gitlab.freedesktop.org/pipewire/wireplumber/-/issues/new`.
 
 ---
 
