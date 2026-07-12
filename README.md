@@ -271,7 +271,7 @@ before being included — nothing here affects stability. Idempotent, safe to re
 
 | Step | What | Gain | Revert |
 |---|---|---|---|
-| 1 | Docker on-demand: `docker.service` disabled, `docker.socket` stays — daemon + dev stacks start at the **first `docker` command**; orphaned `csmbraila_db` stopped | ~700 MB + 2.8s | `systemctl enable docker` |
+| 1 | Docker on-demand: `docker.service` + `containerd` disabled, `docker.socket` stays — daemon + containerd + dev stacks start at the **first `docker` command** (drop-in `Wants=containerd`, since the stock unit only orders `After=` it); orphaned `csmbraila_db` stopped | ~770 MB + 3.2s | `systemctl enable docker containerd` |
 | 2 | `NetworkManager-wait-online` off (nothing needs network-online at boot after steps 1/4/8) | 3.6s | `systemctl enable` it back |
 | 3 | Plymouth removed + `quiet` dropped from GRUB — service messages visible at boot instead of a splash | ~4s wait | `apt install plymouth` |
 | 4 | `gnome-software` masked (user unit) — **not** apt-removed, which would drag the `gnome`/`gnome-core` metapackages away; updates via `apt` | ~30 MB | `systemctl --user unmask` |

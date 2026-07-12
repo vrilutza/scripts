@@ -139,6 +139,24 @@ if [ "$OPT_DOCKER" = "1" ]; then
     fi
     sys_disable docker.service
 
+    # containerd e enabled separat si porneste la boot (69 MB + ~440ms) desi
+    # dockerd (ExecStart --containerd=...) il foloseste doar cand ruleaza.
+    # docker.service are doar After=containerd (ordonare), NU Wants/Requires ->
+    # ii adaugam un drop-in Wants= ca la activarea prin socket sa porneasca si
+    # containerd automat, apoi il dezactivam la boot.
+    DROPIN_DIR="/etc/systemd/system/docker.service.d"
+    DROPIN="$DROPIN_DIR/containerd-ondemand.conf"
+    if [ -f "$DROPIN" ]; then
+        warn "Drop-in containerd-ondemand deja exista."
+    else
+        sudo mkdir -p "$DROPIN_DIR" || fail "Nu am putut crea $DROPIN_DIR."
+        printf '# docker e pornit on-demand prin docker.socket; fara acest Wants,\n# containerd (doar After= in unitatea originala) nu ar mai porni deloc.\n[Unit]\nWants=containerd.service\n' \
+            | sudo tee "$DROPIN" > /dev/null || fail "Nu am putut scrie $DROPIN."
+        sudo systemctl daemon-reload
+        ok "Drop-in creat: docker porneste containerd automat (Wants=)."
+    fi
+    sys_disable containerd.service --now
+
     # Orfanul csmbraila_db: containerele web/phpmyadmin ale stack-ului sunt
     # oprite din mai 2026, doar DB-ul mai porneste (restart=always) degeaba.
     if docker ps -a --format '{{.Names}}' 2>/dev/null | grep -qx csmbraila_db; then
@@ -304,7 +322,7 @@ check() {  # $1=unit $2=stare asteptata $3=scope (system|user)
     fi
 }
 
-[ "$OPT_DOCKER" = "1" ] && { check docker.service disabled system; check docker.socket enabled system; }
+[ "$OPT_DOCKER" = "1" ] && { check docker.service disabled system; check docker.socket enabled system; check containerd.service disabled system; }
 check NetworkManager-wait-online.service disabled system
 check ModemManager.service disabled system
 check fwupd-refresh.timer disabled system
