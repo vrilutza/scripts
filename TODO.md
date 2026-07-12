@@ -40,12 +40,12 @@ Empiric: client care ține 3 buffere = 30 fps la nesfârșit; ține 4 = fix 4 ca
       reinstalarea plănuită.
 - [ ] Opțional: **PR upstream patjak/facetimehd** (4→8; testat stabil, bugetul propriu de 16 MB al
       driverului ține 9 buffere la 720p) — de trimis după ce răspunde PipeWire.
-- [ ] **wireplumber — de trimis** (verificat 100% pe 12 iul: reprodus proaspăt, cod identic pe master,
-      niciun raport existent găsit): AMBELE hook-uri de linking crapă cu erori Lua pt. stream-uri fără
-      `media.type` (`common-utils.lua:54` concat pe nil + `find-best-target.lua:48` Constraint pe nil)
-      → clientul pică cu „target not found". Text gata în
-      [ISSUE_wireplumber_media_type.md](ISSUE_wireplumber_media_type.md) →
-      `gitlab.freedesktop.org/pipewire/wireplumber/-/issues/new`.
+- [x] **wireplumber — TRIMIS 12 iul 2026**: <https://gitlab.freedesktop.org/pipewire/wireplumber/-/work_items/972>
+      ([ISSUE_wireplumber_media_type.md](ISSUE_wireplumber_media_type.md)). Verificat 100% înainte de
+      trimitere: reprodus proaspăt, cod identic pe master, niciun raport existent găsit — AMBELE
+      hook-uri de linking crapă cu erori Lua pt. stream-uri fără `media.type` (`common-utils.lua:54`
+      concat pe nil + `find-best-target.lua:48` Constraint pe nil) → client „target not found".
+      De urmărit răspunsul.
 
 ---
 
