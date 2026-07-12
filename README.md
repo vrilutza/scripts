@@ -262,6 +262,29 @@ Full setup for MacBook Pro 13" 2017 on a fresh Debian Testing install. Runs in 9
 The two DKMS modules (audio, camera) auto-rebuild on kernel updates. The script is idempotent — safe
 to re-run, skips already completed stages.
 
+### `macbook-debian-optimize.sh`
+
+Companion script — frees **~750-800 MB RAM** and cuts boot-to-GDM from ~12s to ~5s by turning off
+services that do nothing on this hardware/usage. Every step was verified individually against the
+live system (apt removal simulations, package dependencies, docker restart policies, socket units)
+before being included — nothing here affects stability. Idempotent, safe to re-run.
+
+| Step | What | Gain | Revert |
+|---|---|---|---|
+| 1 | Docker on-demand: `docker.service` disabled, `docker.socket` stays — daemon + dev stacks start at the **first `docker` command**; orphaned `csmbraila_db` stopped | ~700 MB + 2.8s | `systemctl enable docker` |
+| 2 | `NetworkManager-wait-online` off (nothing needs network-online at boot after steps 1/4/8) | 3.6s | `systemctl enable` it back |
+| 3 | Plymouth removed + `quiet` dropped from GRUB — service messages visible at boot instead of a splash | ~4s wait | `apt install plymouth` |
+| 4 | `gnome-software` masked (user unit) — **not** apt-removed, which would drag the `gnome`/`gnome-core` metapackages away; updates via `apt` | ~30 MB | `systemctl --user unmask` |
+| 5 | `localsearch-3` masked + autostart hidden — file indexing off (Files search becomes limited) | ~55 MB | unmask + delete override |
+| 6 | `ModemManager` disabled (no WWAN modem; package kept — NM references it) | 2-10 MB | `systemctl enable --now` |
+| 7 | `fwupd` masked + refresh timer off (LVFS ships nothing for 2017 Macs) | 6-15 MB + 1.2s | unmask + enable timer |
+| 8 | CUPS on-demand: service+browsed disabled, **socket+path stay** — printing auto-starts when used | ~5 MB | `systemctl enable --now cups` |
+| 9-12 | `switcheroo-control` (single GPU), `iio-sensor-proxy` (its only consumer, auto-brightness, is off per Stage 5h), `networking.service` (ifupdown legacy, only `lo`), `e2scrub` (LVM-only, no LVM here) | ~2 MB + ~1s | enable/unmask each |
+
+Options at the top of the script: `OPT_DOCKER=0` skips step 1 (keep dev stacks up right after boot),
+`OPT_LOCALSEARCH=0` skips step 5 (keep file search). Run it, then `sudo reboot`; measure with
+`systemd-analyze && free -h`.
+
 ## Touchpad — no patch needed
 
 Previous versions of this script shipped an out-of-tree `applespi-fix/` DKMS patch with a velocity
