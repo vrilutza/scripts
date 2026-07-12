@@ -30,10 +30,10 @@ Empiric: client care ține 3 buffere = 30 fps la nesfârșit; ține 4 = fix 4 ca
       ([ISSUE_camera_pipewire.md](ISSUE_camera_pipewire.md));
       2) Snapshot — <https://gitlab.gnome.org/GNOME/snapshot/-/work_items/367>
       ([ISSUE_camera_snapshot.md](ISSUE_camera_snapshot.md)). De urmărit răspunsurile dezvoltatorilor.
-- [ ] **Înlocuiește placeholder-ele `LINK-...` în issue-urile live** (Edit description pe GitLab):
-      în #367 (Snapshot) pune link-ul PipeWire de mai sus în locul `LINK-PIPEWIRE-ISSUE` (verificat
-      12 iul: placeholder-ul e încă acolo); în #5363 (PipeWire) pune link-ul Snapshot în locul
-      `LINK-SNAPSHOT-ISSUE`. Fișierele din repo au deja link-urile reale.
+- [x] **Cross-link-uri completate în issue-urile live** (12 iul): #367 verificat — hyperlink
+      funcțional către #5363 (textul vizibil a rămas „LINK-PIPEWIRE-ISSUE", cosmetic, opțional de
+      înfrumusețat); #5363 completat de user (neverificabil de aici — Anubis blochează orice acces
+      automat la gitlab.freedesktop.org, inclusiv API/curl). Fișierele din repo au link-urile reale.
 - [ ] **Script: decizie amânată (hotărât 12 iul)** — NU băgăm patch-ul `FTHD_BUFFERS` în script
       deocamdată; așteptăm răspunsul upstream (PipeWire/Snapshot) și abia apoi decidem. Reminder:
       patch-ul local trăiește doar în `/usr/src` și **se pierde la reinstalare** — de reținut la
