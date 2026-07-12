@@ -31,4 +31,4 @@ In aperture, on the `pipewiresrc` element, either:
 - set `min-buffers` to something sane for a viewfinder+recording pipeline (8 worked in testing), and/or
 - set `always-copy=true` so held display buffers never starve the source pool.
 
-Either change unfreezes the viewfinder on 4-buffer cameras. (There is an underlying PipeWire issue about the 4-buffer default and the drop-forever behavior: LINK-PIPEWIRE-ISSUE — but Snapshot can protect itself regardless of how that lands, and 4-buffer V4L2 devices will keep existing.)
+Either change unfreezes the viewfinder on 4-buffer cameras. (There is an underlying PipeWire issue about the 4-buffer default and the drop-forever behavior: https://gitlab.freedesktop.org/pipewire/pipewire/-/work_items/5363 — but Snapshot can protect itself regardless of how that lands, and 4-buffer V4L2 devices will keep existing.)

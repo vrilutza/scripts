@@ -25,10 +25,15 @@ Empiric: client care ține 3 buffere = 30 fps la nesfârșit; ține 4 = fix 4 ca
 `min-buffers=8` pe driverul patch-uit = merge chiar ținând 7 (146 cadre/6s).
 **Workaround până răspund upstream:** `guvcview` sau camera din Chrome (amândouă V4L2 direct, ocolesc PipeWire).
 
-- [ ] **Trimite bug-urile upstream** (manual, conturi deja logate; se leagă între ele — placeholder
-      `LINK-...` în fiecare): 1) PipeWire — text gata în [ISSUE_camera_pipewire.md](ISSUE_camera_pipewire.md)
-      → `gitlab.freedesktop.org/pipewire/pipewire`; 2) Snapshot — [ISSUE_camera_snapshot.md](ISSUE_camera_snapshot.md)
-      → `gitlab.gnome.org/GNOME/snapshot`. Reproducer-ul din issue-ul PipeWire e testat copy-paste (12 iul).
+- [x] **Bug-urile upstream TRIMISE 12 iul 2026** (texte păstrate în repo):
+      1) PipeWire — <https://gitlab.freedesktop.org/pipewire/pipewire/-/work_items/5363>
+      ([ISSUE_camera_pipewire.md](ISSUE_camera_pipewire.md));
+      2) Snapshot — <https://gitlab.gnome.org/GNOME/snapshot/-/work_items/367>
+      ([ISSUE_camera_snapshot.md](ISSUE_camera_snapshot.md)). De urmărit răspunsurile dezvoltatorilor.
+- [ ] **Înlocuiește placeholder-ele `LINK-...` în issue-urile live** (Edit description pe GitLab):
+      în #367 (Snapshot) pune link-ul PipeWire de mai sus în locul `LINK-PIPEWIRE-ISSUE` (verificat
+      12 iul: placeholder-ul e încă acolo); în #5363 (PipeWire) pune link-ul Snapshot în locul
+      `LINK-SNAPSHOT-ISSUE`. Fișierele din repo au deja link-urile reale.
 - [ ] **Adaugă patch-ul `FTHD_BUFFERS` 4→8 în script (ETAPA 4)** — acum trăiește doar în `/usr/src`
       și **se pierde la reinstalare** (scriptul re-clonează patjak/facetimehd). Două `sed`-uri + verificare.
 - [ ] Opțional: **PR upstream patjak/facetimehd** (4→8; testat stabil, bugetul propriu de 16 MB al

@@ -93,4 +93,4 @@ print(f"hold={HOLD}: {n[0]} frames in {time.monotonic()-t0:.1f}s")
 - `gstpipewiresrc`: when a dequeued buffer was not recycled, copy its contents into a new GstBuffer and requeue, instead of dropping frames forever.
 - `spa_v4l2_mmap_init`: degrade gracefully to `reqbuf.count` when the driver grants fewer buffers than negotiated.
 
-The end-user impact today is that GNOME Snapshot's viewfinder freezes on the first frame on affected cameras (separate report filed against Snapshot: LINK-SNAPSHOT-ISSUE).
+The end-user impact today is that GNOME Snapshot's viewfinder freezes on the first frame on affected cameras (separate report filed against Snapshot: https://gitlab.gnome.org/GNOME/snapshot/-/work_items/367).
