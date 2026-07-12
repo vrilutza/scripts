@@ -34,7 +34,7 @@ sudo reboot
 |---|---|
 | Audio (speakers + headphones jack) | Play any sound; toggle output in GNOME Settings → Sound |
 | Camera | `cheese` or any video-call app — `/dev/video0` should exist |
-| Backlight | `Fn+F1` / `Fn+F2` — slider should respond smoothly |
+| Backlight | `Fn+F1` / `Fn+F2` — slider should respond smoothly; brightness must then **stay where you set it** (auto-brightness + idle-dim disabled by Stage 5h) |
 | WiFi | Connect to your network from GNOME |
 | Bluetooth | Pair a device from GNOME Settings → Bluetooth (SMC reset first if needed) |
 | Touchpad | Tap, swipe, two-finger scroll — cursor should be smooth |
@@ -86,9 +86,24 @@ ls -la /usr/lib/systemd/system-sleep/                                           
 gsettings get org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type     # Should be 'nothing'
 gsettings get org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type # Should be 'nothing'
 cat /etc/systemd/logind.conf.d/macbook-no-suspend.conf                           # Lid switch override (HandleLidSwitch=lock)
+gsettings get org.gnome.settings-daemon.plugins.power ambient-enabled            # Should be 'false' (Stage 5h — no auto-brightness)
+gsettings get org.gnome.settings-daemon.plugins.power idle-dim                   # Should be 'false' (Stage 5h — no dimming on idle)
 ```
 
 To test the backlight keys: `Fn+F1` / `Fn+F2` — slider in GNOME panel should slide smoothly without jumps.
+
+**Brightness stays where you set it (Stage 5h).** This MacBook has an ambient light sensor
+(`acpi-als`, next to the camera) read by `iio-sensor-proxy`; with GNOME's "Automatic Screen
+Brightness" enabled, the backlight drifts darker/brighter on its own as room light changes — it can
+also *look* like the colors shift warmer/cooler, but that's just the backlight (the 2017 panel has
+no True Tone). The script disables both auto-brightness and dimming-on-idle. To toggle manually:
+
+```bash
+# re-enable / disable auto-brightness (GNOME Settings → Power → Automatic Screen Brightness)
+gsettings set org.gnome.settings-daemon.plugins.power ambient-enabled true   # or false
+# re-enable / disable screen dimming after inactivity
+gsettings set org.gnome.settings-daemon.plugins.power idle-dim true          # or false
+```
 
 ### Video acceleration (VA-API)
 
@@ -238,7 +253,7 @@ Full setup for MacBook Pro 13" 2017 on a fresh Debian Testing install. Runs in 9
 | 2 — Audio driver | [davidjo/snd_hda_macbookpro](https://github.com/davidjo/snd_hda_macbookpro) — Cirrus CS8409 patched driver via DKMS |
 | 3 — Camera firmware | [patjak/facetimehd-firmware](https://github.com/patjak/facetimehd-firmware) — extracted from Apple OS X driver |
 | 4 — Camera driver | [patjak/facetimehd](https://github.com/patjak/facetimehd) — kernel module via DKMS |
-| 5 — System fixes | Backlight (`acpi_backlight=native`) + `reboot=pci` + sleep targets masked (suspend/hibernate blocked — see below) + Bluetooth rfkill unblock at boot + `AutoEnable` ([see below](#bluetooth)) + WiFi stability: power-save off + `kernel.panic=10` ([see below](#wifi-bcm4350--chronic-firmware-desync--the-july-2026-kernel-panic-mitigated-by-stage-5g)) |
+| 5 — System fixes | Backlight (`acpi_backlight=native`) + `reboot=pci` + sleep targets masked (suspend/hibernate blocked — see below) + Bluetooth rfkill unblock at boot + `AutoEnable` ([see below](#bluetooth)) + WiFi stability: power-save off + `kernel.panic=10` ([see below](#wifi-bcm4350--chronic-firmware-desync--the-july-2026-kernel-panic-mitigated-by-stage-5g)) + fixed brightness: ALS auto-brightness + idle-dim off (5h) |
 | 6 — VA-API | `intel-media-va-driver` + `i965-va-driver` — hardware video acceleration for Intel Iris Plus 640 |
 | 7 — Touchpad UX | `tap-to-click` + `natural-scroll` + `disable-while-typing` via gsettings — macOS-like out of the box |
 | 8 — Thermal management | `thermald` + `lm-sensors` + RAPL PL1=22W / PL2=30W (Apple-like) via udev rule + thermald reinit + fan floor (`fan1_min=3500` RPM) |

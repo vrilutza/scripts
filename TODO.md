@@ -150,7 +150,7 @@ după *warm reboot* — cipul nu e power-cycle-at → vezi secțiunea won't-fix.
 
 | # | Ce | Detaliu |
 |---|---|---|
-| 1-6 | Hardware base | deps (+rfkill, iw), audio CS8409, cameră FaceTime HD, GRUB/suspend fixes, **Bluetooth unblock+AutoEnable (5f)**, **WiFi stabilitate: power-save off + kernel.panic=10 (5g)**, VA-API |
+| 1-6 | Hardware base | deps (+rfkill, iw), audio CS8409, cameră FaceTime HD, GRUB/suspend fixes, **Bluetooth unblock+AutoEnable (5f)**, **WiFi stabilitate: power-save off + kernel.panic=10 (5g)**, **luminozitate fixă: auto-brightness ALS + idle-dim off (5h)**, VA-API |
 | 7 | Touchpad UX | tap-to-click + natural scroll + disable-while-typing |
 | 8 | Thermal | thermald + lm-sensors + RAPL PL1=22W/PL2=30W + fan floor 3500 RPM (oneshot service, race-safe) |
 | 9 | Cosmetic / jurnal | GNOME media-keys (hibernate/playback-repeat) + usb-protection off + applespi fnmode=1 |

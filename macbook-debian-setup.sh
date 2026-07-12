@@ -257,7 +257,7 @@ fi
 
 
 # =============================================================================
-# ETAPA 5/9 — Fix sistem: luminozitate ecran + suspend stabil + WiFi dupa sleep + Bluetooth + stabilitate WiFi
+# ETAPA 5/9 — Fix sistem: luminozitate ecran + suspend stabil + WiFi dupa sleep + Bluetooth + stabilitate WiFi + luminozitate fixa (ALS off)
 # =============================================================================
 CURRENT_STEP="ETAPA 5/9 — Fix luminozitate + auto-suspend dezactivat (S3 unreliable) + Bluetooth + stabilitate WiFi"
 step "$CURRENT_STEP"
@@ -571,6 +571,34 @@ if [ "$(cat /proc/sys/kernel/panic 2>/dev/null)" = "10" ]; then
     ok "kernel.panic=10 activ (reboot automat la 10s dupa panica)."
 else
     warn "kernel.panic nu este 10 — verifica $PANIC_CONF."
+fi
+
+# --- 5h: Luminozitate fixa — dezactivare auto-brightness (senzor ALS) + idle-dim ---
+# Cauza: MacBook-ul are senzor de lumina ambientala (acpi-als, langa camera) citit de
+# iio-sensor-proxy. GNOME cu "Automatic Screen Brightness" activ regleaza singur
+# backlight-ul dupa lumina din camera — ecranul se face ba mai inchis, ba mai deschis
+# chiar daca userul a setat luminozitatea la maxim. Perceptia de culori mai calde/reci
+# vine tot din variatiile de backlight (panoul 2017 NU are True Tone — doar 2018+).
+# Fix: dezactivam auto-brightness + idle-dim (estomparea dupa inactivitate), ca
+# luminozitatea sa ramana exact unde o seteaza userul. Diagnosticat 2026-07-12.
+# Reversibil oricand: aceleasi chei cu 'true' (sau GNOME Settings -> Power).
+info "Configurare GNOME: luminozitate fixa (auto-brightness + idle-dim off)..."
+
+if command -v gsettings >/dev/null 2>&1; then
+    gsettings set org.gnome.settings-daemon.plugins.power ambient-enabled false \
+        || warn "Nu am putut dezactiva ambient-enabled (auto-brightness)."
+    gsettings set org.gnome.settings-daemon.plugins.power idle-dim false \
+        || warn "Nu am putut dezactiva idle-dim."
+
+    AMBIENT=$(gsettings get org.gnome.settings-daemon.plugins.power ambient-enabled 2>/dev/null)
+    IDLEDIM=$(gsettings get org.gnome.settings-daemon.plugins.power idle-dim 2>/dev/null)
+    if [ "$AMBIENT" = "false" ] && [ "$IDLEDIM" = "false" ]; then
+        ok "Luminozitate fixa: auto-brightness + idle-dim dezactivate."
+    else
+        warn "Luminozitate fixa: verificare esuata (ambient=$AMBIENT, idle-dim=$IDLEDIM)."
+    fi
+else
+    warn "gsettings nu este disponibil — sari peste config luminozitate fixa."
 fi
 
 
@@ -948,6 +976,7 @@ echo -e "  ${GREEN}✓${NC}  Driver audio Cirrus CS8409 — DKMS"
 echo -e "  ${GREEN}✓${NC}  Firmware FaceTime HD — /usr/lib/firmware/facetimehd/"
 echo -e "  ${GREEN}✓${NC}  Driver camera FaceTime HD — DKMS"
 echo -e "  ${GREEN}✓${NC}  Luminozitate ecran — acpi_backlight=native in GRUB"
+echo -e "  ${GREEN}✓${NC}  Luminozitate fixa — auto-brightness (senzor ALS) + idle-dim dezactivate"
 echo -e "  ${GREEN}✓${NC}  Reboot fix — reboot=pci in GRUB (reset fiabil pe Apple hardware)"
 echo -e "  ${GREEN}✓${NC}  Suspend/hibernate blocat complet — sleep targets masked (S3 nefiabil)"
 echo -e "  ${GREEN}✓${NC}  Lid close = lock screen (logind), nu suspend"
