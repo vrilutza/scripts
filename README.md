@@ -264,10 +264,12 @@ to re-run, skips already completed stages.
 
 ### `macbook-debian-optimize.sh`
 
-Companion script — frees **~750-800 MB RAM** and cuts boot-to-GDM from ~12s to ~5s by turning off
-services that do nothing on this hardware/usage. Every step was verified individually against the
-live system (apt removal simulations, package dependencies, docker restart policies, socket units)
-before being included — nothing here affects stability. Idempotent, safe to re-run.
+Companion script — turns off services that do nothing on this hardware/usage. Measured after a day
+of real use (2026-07-13): **boot 16s → 9.9s** (kernel 3.9→1.15s, userspace 12.1→8.8s),
+**system services (system.slice) 862 → 223 MB**, swap 3.7 GB → 0, plus **~280 MB** freed from the
+GNOME session by steps 13-16. Every step was verified individually against the live system (apt
+removal simulations, package dependencies, docker restart policies, socket units) before being
+included — nothing here affects stability. Idempotent, safe to re-run.
 
 | Step | What | Gain | Revert |
 |---|---|---|---|
@@ -278,12 +280,20 @@ before being included — nothing here affects stability. Idempotent, safe to re
 | 5 | `localsearch-3` masked + autostart hidden — file indexing off (Files search becomes limited) | ~55 MB | unmask + delete override |
 | 6 | `ModemManager` disabled (no WWAN modem; package kept — NM references it) | 2-10 MB | `systemctl enable --now` |
 | 7 | `fwupd` masked + refresh timer off (LVFS ships nothing for 2017 Macs) | 6-15 MB + 1.2s | unmask + enable timer |
-| 8 | CUPS on-demand: service+browsed disabled, **socket+path stay** — printing auto-starts when used | ~5 MB | `systemctl enable --now cups` |
+| 8 | CUPS on-demand for real: service+browsed+**path** disabled, **only the socket stays** — printing auto-starts when used. (`cups.path` watches `/var/cache/cups/org.cups.cupsd`, which persists across reboots, so it was starting cupsd at *every* boot) | ~5 MB | `systemctl enable --now cups cups.path` |
 | 9-12 | `switcheroo-control` (single GPU), `iio-sensor-proxy` (its only consumer, auto-brightness, is off per Stage 5h), `networking.service` (ifupdown legacy, only `lo`), `e2scrub` (LVM-only, no LVM here) | ~2 MB + ~1s | enable/unmask each |
+| 13 | Evolution Data Server masked (3 user units + alarm-notify autostart hidden) — no online accounts configured (GOA empty), so it served nothing. Shell calendar shows no events; GNOME Contacts/Calendar need an unmask | ~207 MB | `systemctl --user unmask evolution-source-registry evolution-calendar-factory evolution-addressbook-factory` + delete the autostart override |
+| 14 | `packagekit` masked — was started at every boot by a maintenance job and never idled out, though its only real client (gnome-software) is masked by step 4; `apt` doesn't use PackageKit | ~21 MB | `systemctl unmask packagekit` |
+| 15 | Remmina tray applet autostart off (`Hidden=true`) — the app itself stays installed, launch it when needed | ~53 MB | set `Hidden=false` back in `~/.config/autostart/remmina-applet.desktop` |
+| 16 | gvfs monitors masked (user): `afc` (iPhone mounting — no iPhone) + `goa` (online accounts — none). **`mtp` and `gphoto2` stay** — the Samsung phone over USB shows up via MTP (files) or PTP (photos) | ~16 MB | `systemctl --user unmask` both |
+
+Deliberately untouched (in active use): `bluetooth` + `mpris-proxy` (Apple/Sony headphones, Logitech
+mouse), `avahi-daemon` (SSH/`.local` to a second PC), `gvfs-mtp`/`gphoto2` (Samsung phone over USB),
+`bolt`/`udisks2` (needed, and parallel to the boot critical path anyway).
 
 Options at the top of the script: `OPT_DOCKER=0` skips step 1 (keep dev stacks up right after boot),
-`OPT_LOCALSEARCH=0` skips step 5 (keep file search). Run it, then `sudo reboot`; measure with
-`systemd-analyze && free -h`.
+`OPT_LOCALSEARCH=0` skips step 5 (keep file search), `OPT_EDS=0` skips step 13 (keep Shell calendar
+events). Run it, then `sudo reboot`; measure with `systemd-analyze && free -h`.
 
 ## Touchpad — no patch needed
 

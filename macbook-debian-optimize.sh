@@ -9,7 +9,9 @@
 #  jos a fost verificat individual (simulari apt, dependente de pachete, politici
 #  de restart docker, socket-uri) ca sa NU afecteze stabilitatea.
 #
-#  Castig masurat/estimat: ~750-800 MB RAM + boot userspace ~12s -> ~5s.
+#  Castig masurat (13 iul 2026, dupa o zi de rulare): boot 16s -> 9.9s;
+#  servicii sistem (system.slice) 862 -> 223 MB; swap 3.7 GB -> 0;
+#  pasii 13-16 mai elibereaza ~280 MB din sesiunea grafica.
 #
 #  Ce face (si cum se anuleaza fiecare):
 #    1. Docker on-demand: disable docker.service, ramane docker.socket ->
@@ -30,18 +32,45 @@
 #       (network-manager il are in relatii).   [revert: systemctl enable --now]
 #    7. fwupd mask + timer off — LVFS nu are firmware pt. Mac 2017.
 #                    [revert: systemctl unmask fwupd; enable fwupd-refresh.timer]
-#    8. CUPS on-demand: disable cups.service + cups-browsed; RAMAN cups.socket
-#       si cups.path -> printarea porneste automat cand chiar printezi.
-#                    [revert: systemctl enable --now cups cups-browsed]
+#    8. CUPS on-demand REAL: disable cups.service + cups-browsed + cups.path;
+#       ramane DOAR cups.socket -> printarea porneste automat cand chiar
+#       printezi. (cups.path pornea cupsd la FIECARE boot: fisierul-semnal
+#       /var/cache/cups/org.cups.cupsd persista pe disc intre reporniri —
+#       vazut pe viu la boot-ul din 13 iul.)
+#                    [revert: systemctl enable --now cups cups-browsed cups.path]
 #    9. switcheroo-control off — un singur GPU, n-are ce comuta.
 #   10. iio-sensor-proxy mask — singurul consumator (auto-brightness) e oprit
 #       de setup (ETAPA 5h).     [revert: unmask + gsettings ambient-enabled]
 #   11. networking.service (ifupdown) off — doar 'lo' in interfaces, totul e NM.
 #   12. e2scrub timers off — functioneaza doar pe LVM; sistemul nu are LVM.
+#   13. Evolution Data Server mask (user) — ~207 MB masurat (alarm-notify 87 +
+#       source-registry 62 + addressbook 31 + calendar 27 MB). Fara conturi
+#       online (GOA gol) nu serveste nimic. Calendarul din Shell nu mai arata
+#       evenimente; GNOME Contacts/Calendar nu functioneaza pana la unmask.
+#                    [revert: systemctl --user unmask evolution-source-registry
+#                     evolution-calendar-factory evolution-addressbook-factory
+#                     + sterge ~/.config/autostart/org.gnome.Evolution-alarm-notify.desktop]
+#   14. packagekit mask — ~21 MB; pornea la fiecare boot desi gnome-software
+#       (singurul client real) e mascat de pasul 4. apt nu trece prin PackageKit.
+#                    [revert: systemctl unmask packagekit]
+#   15. Remmina fara autostart in tray (~53 MB la login); aplicatia ramane
+#       instalata si o deschizi normal cand ai nevoie.
+#                    [revert: sterge linia Hidden=true din
+#                     ~/.config/autostart/remmina-applet.desktop]
+#   16. gvfs afc+goa monitor mask (user) — ~16 MB; afc = montare iPhone (nu
+#       exista iPhone), goa = conturi online (nu exista). RAMAN gvfs-mtp si
+#       gvfs-gphoto2: telefonul Samsung pe USB apare prin MTP (fisiere) sau
+#       PTP (poze).  [revert: systemctl --user unmask gvfs-afc-volume-monitor
+#                     gvfs-goa-volume-monitor]
+#
+#  NU se ating (folosite activ): bluetooth + mpris-proxy (casti Apple/Sony,
+#  mouse Logitech), avahi (SSH/.local catre al doilea PC), gvfs-mtp/gphoto2
+#  (telefon Samsung pe USB), bolt/udisks2 (necesare, oricum in paralel la boot).
 #
 #  Optiuni (schimba in 0 ca sa sari peste pasul respectiv):
 #    OPT_DOCKER=1       — pasul 1 (site-urile dev nu mai sunt up imediat la boot)
 #    OPT_LOCALSEARCH=1  — pasul 5 (cautarea in Files devine limitata)
+#    OPT_EDS=1          — pasul 13 (calendarul din Shell nu mai arata evenimente)
 #
 #  Utilizare:
 #    chmod +x macbook-debian-optimize.sh
@@ -54,6 +83,7 @@
 
 OPT_DOCKER=1
 OPT_LOCALSEARCH=1
+OPT_EDS=1
 
 # --- Culori ---
 RED='\033[0;31m'
@@ -278,13 +308,19 @@ CURRENT_STEP="PASUL 8 — CUPS on-demand"
 step "$CURRENT_STEP"
 sys_disable cups-browsed.service --now
 sys_disable cups.service --now
-# cups.socket + cups.path raman enabled -> CUPS porneste automat cand printezi
-for u in cups.socket cups.path; do
-    if [ "$(systemctl is-enabled $u 2>/dev/null)" != "enabled" ]; then
-        sudo systemctl enable $u || warn "Nu am putut activa $u."
-    fi
-done
-ok "cups.socket + cups.path raman active (printare on-demand, zero pierdere)."
+# cups.path (PathExists=/var/cache/cups/org.cups.cupsd) pornea cupsd la FIECARE
+# boot: fisierul-semnal persista pe disc intre reporniri. Socket-ul singur
+# acopera complet printarea la cerere.
+sys_disable cups.path --now
+if [ "$(systemctl is-enabled cups.socket 2>/dev/null)" != "enabled" ]; then
+    sudo systemctl enable cups.socket || warn "Nu am putut activa cups.socket."
+fi
+# daca cupsd a fost pornit de cups.path la boot-ul curent, il oprim acum
+if systemctl is-active --quiet cups.service; then
+    sudo systemctl stop cups.service || warn "Nu am putut opri cups.service."
+    ok "cups.service oprit (porneste la nevoie prin socket)."
+fi
+ok "doar cups.socket ramane activ (printare on-demand reala, zero pierdere)."
 
 # =============================================================================
 # PASUL 9-12 — marunte, toate cu risc zero verificat
@@ -305,6 +341,82 @@ CURRENT_STEP="PASUL 12 — e2scrub (doar pentru LVM, sistemul nu are LVM)"
 step "$CURRENT_STEP"
 sys_disable e2scrub_all.timer --now
 sys_disable e2scrub_reap.service
+
+# =============================================================================
+# PASUL 13 — Evolution Data Server (~207 MB; fara conturi online nu face nimic)
+# =============================================================================
+if [ "$OPT_EDS" = "1" ]; then
+    CURRENT_STEP="PASUL 13 — Evolution Data Server mask"
+    step "$CURRENT_STEP"
+    # Masurat pe sistem viu (13 iul 2026), cu zero conturi configurate (GOA gol).
+    # Pachetele RAMAN instalate — gnome-shell depinde de evolution-data-server;
+    # doar unitatile user sunt mascate, deci activarea D-Bus esueaza curat
+    # (o linie in jurnal cand deschizi calendarul din bara, atat).
+    user_mask evolution-source-registry.service
+    user_mask evolution-calendar-factory.service
+    user_mask evolution-addressbook-factory.service
+    # alarm-notify nu e serviciu, e autostart .desktop — il ascundem ca la
+    # localsearch (pasul 5) si oprim instanta care ruleaza acum.
+    EDS_OVERRIDE="$HOME/.config/autostart/org.gnome.Evolution-alarm-notify.desktop"
+    if [ -f /etc/xdg/autostart/org.gnome.Evolution-alarm-notify.desktop ] && [ ! -f "$EDS_OVERRIDE" ]; then
+        mkdir -p "$HOME/.config/autostart"
+        printf '[Desktop Entry]\nType=Application\nName=Evolution Alarm Notify\nHidden=true\n' \
+            > "$EDS_OVERRIDE" || fail "Nu am putut scrie $EDS_OVERRIDE."
+        ok "Autostart evolution-alarm-notify ascuns (override Hidden=true)."
+    else
+        warn "Autostart evolution-alarm-notify: deja tratat sau inexistent."
+    fi
+    pkill -u "$USER" -f evolution-alarm-notify 2>/dev/null \
+        && ok "evolution-alarm-notify oprit."
+    info "Calendarul din Shell nu mai arata evenimente. Revert: unmask cele 3 unitati + sterge override-ul autostart."
+else
+    step "PASUL 13 — Evolution Data Server: SARIT (OPT_EDS=0)"
+fi
+
+# =============================================================================
+# PASUL 14 — packagekit (update-urile se fac cu apt, nu prin PackageKit)
+# =============================================================================
+CURRENT_STEP="PASUL 14 — packagekit mask"
+step "$CURRENT_STEP"
+# Pornit la fiecare boot de un job de mentenanta (gdbus call ca root) si nu
+# mai iesea din idle (~21 MB), desi gnome-software — singurul lui client
+# real — e mascat de pasul 4. apt nu trece prin PackageKit.
+sys_mask packagekit.service
+
+# =============================================================================
+# PASUL 15 — Remmina fara autostart in tray (~53 MB la fiecare login)
+# =============================================================================
+CURRENT_STEP="PASUL 15 — Remmina fara autostart"
+step "$CURRENT_STEP"
+REMMINA_AUTOSTART="$HOME/.config/autostart/remmina-applet.desktop"
+if [ -f "$REMMINA_AUTOSTART" ]; then
+    if grep -q '^Hidden=true' "$REMMINA_AUTOSTART"; then
+        warn "Remmina autostart deja ascuns."
+    elif grep -q '^Hidden=' "$REMMINA_AUTOSTART"; then
+        # fisierul generat de Remmina contine deja Hidden=false — il inlocuim,
+        # nu adaugam a doua cheie (duplicatele deruteaza parserul GKeyFile)
+        sed -i 's/^Hidden=.*/Hidden=true/' "$REMMINA_AUTOSTART" \
+            || fail "Nu am putut edita $REMMINA_AUTOSTART."
+        ok "Remmina nu mai porneste in tray la login (aplicatia ramane instalata)."
+    else
+        printf 'Hidden=true\n' >> "$REMMINA_AUTOSTART" \
+            || fail "Nu am putut edita $REMMINA_AUTOSTART."
+        ok "Remmina nu mai porneste in tray la login (aplicatia ramane instalata)."
+    fi
+else
+    warn "Remmina autostart inexistent — nimic de facut."
+fi
+
+# =============================================================================
+# PASUL 16 — gvfs: monitor iPhone (afc) + conturi online (goa)
+# =============================================================================
+CURRENT_STEP="PASUL 16 — gvfs afc+goa monitor mask"
+step "$CURRENT_STEP"
+# afc = Apple File Conduit (montare iPhone — nu exista iPhone); goa = GNOME
+# Online Accounts (niciun cont configurat). RAMAN gvfs-mtp si gvfs-gphoto2:
+# telefonul Samsung pe USB apare prin MTP (fisiere) sau PTP (poze).
+user_mask gvfs-afc-volume-monitor.service
+user_mask gvfs-goa-volume-monitor.service
 
 # =============================================================================
 # VERIFICARE FINALA
@@ -333,13 +445,25 @@ check fwupd-refresh.timer disabled system
 check fwupd.service masked system
 check cups.service disabled system
 check cups-browsed.service disabled system
+check cups.path disabled system
 check cups.socket enabled system
 check switcheroo-control.service disabled system
 check iio-sensor-proxy.service masked system
 check networking.service disabled system
 check e2scrub_all.timer disabled system
+check packagekit.service masked system
 check gnome-software.service masked user
 [ "$OPT_LOCALSEARCH" = "1" ] && check localsearch-3.service masked user
+if [ "$OPT_EDS" = "1" ]; then
+    check evolution-source-registry.service masked user
+    check evolution-calendar-factory.service masked user
+    check evolution-addressbook-factory.service masked user
+fi
+check gvfs-afc-volume-monitor.service masked user
+check gvfs-goa-volume-monitor.service masked user
+grep -q '^Hidden=true' "$HOME/.config/autostart/remmina-applet.desktop" 2>/dev/null \
+    && ok "remmina autostart ascuns" \
+    || warn "remmina autostart activ (fisier lipsa sau fara Hidden=true)"
 dpkg -s plymouth > /dev/null 2>&1 && warn "plymouth inca instalat" || ok "plymouth sters"
 
 echo ""
@@ -347,7 +471,7 @@ echo -e "${BOLD}${GREEN}  ╔═════════════════
 echo "  ║              OPTIMIZARE APLICATA                    ║"
 echo -e "  ╚══════════════════════════════════════════════════════╝${NC}"
 echo ""
-echo -e "  ${GREEN}✓${NC}  Castig estimat: ~750-800 MB RAM + boot userspace ~12s -> ~5s"
+echo -e "  ${GREEN}✓${NC}  Castig masurat: boot 16s -> ~10s; servicii sistem 862 -> ~220 MB; sesiune -~280 MB"
 echo -e "  ${YELLOW}⚠${NC}  Necesar: ${BOLD}sudo reboot${NC} pentru efectul complet."
 echo -e "  ${BLUE}→${NC}  Dupa reboot, masoara cu: systemd-analyze && free -h"
 echo -e "  ${BLUE}→${NC}  Docker: stack-urile dev pornesc la prima comanda docker (ex: docker ps)."
