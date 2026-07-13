@@ -397,15 +397,30 @@ sys_mask packagekit.service
 # serviciul mascat, apelul afiseaza "Error: ... UnitMasked" — inofensiv
 # (apt isi termina treaba normal), dar il deviem ca sa dispara si eroarea,
 # si activarea la boot. Divert-ul supravietuieste upgrade-urilor pachetului.
+# Numele de deviere trebuie sa se termine in .disabled: e in lista implicita
+# apt Dir::Ignore-Files-Silently, deci apt il ignora FARA sa afiseze un
+# "Notice: Ignoring file..." la fiecare rulare (cum ar face cu .distrib,
+# numele implicit dpkg-divert).
 PK_HOOK="/etc/apt/apt.conf.d/20packagekit"
-if dpkg-divert --list "$PK_HOOK" 2>/dev/null | grep -q .; then
-    warn "Hook-ul apt 20packagekit deja deviat."
-elif [ -e "$PK_HOOK" ]; then
-    sudo dpkg-divert --rename --add "$PK_HOOK" || fail "Nu am putut devia $PK_HOOK."
-    ok "Hook-ul apt 20packagekit deviat."
-    info "Revert: sudo dpkg-divert --rename --remove $PK_HOOK"
+PK_DIVERT="$PK_HOOK.disabled"
+if dpkg-divert --list "$PK_HOOK" 2>/dev/null | grep -q "to $PK_DIVERT"; then
+    warn "Hook-ul apt 20packagekit deja deviat in .disabled."
 else
-    warn "Hook-ul apt 20packagekit inexistent — nimic de deviat."
+    if dpkg-divert --list "$PK_HOOK" 2>/dev/null | grep -q .; then
+        # deviat cu numele implicit .distrib (versiunea veche a pasului) —
+        # il readucem si il deviem din nou, curat
+        sudo dpkg-divert --rename --remove "$PK_HOOK" \
+            || fail "Nu am putut anula devierea veche a $PK_HOOK."
+        info "Devierea veche (.distrib) anulata — refac cu .disabled."
+    fi
+    if [ -e "$PK_HOOK" ]; then
+        sudo dpkg-divert --rename --divert "$PK_DIVERT" --add "$PK_HOOK" \
+            || fail "Nu am putut devia $PK_HOOK."
+        ok "Hook-ul apt 20packagekit deviat in .disabled (apt il ignora silentios)."
+        info "Revert: sudo dpkg-divert --rename --remove $PK_HOOK"
+    else
+        warn "Hook-ul apt 20packagekit inexistent — nimic de deviat."
+    fi
 fi
 
 # =============================================================================
@@ -477,9 +492,9 @@ check iio-sensor-proxy.service masked system
 check networking.service disabled system
 check e2scrub_all.timer disabled system
 check packagekit.service masked system
-dpkg-divert --list /etc/apt/apt.conf.d/20packagekit 2>/dev/null | grep -q . \
-    && ok "hook apt packagekit deviat" \
-    || warn "hook apt packagekit activ (apt update va afisa un Error inofensiv)"
+dpkg-divert --list /etc/apt/apt.conf.d/20packagekit 2>/dev/null | grep -q '\.disabled' \
+    && ok "hook apt packagekit deviat (.disabled)" \
+    || warn "hook apt packagekit nedeviat sau cu nume vechi (apt va afisa Error/Notice)"
 check gnome-software.service masked user
 [ "$OPT_LOCALSEARCH" = "1" ] && check localsearch-3.service masked user
 if [ "$OPT_EDS" = "1" ]; then
