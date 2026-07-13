@@ -315,10 +315,17 @@ sys_disable cups.path --now
 if [ "$(systemctl is-enabled cups.socket 2>/dev/null)" != "enabled" ]; then
     sudo systemctl enable cups.socket || warn "Nu am putut activa cups.socket."
 fi
-# daca cupsd a fost pornit de cups.path la boot-ul curent, il oprim acum
+# daca cupsd a fost pornit de cups.path la boot-ul curent, il oprim acum.
+# Atentie: cups.socket are PartOf=cups.service, deci stop-ul serviciului
+# opreste si socket-ul — il repornim imediat ca printarea on-demand sa
+# functioneze si in sesiunea curenta, nu doar dupa reboot.
 if systemctl is-active --quiet cups.service; then
     sudo systemctl stop cups.service || warn "Nu am putut opri cups.service."
     ok "cups.service oprit (porneste la nevoie prin socket)."
+fi
+if ! systemctl is-active --quiet cups.socket; then
+    sudo systemctl start cups.socket || warn "Nu am putut porni cups.socket."
+    ok "cups.socket repornit (asculta pentru printare on-demand)."
 fi
 ok "doar cups.socket ramane activ (printare on-demand reala, zero pierdere)."
 
