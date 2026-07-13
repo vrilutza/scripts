@@ -51,8 +51,11 @@
 #                     evolution-calendar-factory evolution-addressbook-factory
 #                     + sterge ~/.config/autostart/org.gnome.Evolution-alarm-notify.desktop]
 #   14. packagekit mask — ~21 MB; pornea la fiecare boot desi gnome-software
-#       (singurul client real) e mascat de pasul 4. apt nu trece prin PackageKit.
-#                    [revert: systemctl unmask packagekit]
+#       (singurul client real) e mascat de pasul 4. apt nu trece prin
+#       PackageKit. Hook-ul apt 20packagekit e deviat (dpkg-divert), altfel
+#       fiecare apt update ar afisa un "Error: UnitMasked" inofensiv.
+#                    [revert: systemctl unmask packagekit && dpkg-divert
+#                     --rename --remove /etc/apt/apt.conf.d/20packagekit]
 #   15. Remmina fara autostart in tray (~53 MB la login); aplicatia ramane
 #       instalata si o deschizi normal cand ai nevoie.
 #                    [revert: sterge linia Hidden=true din
@@ -389,6 +392,21 @@ step "$CURRENT_STEP"
 # mai iesea din idle (~21 MB), desi gnome-software — singurul lui client
 # real — e mascat de pasul 4. apt nu trece prin PackageKit.
 sys_mask packagekit.service
+# Sursa acelui gdbus call: hook-ul apt 20packagekit, care anunta daemonul
+# dupa fiecare apt update / operatie dpkg (inclusiv apt-daily la boot). Cu
+# serviciul mascat, apelul afiseaza "Error: ... UnitMasked" — inofensiv
+# (apt isi termina treaba normal), dar il deviem ca sa dispara si eroarea,
+# si activarea la boot. Divert-ul supravietuieste upgrade-urilor pachetului.
+PK_HOOK="/etc/apt/apt.conf.d/20packagekit"
+if dpkg-divert --list "$PK_HOOK" 2>/dev/null | grep -q .; then
+    warn "Hook-ul apt 20packagekit deja deviat."
+elif [ -e "$PK_HOOK" ]; then
+    sudo dpkg-divert --rename --add "$PK_HOOK" || fail "Nu am putut devia $PK_HOOK."
+    ok "Hook-ul apt 20packagekit deviat."
+    info "Revert: sudo dpkg-divert --rename --remove $PK_HOOK"
+else
+    warn "Hook-ul apt 20packagekit inexistent — nimic de deviat."
+fi
 
 # =============================================================================
 # PASUL 15 — Remmina fara autostart in tray (~53 MB la fiecare login)
@@ -459,6 +477,9 @@ check iio-sensor-proxy.service masked system
 check networking.service disabled system
 check e2scrub_all.timer disabled system
 check packagekit.service masked system
+dpkg-divert --list /etc/apt/apt.conf.d/20packagekit 2>/dev/null | grep -q . \
+    && ok "hook apt packagekit deviat" \
+    || warn "hook apt packagekit activ (apt update va afisa un Error inofensiv)"
 check gnome-software.service masked user
 [ "$OPT_LOCALSEARCH" = "1" ] && check localsearch-3.service masked user
 if [ "$OPT_EDS" = "1" ]; then
