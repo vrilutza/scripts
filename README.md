@@ -214,7 +214,15 @@ trigger --action=add /sys/devices/platform/applesmc.768`. To revert to stock: se
 `1200` (or just `echo 1200 | sudo tee /sys/devices/platform/applesmc.768/fan1_min` — resets on
 reboot anyway).
 
-### WiFi & Bluetooth
+**Hot-weather fingerprint (measured 2026-07-19, ~3h PSI/thermal monitoring, Chrome+Firefox).**
+With high summer ambient the chassis heat-soaks: the fan sat at max (≥7000 RPM) ~85% of a 3-hour
+browsing session even at ~60°C package — that is poor heat *evacuation* (time to clean the
+fan/heatsink), not a control problem. The SMC-lag caveat above bites harder in summer: one 2-minute
+burst caught the fan near its floor (~3900 RPM) and cost ~115 throttle events at 89-95°C. Note the
+UI stutter with two browsers open is primarily **2C/4T CPU saturation** (PSI-CPU spiking to 54%,
+GPU pinned at 1000 MHz), *not* thermal and not memory (PSI-mem ≈0; swap on the NVMe absorbs cleanly)
+— so a turbo cap or zswap would not help; a fan/heatsink cleaning and closing the one
+permanently-busy Chrome tab do.
 
 ```bash
 lsmod | grep brcmfmac           # WiFi driver loaded?

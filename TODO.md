@@ -87,6 +87,39 @@ cronic de driver — înainte de mitigare: `Invalid packet id` de ~23 de ori în
 
 ---
 
+## 🔧 Diagnosticat — sacadare cu Chrome+Firefox deschise simultan (19 iul 2026)
+
+**Simptom:** micro-înțepeniri când sunt deschise ambele browsere; nu apărea în mai (vreme răcoroasă).
+
+**Diagnostic pe date live** (2 sesiuni de monitorizare PSI/termice/frecvențe/ventilator: 45 min @5s
++ 3h @10s, 19 iul):
+
+1. **Cauza principală: saturarea CPU-ului (2C/4T) în rafale** — PSI-CPU ≥10% în 8,4% din timp,
+   vârfuri 36–54% (procesele stau la coadă după CPU = exact senzația de înțepenit), load până la
+   6,5; GPU-ul (Iris 640) țintuit la 1000 MHz în aceleași momente (2 browsere + gnome-shell).
+   Chrome = primul consumator în ~80% din eșantioane, constant ~10-13% CPU și în idle — un tab
+   lucrează permanent în fundal.
+2. **Agravant termic (legătura cu vremea):** ventilator la maxim (≥7000 RPM) ~85% din timp chiar
+   la 60°C pachet = șasiu îmbibat termic (caniculă + probabil praf); singurul episod real de
+   throttling (+115 evenimente, 89–95°C, 11:47–11:49) a început cu ventilatorul prins jos
+   (~3900 RPM) după o perioadă liniștită — lag-ul SMC documentat în README (Thermal management).
+   Pe vreme rece marja acoperă rafalele — de-aia „nu se întâmpla acum 2 luni".
+3. **Exonerate pe date:** memoria (PSI-mem ~0 permanent, max 4%; swap 2,7 GB dar NVMe absoarbe
+   fără stall-uri; avail min 694 MB), thermald (corect, powerclamp 0 intervenții), turbo (3,6 GHz
+   susținut).
+
+- [ ] **Curățare fizică ventilator + radiator** (eventual repastare) — măsura principală; capacul
+      A1708 = șuruburi pentalobe P5. Redă marja pentru rafale + scoate ventilatorul din maxim permanent.
+- [ ] **Identificat tab-ul Chrome permanent activ** (`Shift+Esc` în Chrome → Task Manager) ±
+      uBlock Origin.
+- **NU se face** (respins pe date): plafonare turbo (throttling ~1% din timp), zswap (zero presiune
+  de memorie), modificări thermald.
+- [ ] (separat) **Test fizic `auto-boot=false`** (pasul 17 optimize — scris și verificat în NVRAM
+      19 iul): după shutdown, ridicarea capacului NU trebuie să pornească laptopul; pornire doar
+      din buton. La fel la conectarea alimentării.
+
+---
+
 ## 🧹 De făcut — curățenie repo experimental (rămas de la testarea 7.1.x)
 
 Kernelul vine acum din forky, dar fișierele repo-ului experimental **încă există** (verificat 12 iul).
