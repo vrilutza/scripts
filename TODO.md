@@ -114,12 +114,13 @@ cronic de driver — înainte de mitigare: `Invalid packet id` de ~23 de ori în
       uBlock Origin.
 - **NU se face** (respins pe date): plafonare turbo (throttling ~1% din timp), zswap (zero presiune
   de memorie), modificări thermald.
-- [ ] (separat) **Test fizic auto power-on** (pasul 17 optimize): după shutdown, ridicarea
-      capacului NU trebuie să pornească laptopul; pornire doar din buton. La fel la alimentare.
-      **Încercarea 1 EȘUATĂ (19 iul, ~16:25):** `auto-boot=false` (ASCII) a persistat în NVRAM
-      dar laptopul tot a pornit la capac — pe Intel fără T2 SMC-ul citește variabila BINARĂ
-      `AutoBoot` (%00=oprit; `nvram AutoBoot=%00` din macOS), care lipsea. Pasul 17 le scrie acum
-      pe amândouă; de re-rulat scriptul + repetat testul fizic.
+- [x] (separat) **Test fizic auto power-on — TRECUT (19 iul, boot 16:39)**: cu `AutoBoot=%00`
+      laptopul rămâne oprit la ridicarea capacului; pornește doar din buton, iar valoarea
+      supraviețuiește power-cycle-ului (verificat: `07 00 00 80 00` după shutdown). Istoric:
+      încercarea 1 (doar `auto-boot=false` ASCII — varianta T1/T2) a EȘUAT deși valoarea persista
+      în NVRAM: pe Intel fără T2, SMC-ul citește variabila BINARĂ `AutoBoot` (%00=oprit,
+      echivalentul `nvram AutoBoot=%00` din macOS), care lipsea — pasul 17 le scrie acum pe
+      amândouă.
 
 ---
 
