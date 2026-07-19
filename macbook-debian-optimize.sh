@@ -65,13 +65,14 @@
 #       gvfs-gphoto2: telefonul Samsung pe USB apare prin MTP (fisiere) sau
 #       PTP (poze).  [revert: systemctl --user unmask gvfs-afc-volume-monitor
 #                     gvfs-goa-volume-monitor]
-#   17. firmware auto-boot=false — MacBook-urile 2016+ pornesc SINGURE la
-#       ridicarea capacului / conectarea alimentarii (variabila NVRAM Apple
-#       'auto-boot'); de aici porniri nedorite la transport. Dupa acest pas
-#       laptopul porneste doar de la butonul de pornire. Echivalentul exact
-#       al 'nvram auto-boot=false' din macOS; nicio alta variabila EFI atinsa.
-#                    [revert: vezi comanda info afisata de pasul 17 —
-#                     aceeasi scriere, cu valoarea 'true']
+#   17. firmware AutoBoot=%00 (+ auto-boot=false) — MacBook-urile 2016+ pornesc
+#       SINGURE la ridicarea capacului / conectarea alimentarii; de aici
+#       porniri nedorite la transport. Pe Intel fara T2 comutatorul efectiv e
+#       AutoBoot binar (echivalentul 'nvram AutoBoot=%00' din macOS); scriem
+#       si varianta ASCII auto-boot=false (T1/T2) pentru acoperire completa.
+#       Dupa acest pas laptopul porneste doar de la butonul de pornire.
+#                    [revert: comenzile info afisate de pasul 17 — aceleasi
+#                     scrieri, cu 'true' respectiv %03]
 #
 #  NU se ating (folosite activ): bluetooth + mpris-proxy (casti Apple/Sony,
 #  mouse Logitech), avahi (SSH/.local catre al doilea PC), gvfs-mtp/gphoto2
@@ -492,9 +493,28 @@ else
         || fail "Nu am putut scrie auto-boot=false."
     [ "$(tail -c +5 "$AB_VAR" 2>/dev/null)" = "false" ] \
         || fail "auto-boot nu s-a schimbat (recitirea nu arata 'false')."
-    ok "auto-boot=false — laptopul porneste doar de la butonul de pornire."
+    ok "auto-boot=false scris (varianta ASCII, citita de firmware-urile T1/T2)."
     # backslash-urile sunt dublate pentru echo -e din info(); se afiseaza \x07 etc.
     info "Revert: sudo chattr -i \$VAR && printf '\\\\x07\\\\x00\\\\x00\\\\x00true' | sudo tee \$VAR  (VAR=$AB_VAR)"
+fi
+# Pe Mac-urile Intel FARA T2 (cazul A1708) comutatorul citit efectiv de SMC e
+# variabila clasica AutoBoot, BINARA (%00=oprit, %03=pornit) — cea creata de
+# 'nvram AutoBoot=%00' din macOS pentru modelele 2016-2017. Verificat pe viu
+# 19 iul 2026: doar cu auto-boot=false (ASCII) laptopul tot pornea singur la
+# ridicarea capacului; variabila AutoBoot nu exista si trebuie CREATA.
+# Le setam pe amandoua — dublura e inofensiva si acopera ambele familii.
+AB2_VAR="/sys/firmware/efi/efivars/AutoBoot-7c436110-ab2a-4bbb-a880-fe41995c9f82"
+ab2_val() { od -An -tx1 -j4 "$AB2_VAR" 2>/dev/null | tr -d ' \n'; }
+if [ "$(ab2_val)" = "00" ]; then
+    warn "AutoBoot deja %00."
+else
+    [ -e "$AB2_VAR" ] && sudo chattr -i "$AB2_VAR" 2>/dev/null
+    printf '\x07\x00\x00\x00\x00' | sudo tee "$AB2_VAR" > /dev/null \
+        || fail "Nu am putut scrie AutoBoot=%00."
+    [ "$(ab2_val)" = "00" ] \
+        || fail "AutoBoot nu s-a schimbat (recitirea nu arata %00)."
+    ok "AutoBoot=%00 — laptopul porneste doar de la butonul de pornire."
+    info "Revert: sudo chattr -i \$VAR && printf '\\\\x07\\\\x00\\\\x00\\\\x00\\\\x03' | sudo tee \$VAR  (VAR=$AB2_VAR)"
 fi
 
 # =============================================================================
@@ -543,9 +563,9 @@ if [ "$OPT_EDS" = "1" ]; then
 fi
 check gvfs-afc-volume-monitor.service masked user
 check gvfs-goa-volume-monitor.service masked user
-[ "$(tail -c +5 "$AB_VAR" 2>/dev/null)" = "false" ] \
-    && ok "firmware auto-boot = false (nu porneste singur la capac/alimentare)" \
-    || warn "firmware auto-boot != false (porneste singur la ridicarea capacului)"
+[ "$(tail -c +5 "$AB_VAR" 2>/dev/null)" = "false" ] && [ "$(ab2_val)" = "00" ] \
+    && ok "firmware auto-boot=false + AutoBoot=%00 (nu porneste singur la capac/alimentare)" \
+    || warn "auto-boot/AutoBoot incomplete (poate porni singur la ridicarea capacului)"
 grep -q '^Hidden=true' "$HOME/.config/autostart/remmina-applet.desktop" 2>/dev/null \
     && ok "remmina autostart ascuns" \
     || warn "remmina autostart activ (fisier lipsa sau fara Hidden=true)"
