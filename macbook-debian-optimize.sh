@@ -65,6 +65,13 @@
 #       gvfs-gphoto2: telefonul Samsung pe USB apare prin MTP (fisiere) sau
 #       PTP (poze).  [revert: systemctl --user unmask gvfs-afc-volume-monitor
 #                     gvfs-goa-volume-monitor]
+#   17. firmware auto-boot=false — MacBook-urile 2016+ pornesc SINGURE la
+#       ridicarea capacului / conectarea alimentarii (variabila NVRAM Apple
+#       'auto-boot'); de aici porniri nedorite la transport. Dupa acest pas
+#       laptopul porneste doar de la butonul de pornire. Echivalentul exact
+#       al 'nvram auto-boot=false' din macOS; nicio alta variabila EFI atinsa.
+#                    [revert: vezi comanda info afisata de pasul 17 —
+#                     aceeasi scriere, cu valoarea 'true']
 #
 #  NU se ating (folosite activ): bluetooth + mpris-proxy (casti Apple/Sony,
 #  mouse Logitech), avahi (SSH/.local catre al doilea PC), gvfs-mtp/gphoto2
@@ -459,6 +466,38 @@ user_mask gvfs-afc-volume-monitor.service
 user_mask gvfs-goa-volume-monitor.service
 
 # =============================================================================
+# PASUL 17 — firmware auto-boot=false (nu mai porneste singur la capac)
+# =============================================================================
+CURRENT_STEP="PASUL 17 — firmware auto-boot=false"
+step "$CURRENT_STEP"
+# MacBook-urile 2016+ pornesc automat la ridicarea capacului si la conectarea
+# alimentarii (variabila NVRAM Apple 'auto-boot', din fabrica 'true') — de
+# aici pornirile nedorite cand e carat cu capacul inchis. Scriem 'false' in
+# ACEEASI variabila — exact ce face 'nvram auto-boot=false' din macOS; nu
+# atingem nicio alta variabila EFI. Formatul efivarfs: 4 octeti de atribute
+# + valoarea ASCII. Firmware-ul Apple raporteaza la CITIRE atributele cu un
+# bit propriu (07 00 00 80), dar kernelul respinge cu EINVAL orice bit din
+# afara celor standard UEFI la scriere (efivarfs_file_write: attributes &
+# ~EFI_VARIABLE_MASK — verificat in sursa 7.1) — deci scriem NV+BS+RT
+# (07 00 00 00), forma acceptata si de kernel si de firmware.
+AB_VAR="/sys/firmware/efi/efivars/auto-boot-7c436110-ab2a-4bbb-a880-fe41995c9f82"
+if [ ! -e "$AB_VAR" ]; then
+    warn "Variabila auto-boot nu exista in NVRAM (resetat?) — sar peste."
+elif [ "$(tail -c +5 "$AB_VAR" 2>/dev/null)" = "false" ]; then
+    warn "auto-boot deja false."
+else
+    # efivarfs marcheaza variabilele immutable — ridicam flag-ul inainte de scriere
+    sudo chattr -i "$AB_VAR" 2>/dev/null
+    printf '\x07\x00\x00\x00false' | sudo tee "$AB_VAR" > /dev/null \
+        || fail "Nu am putut scrie auto-boot=false."
+    [ "$(tail -c +5 "$AB_VAR" 2>/dev/null)" = "false" ] \
+        || fail "auto-boot nu s-a schimbat (recitirea nu arata 'false')."
+    ok "auto-boot=false — laptopul porneste doar de la butonul de pornire."
+    # backslash-urile sunt dublate pentru echo -e din info(); se afiseaza \x07 etc.
+    info "Revert: sudo chattr -i \$VAR && printf '\\\\x07\\\\x00\\\\x00\\\\x00true' | sudo tee \$VAR  (VAR=$AB_VAR)"
+fi
+
+# =============================================================================
 # VERIFICARE FINALA
 # =============================================================================
 CURRENT_STEP="verificare finala"
@@ -504,6 +543,9 @@ if [ "$OPT_EDS" = "1" ]; then
 fi
 check gvfs-afc-volume-monitor.service masked user
 check gvfs-goa-volume-monitor.service masked user
+[ "$(tail -c +5 "$AB_VAR" 2>/dev/null)" = "false" ] \
+    && ok "firmware auto-boot = false (nu porneste singur la capac/alimentare)" \
+    || warn "firmware auto-boot != false (porneste singur la ridicarea capacului)"
 grep -q '^Hidden=true' "$HOME/.config/autostart/remmina-applet.desktop" 2>/dev/null \
     && ok "remmina autostart ascuns" \
     || warn "remmina autostart activ (fisier lipsa sau fara Hidden=true)"

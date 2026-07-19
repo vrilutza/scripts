@@ -39,7 +39,7 @@ sudo reboot
 | Bluetooth | Pair a device from GNOME Settings → Bluetooth (SMC reset first if needed) |
 | Touchpad | Tap, swipe, two-finger scroll — cursor should be smooth |
 | VA-API (video accel) | `vainfo` should print supported profiles |
-| Suspend | **Fully blocked by design** (sleep targets masked — S3 unreliable on this hardware). Lid close only locks the screen. See "Suspend / sleep / hibernation" below. |
+| Suspend | **Fully blocked by design** (sleep targets masked — S3 unreliable on this hardware). Lid close only locks the screen; lid open no longer powers the machine on by itself (firmware `auto-boot=false`, optimize step 17). See "Suspend / sleep / hibernation" below. |
 | Reboot | `sudo systemctl reboot` should reset cleanly (`reboot=pci`). If it ever hangs at "Rebooting.", see the reboot note below. |
 | DKMS rebuild | `sudo dkms status` — `snd_hda_macbookpro` and `facetimehd` should show `installed` |
 
@@ -86,6 +86,7 @@ ls -la /usr/lib/systemd/system-sleep/                                           
 gsettings get org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type     # Should be 'nothing'
 gsettings get org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type # Should be 'nothing'
 cat /etc/systemd/logind.conf.d/macbook-no-suspend.conf                           # Lid switch override (HandleLidSwitch=lock)
+tail -c +5 /sys/firmware/efi/efivars/auto-boot-7c436110-ab2a-4bbb-a880-fe41995c9f82; echo  # 'false' = no self power-on at lid-open/power-connect (optimize step 17)
 gsettings get org.gnome.settings-daemon.plugins.power ambient-enabled            # Should be 'false' (Stage 5h — no auto-brightness)
 gsettings get org.gnome.settings-daemon.plugins.power idle-dim                   # Should be 'false' (Stage 5h — no dimming on idle)
 ```
@@ -286,6 +287,7 @@ included — nothing here affects stability. Idempotent, safe to re-run.
 | 14 | `packagekit` masked + its apt hook (`20packagekit`) dpkg-diverted. The hook gdbus-poked the daemon after every `apt update`/dpkg run (that's what started packagekitd at every boot, via apt-daily) and, with the unit masked, printed a harmless `Error: ... UnitMasked` after each `apt update`. Its only real client (gnome-software) is masked by step 4; `apt` doesn't use PackageKit | ~21 MB | `systemctl unmask packagekit && dpkg-divert --rename --remove /etc/apt/apt.conf.d/20packagekit` |
 | 15 | Remmina tray applet autostart off (`Hidden=true`) — the app itself stays installed, launch it when needed | ~53 MB | set `Hidden=false` back in `~/.config/autostart/remmina-applet.desktop` |
 | 16 | gvfs monitors masked (user): `afc` (iPhone mounting — no iPhone) + `goa` (online accounts — none). **`mtp` and `gphoto2` stay** — the Samsung phone over USB shows up via MTP (files) or PTP (photos) | ~16 MB | `systemctl --user unmask` both |
+| 17 | Firmware `auto-boot=false` — 2016+ MacBooks power themselves on at lid-open **and** at power-connect (Apple NVRAM variable `auto-boot`, factory `true`), hence unwanted boots while carried with the lid closed. After this the machine starts **only from the power button**. Exact equivalent of macOS `nvram auto-boot=false`, written via efivarfs; no other EFI variable is touched | no surprise power-ons | same write with `true` (command printed by step 17) |
 
 Deliberately untouched (in active use): `bluetooth` + `mpris-proxy` (Apple/Sony headphones, Logitech
 mouse), `avahi-daemon` (SSH/`.local` to a second PC), `gvfs-mtp`/`gphoto2` (Samsung phone over USB),
@@ -370,6 +372,9 @@ Since sleep is unfixable, the script *prevents* it so the machine can never hang
 - `reboot=pci` in GRUB — the default reset method does not reliably reset Apple hardware (reboot
   hangs at "Rebooting."); `reboot=pci` forces a reset via PCI port 0xcf9. Tested working on
   MacBookPro14,1. (If a future kernel breaks it, alternatives are `reboot=efi` / `reboot=acpi`.)
+- Firmware `auto-boot=false` (optimize step 17) — since the machine never sleeps, the way to carry
+  it around is a plain shutdown; with Apple's factory `auto-boot=true` it would then power itself
+  back on at lid-open or power-connect (even inside a bag). Now it stays off until the power button.
 
 The screen still blanks/locks after idle; the laptop just stays running. The sleep hooks
 (facetimehd, brcmfmac) remain installed but are now moot while sleep is masked — they only matter
