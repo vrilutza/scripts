@@ -63,14 +63,18 @@ apoi reconfigurează UART-ul gazdă. Pe Apple, ACPI nu descrie complet device-ul
 deci reconfigurarea nu se poate aplica. Eroarea apare **la fiecare boot**, dar cu două coduri diferite:
 
 ```
-BENIGN (149 boot-uri):                         FATAL (24 boot-uri):
-  BCM: failed to write update baudrate (-16)     hci0: command 0xfc18 tx timeout
-  Failed to set baudrate                         BCM: failed to write update baudrate (-110)
-  BCM: chip id 92                                Failed to set baudrate
-  BCM4350C0 UART 37.4 MHz Gamay USI UHE          BCM: Reset failed (-110)
-  BCM: firmware Patch file not found             → hci0 DOWN, BD Address 00:00:00:00:00:00
-  → hci0 UP RUNNING, BT complet funcțional       → „No default controller available"
+BENIGN (149 boot-uri)                        FATAL (24 boot-uri)
+  BCM: failed to write update baudrate (-16)   hci0: command 0xfc18 tx timeout
+  Failed to set baudrate                       BCM: failed to write update baudrate (-110)
+  BCM: chip id 92                              Failed to set baudrate
+  BCM4350C0 UART 37.4 MHz Gamay USI UHE        hci0: command 0xfc18 tx timeout   ← reîncercare
+  BCM: firmware Patch file not found           BCM: Reset failed (-110)
+  → hci0 UP RUNNING, BT funcțional             → hci0 DOWN, BD Address 00:00:00:00:00:00
+                                               → „No default controller available"
 ```
+
+Pe boot-urile fatale controllerul rămâne mut și la **a doua** trimitere a lui `0xfc18` — nu e un
+timeout izolat, ci lipsă totală de răspuns pe UART.
 
 - `-16` = **`-EBUSY`**: comanda e refuzată, dar controllerul răspunde. Rămâne pe 115200 și **merge** —
   suficient pentru mouse/tastatură/căști (A2DP ok). Doar throughput-ul maxim teoretic e limitat.
@@ -234,8 +238,12 @@ tip 7 iulie la fiecare câteva luni. Nu e urgent, dar nici „rezolvat".
 
 ### 2.6 Patch defensiv — versiunea corectă (dacă se merge pe B sau C)
 
-Punct de inserție verificat în sursa kernel 7.1 (`msgbuf.c`, `brcmf_msgbuf_process_rx_complete()`,
-în jurul liniei 1147 — **nu** `brcmf_msgbuf_rx_process()`, care nu există; vezi **E4**):
+Punct de inserție verificat în sursa kernel 7.1 (`msgbuf.c`, `brcmf_msgbuf_process_rx_complete()` —
+definită la linia **1147**, **nu** `brcmf_msgbuf_rx_process()`, care nu există; vezi **E4**).
+
+⚠️ **Poziția contează:** verificarea trebuie să stea între `if (!skb) return;` și primul `skb_pull()`
+care urmează imediat. `skb_pull()` pe un skb cu `skb_shared_info` corupt e la fel de nesigur ca
+eliberarea lui — orice inserție mai jos ratează scopul.
 
 ```c
 /* drivers/net/wireless/broadcom/brcm80211/brcmfmac/msgbuf.c
@@ -337,7 +345,7 @@ PipeWire.
 
 **De ce `PATCH[0]` în `dkms.conf` nu e suficient (E10):** scriptul de setup face
 `git clone patjak/facetimehd` → `make` → `sudo cp -r "$WORKDIR/facetimehd" "$DKMS_SRC"`
-(`macbook-debian-setup.sh:197-222`). La reinstalare curată se recreează **tot** directorul din clona
+(`macbook-debian-setup.sh:197-221`). La reinstalare curată se recreează **tot** directorul din clona
 proaspătă — deci și un `dkms.conf` modificat, și `patches/*.patch` dispar odată cu el.
 Persistența trebuie să vină din **repo-ul ăsta**, nu din `/usr/src`.
 
@@ -675,7 +683,9 @@ nu `platform-applespi:bluetooth`, cum apare prin unele documentații.)*
 
 ## Anexa A — catalog „log noise" per boot
 
-Pentru fiecare boot apar ~40 mesaje „error/warning", toate benigne și clasificate mai sus:
+Pentru fiecare boot apar ~40 mesaje „error/warning". Toate sunt clasificate mai jos — **benigne cu o
+singură excepție**, rândul marcat `A!` (Bluetooth `-110`), care apare doar pe 24 din 173 de boot-uri și
+**nu** e zgomot:
 
 | Cat | Mesaj jurnal | Frecvență | Cauza reală |
 |---|---|---|---|
