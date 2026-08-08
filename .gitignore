@@ -1,0 +1,25 @@
+# capturi de ecran de lucru — nu se publica
+screen/
+*.png
+
+# Material de lucru, strict local pe laptop — nu se publica.
+#
+# Rapoartele de bug au fost trimise upstream si traiesc acolo; copiile locale sunt
+# ciornele si jurnalele brute din care au iesit, specifice masinii asteia. TODO.md
+# le rezuma si linkeaza direct issue-urile upstream, deci nu se pierde nimic pentru
+# cineva din afara.
+#
+# (Atentie: in .gitignore, '#' comenteaza doar la inceput de rand. Un comentariu
+#  pus dupa tipar, pe aceeasi linie, intra in tipar si nu mai prinde nimic.)
+
+# -> pipewire #5363
+ISSUE_camera_pipewire.md
+# -> GNOME/snapshot #367
+ISSUE_camera_snapshot.md
+# investigatie in curs, jurnale brute ale masinii
+ISSUE_opriri_spontane.md
+
+# Bancul de test pentru pipewire #5363: arbori de build, .so-uri, jurnale de rulare.
+# Se reconstruieste din zero; de sters dupa ce upstream se pronunta, mai putin
+# camera-fix/, care trebuie mutat in proiect.
+pipewire-5363/

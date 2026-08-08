@@ -15,8 +15,10 @@ Before running this script:
    sudo apt update
    sudo apt install -y git
    ```
-3. **(Optional) If migrating from macOS:** perform an SMC Reset once (see Bluetooth section below)
-   — otherwise Bluetooth will stay broken even after the script runs.
+3. **(Optional) If Bluetooth doesn't come up:** perform an SMC Reset (see Bluetooth section below).
+   Note this is *not* a one-time migration step — on this hardware the Bluetooth controller fails to
+   initialise on roughly **14% of boots** (measured: 27 of 195). Most boots are fine; when one isn't,
+   a full power-off fixes that boot.
 
 ## Usage
 
@@ -58,11 +60,9 @@ aplay -l                                 # Playback devices visible to ALSA?
 
 Quick live test: from GNOME Settings → Sound, toggle output between Speakers and Headphones; both should respond. If audio dies after a kernel upgrade, run `sudo dkms status` first — DKMS rebuilds the module automatically against the new headers and a missing rebuild is the usual culprit.
 
-> ✅ **Audio regression on kernel 7.0.10 — RESOLVED in 7.0.12.** Kernel `7.0.10` briefly broke the
-> CS8409 codec (no sound card; an in-tree HDA generic-parser change, **not** a DKMS rebuild failure).
-> It was **fixed upstream in `7.0.12`** — audio registers normally again (verified: 0 UBSAN, card OK).
-> 7.0.10 is no longer shipped. If you're still on it for any reason, `sudo apt full-upgrade` (or boot
-> 7.0.9). Background in [TODO.md](TODO.md).
+> ℹ️ **Historical:** kernel `7.0.10` briefly broke the CS8409 codec (an in-tree HDA parser change,
+> **not** a DKMS failure); fixed upstream in `7.0.12`. That series is long gone from Debian — kept
+> here only so the symptom is searchable. Background in [TODO.md](TODO.md).
 
 ### Camera (FaceTime HD)
 
@@ -75,6 +75,24 @@ sudo modinfo facetimehd | head -10                   # Driver metadata (version,
 ```
 
 Quick live test: `sudo apt install cheese && cheese` — webcam preview should appear in 1-2 seconds. If `/dev/video0` is missing right after boot, try `sudo modprobe facetimehd` manually.
+
+> ⚠️ **Known issue: apps that go through PipeWire can freeze on the first frame.** GNOME Snapshot is
+> the usual victim — the viewfinder shows one frame and stops, recordings come out empty. The camera
+> itself is fine; `guvcview` and Chrome talk to V4L2 directly and work.
+>
+> Cause: `pipewiresrc` hands downstream memory that is **shared** with a buffer the producer reuses
+> in the same graph cycle. The mechanism that would make that safe, `SPA_META_Busy`, is implemented
+> by no SPA plugin. With the four buffers a V4L2 source negotiates, a client that holds four stops
+> the stream. Raising the driver's buffer count only moves the threshold, which is why the old
+> `FTHD_BUFFERS 4→8` patch that used to live here was dropped.
+>
+> Reported and being fixed upstream — one patch is already in PipeWire master
+> ([!2941](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2941)), two more await
+> review, plus six driver PRs at
+> [patjak/facetimehd](https://github.com/patjak/facetimehd/pulls) (centred crop, controls surviving
+> STREAMON, real frame-size reporting, a buffer-context leak, and an out-of-bounds write). The
+> setup script installs **stock upstream** driver, so a fresh install has the plain upstream
+> behaviour. Status and evidence: [TODO.md §3](TODO.md).
 
 ### System fixes (backlight, suspend, lid behavior)
 
@@ -464,8 +482,14 @@ rapid successive reboots it can land in an unresponsive state:
 - **Bluetooth**: `command 0xfc18 tx timeout` → `BCM: Reset failed (-110)` (chip times out on UART), `hci0` stays `DOWN`
 
 This is a **hardware-level limitation, not a software bug** — none of this repo's hooks run on
-reboot. Observed empirically: across 8 rapid reboots, WiFi failed once (self-recovered next boot)
-and Bluetooth went unresponsive after the burst.
+reboot.
+
+⚠️ **But it is only part of the story, and the honest version matters here.** Measured across 173
+boots: a fast restart (<45 s gap) doubles the risk of a dead Bluetooth controller — 21% vs 10% —
+but at `p = 0.055` that is suggestive, not proven. More importantly, **half the failures (12 of 24)
+happened after long power-offs**, one of them after 23.9 hours, which power-cycles the chip for
+certain. So warm reboot cannot be the only cause; there is also a race in the UART init sequence.
+Full analysis in [TODO.md §1.3](TODO.md).
 
 **Recovery: a full power-off, not a warm reboot.**
 
@@ -495,7 +519,7 @@ was captured in the EFI pstore crash dump (archived to `/var/lib/systemd/pstore/
    (`irq/65-brcmf_pc`) — unrecoverable in interrupt context → panic.
 
 This is **not** a kernel regression: the precursor (`Invalid packet id`, usually paired with a DMAR
-fault from the same device `02:00.0`) fired **23 times between May 20 and Jul 8**, across both
+fault from the same device `02:00.0`) has fired **93 times between May 20 and Aug 8**, across both
 7.0.x and 7.1.x kernels. The driver normally recovers silently; on Jul 7 the corruption reached the
 network stack before recovery. Root cause: the generic Broadcom firmware (Nov 2015, from
 `firmware-brcm80211`) running without Apple's board-specific NVRAM/CLM data — the same gap behind
@@ -504,8 +528,10 @@ the `failed to load ...MacBookPro14,1.txt/.clm_blob` boot messages and the 2.4 G
 **Mitigations (Stage 5g, automatic):**
 
 - WiFi power management **off** — `wifi.powersave = 2` in
-  `/etc/NetworkManager/conf.d/wifi-powersave-off.conf` (fewer firmware state transitions; the
-  laptop always runs on AC, so this costs nothing).
+  `/etc/NetworkManager/conf.d/wifi-powersave-off.conf` (the laptop always runs on AC, so this costs
+  nothing). ⚠️ **Measured: this did not reduce the desync rate.** 23 events in the ~50 days before
+  it, 70 in the ~31 days after — the rate went *up*, tracking usage rather than the setting. It is
+  kept because it costs nothing, not because it works. See [TODO.md §2.2](TODO.md).
 - `kernel.panic = 10` in `/etc/sysctl.d/99-panic-reboot.conf` — if it ever panics again, the
   machine reboots itself after 10 s instead of freezing until someone holds the power button.
 - The IOMMU stays **on**. Do **not** use `intel_iommu=off` to silence the DMAR faults — the IOMMU
@@ -517,7 +543,9 @@ Manual checks:
 ```bash
 iw dev wlp2s0 get power_save                     # expect "Power save: off"
 cat /proc/sys/kernel/panic                       # expect 10
-journalctl -g 'Invalid packet id' --no-pager     # desync frequency — should drop with power save off
+journalctl _TRANSPORT=kernel --since "30 days ago" -g 'Invalid packet id' \
+  | grep -c 'Invalid packet id'                  # desync frequency (~2/day is the current normal)
+                                                 # NOTE: plain 'journalctl -k' implies -b = this boot only
 sudo ls -la /var/lib/systemd/pstore/             # archived EFI crash dumps, if any new panic happened
 ```
 
@@ -532,10 +560,20 @@ machine. The chronic desync remains a generic-firmware quirk, handled by the Sta
 
 ## Tested on
 
-Debian Testing/forky — kernels `7.0.13+deb14-amd64` (forky) + `7.1.2-1~exp1` (experimental, GRUB
-default) — July 2026 (full hardware stack working, audio included).
+Debian Testing/forky. **Currently `7.1.6+deb14-amd64`**, with `7.1.3` kept installed as a fallback
+and DKMS built for both — verified 2026-08-08, full hardware stack working.
 
-> **Kernel note:** the audio regression on `7.0.10+deb14-amd64` (CS8409 codec failed to register a
-> sound card — in-tree HDA generic-parser change) was **fixed upstream in `7.0.12`**; audio works
-> again. Kernels currently installed: `7.0.13` (forky, fallback) + `7.1.2` (experimental, default).
-> Everything else (camera, WiFi, VA-API, RAPL/thermal, touchpad) works across both.
+Nothing in this repo is pinned to a kernel version. The machine has run the whole `7.0.x` → `7.1.x`
+path since May 2026; the two DKMS modules rebuild themselves on upgrade and the camera stack was
+re-verified end to end after `7.1.3 → 7.1.6` (identical `v4l2-compliance` result, capture working
+from 320x240 to 1296x736). Newer 7.1.x releases are expected to be uneventful.
+
+> ⚠️ **One thing that bites at every kernel upgrade:** install `linux-source-<X.Y>` **before**
+> upgrading, or the audio DKMS build fails — the driver's install script falls back to downloading
+> kernel sources from kernel.org, which 404s for `-rc` and end-of-life series.
+> ```bash
+> sudo apt install linux-source-7.1     # match your kernel's X.Y
+> ```
+> Reported upstream ([issue #187](https://github.com/davidjo/snd_hda_macbookpro/issues/187),
+> [PR #189](https://github.com/davidjo/snd_hda_macbookpro/pull/189)); until that lands, the manual
+> step stays. Details in [TODO.md §7.9](TODO.md).
