@@ -9,7 +9,7 @@ Fișier unic: **ce e rezolvat**, **ce e deschis și se poate repara**, **ce e wo
 | **Hardware** | MacBookPro14,1 (A1708), i5-7360U 2C/4T, Iris 640, 8 GB RAM, Apple S3X NVMe, BCM4350C0 (WiFi PCIe + BT UART), FaceTime HD, CS8409/CS42L83 |
 | **Software** | Debian testing/forky, kernel `7.1.6+deb14-amd64` (+ `7.1.3` păstrat ca rezervă, DKMS construit pe ambele), pipewire 1.6.8-1, wireplumber 0.5.15-1, Chrome 151.0.7922.108, GNOME/Wayland |
 | **Verificat pe viu** | **8 august 2026** — reverificare completă a cifrelor de mai jos pe **196 de boot-uri** (19 mai → 8 aug). Verificarea anterioară: 27 iulie, 173 de boot-uri. Ce nu s-a putut reverifica e marcat explicit `⏳ neconfirmat`. |
-| **Stare de bază** | Hardware-ul e funcțional. Margini: 2 probleme cronice (BT, WiFi), 1 **nediagnosticată** (opriri spontane), 1 la upstream (cameră — 9 rapoarte trimise, 2 acceptate), 1 fizică (termic). |
+| **Stare de bază** | Hardware-ul e funcțional. Margini: 2 probleme cronice (BT, WiFi), 1 **nediagnosticată** (opriri spontane), 1 la upstream (cameră — 11 rapoarte trimise, 1 acceptat în master), 1 fizică (termic). Tabloul complet al rapoartelor: §0.1. |
 
 **Legendă:**
 
@@ -51,6 +51,9 @@ Fișier unic: **ce e rezolvat**, **ce e deschis și se poate repara**, **ce e wo
 
 *(Scos din listă pe 8 august: „persistența patch-ului `FTHD_BUFFERS=8`". Patch-ul nu mai există —
 vezi §3.)*
+
+**Nu e în tabelul de mai sus, dar e deschis:** §7.9 — capcana `linux-source` de la fiecare upgrade
+de kernel. Stă în §7 fiindcă acolo o cauți, la upgrade, nu în lista de probleme active.
 
 ---
 
@@ -381,19 +384,26 @@ lent, e de așteptat, nu e un semnal.
 | [#333](https://github.com/patjak/facetimehd/pull/333) | **coruperea de memorie**: până la 4095 de octeți scriși *înaintea* bufferului, când acesta nu începe pe graniță de pagină |
 
 Driverul instalat pe mașină e **exact** suma lor *(verificat prin `diff -rq` pe 8 aug)*, construit
-pentru ambele kerneluri. Instalare/revenire: `camera-fix/install-pr333.sh`.
+pentru ambele kerneluri. Scriptul de instalare/revenire e local, în
+`pipewire-5363/camera-fix/install-pr333.sh` (nu e publicat — vezi nota din §3.2).
 
 ### 3.4 ✅ Ce s-a închis din versiunea veche a acestei secțiuni
 
 - ~~patch local `FTHD_BUFFERS` 4→8~~ — **retras**, trata simptomul (§3.1)
-- ~~§3.3 persistența patch-ului 4→8 în scriptul de setup~~ — **fără obiect**, patch-ul nu mai există
-- ~~§3.4 PR upstream `patjak/facetimehd` cu 4→8~~ — **nu s-a trimis și nu se mai trimite**; în locul
-  lui au plecat cele șase de mai sus
+- ~~*fostul* §3.3, persistența patch-ului 4→8 în scriptul de setup~~ — **fără obiect**, patch-ul nu
+  mai există *(numerele se refereau la structura veche a secțiunii; azi §3.3 e altceva)*
+- ~~*fostul* §3.4, PR upstream `patjak/facetimehd` cu 4→8~~ — **nu s-a trimis și nu se mai trimite**;
+  în locul lui au plecat cele șase de mai sus
 - ~~„fix-ul propus e de o linie (`SPA_MIN(8u, …)`)"~~ — **infirmat** de analiza de cauză rădăcină
 
-### 3.5 Workaround, cât timp !2934/!2935 așteaptă
+### 3.5 Ce înseamnă asta practic — încă nimic, pe mașina asta
 
-`guvcview` sau camera din Chrome — ambele merg V4L2 direct și ocolesc PipeWire. Neschimbat.
+**Atenție la o confuzie ușor de făcut:** !2941 e în **master**-ul PipeWire, iar Debian testing are
+`1.6.8-1`. Până când Debian livrează o versiune care îl conține, pe mașina asta nu s-a schimbat
+nimic. La fel pentru cele șase PR-uri de driver — sunt instalate local, dar nu sunt încă upstream.
+
+Workaround-ul rămâne valabil: `guvcview` sau camera din Chrome, ambele merg V4L2 direct și ocolesc
+PipeWire.
 
 ## 4. 🟢 Termic & sacadare
 
@@ -584,6 +594,9 @@ DMAR: ANDD device: 9 name: \_SB.PCI0.UA00     ← nu se rezolvă
 
 Probleme închise. Păstrate cu detaliul tehnic care contează, ca să nu fie re-deschise sau re-diagnosticate.
 
+⚠️ **Excepție: §7.9 nu e o problemă închisă.** E o capcană recurentă, care se manifestă doar la
+upgrade de kernel; stă aici pentru că acolo o cauți, nu în lista de probleme active.
+
 ### 7.1 NVRAM `AutoBoot` — pornire nedorită la ridicarea capacului (PASUL 17 din optimize)
 
 **Test fizic TRECUT** (19 iul, boot 16:39): cu `AutoBoot=%00` laptopul rămâne oprit la ridicarea
@@ -714,20 +727,41 @@ sursa distribuției. Până se acceptă, pasul manual de mai sus rămâne obliga
 **fără nicio urmă în jurnal** — journald se oprește odată cu mașina, deci ultimul lucru scris e o
 intrare normală.
 
-**Eliminate, cu dovezi:** termic (fără throttling în preajma opririlor), suspend (toate țintele
-`masked`, verificat din nou 8 aug), panic (zero `Oops`/UBSAN din 8 iulie, verificat 8 aug), stocare
-(NVMe fără erori), baterie/alimentare (laptopul e permanent pe USB-C), WiFi și DMAR.
+**Eliminate, cu dovada:** termic (66 °C sub încărcare, prag 100 °C, zero throttling în boot-urile
+care au murit), suspendare (ținte `masked`, zero `PM: suspend` în tot istoricul — reverificat 8 aug),
+**kernel panic** (`kernel.panic=10` ar fi repornit în 10 s; pauzele reale până la boot-ul următor au
+fost **92 s** și **98 s** — deci nu a intrat în panic), disc (zero erori NVMe/EXT4), DMA/IOMMU,
+MCE/RAM, și WiFi ca declanșator direct (ultimele evenimente sunt cu ore înainte de fiecare cădere).
 
-**De ce nu se poate prinde acum:** watchdog-ul hardware e dezactivat de firmware-ul Apple, iar
-pstore EFI nu conține nimic — deci oprirea nu e o panică. Rămâne o cădere de alimentare sau ceva
-sub nivelul kernelului.
+**De ce nu se prinde nimic:** `iTCO_wdt: device disabled by hardware/BIOS` — firmware-ul Apple
+dezactivează watchdog-ul hardware. `/sys/fs/pstore` e gol, netconsole nu e configurat. Mașina nu are
+în acest moment **niciun** mecanism prin care să lase o urmă când moare.
 
-### 8.1 🟢 De făcut — netconsole (P1) `⏳ NEFĂCUT`
+**Cele două ipoteze rămase**, pe care jurnalele nu le pot separa:
 
-Singura cale de a obține o urmă: trimiterea jurnalului de kernel prin UDP către **al doilea PC din
-LAN**, în timp real. Ce se scrie acolo nu se pierde odată cu mașina.
+1. **blocaj complet al kernelului** — nimic nu mai rulează, deci nimic nu mai scrie; ar fi urmat de
+   apăsarea butonului după ~90 s, ceea ce se potrivește cu pauzele măsurate;
+2. **întrerupere de alimentare la nivel SMC/firmware** — la fel de tăcută pentru sistemul de operare.
 
-Nimic din asta nu e configurat încă *(verificat 8 aug)*.
+⚠️ Alimentarea **nu e eliminată** — e eliminată doar *pe intervalul măsurat* (tensiunea bateriei
+perfect plată, 12,399–12,401 V, până cu 7 minute înainte). Indiciu slab pentru (2): după o cădere,
+bateria pierduse ~1,3 Wh și se încărca la 12,2 W, deci sistemul trăgea din baterie sub încărcare —
+alimentatorul de 61 W poate să nu acopere vârful. Bateria e la **62% sănătate, 1436 de cicluri**.
+
+Kernelul e `tainted` de două module out-of-tree (`facetimehd`, `snd_hda_codec_cs8409`). Un blocaj de
+driver e plauzibil pentru două dintre căderi, dar **nu explică** cele trei nocturne, cu mașina inactivă.
+
+### 8.1 🟢 De făcut, în ordinea raportului cost/informație — `⏳ NIMIC APLICAT`
+
+- [ ] **1. netconsole către al doilea PC.** Trimite mesajele de kernel prin UDP pe măsură ce apar,
+      deci prinde un oops *înainte* ca mașina să moară. Singurul lucru care transformă „nimic în
+      jurnal" în „avem urma". Risc zero, reversibil.
+- [ ] **2. Panic pe blocaj** — `panic_on_oops=1`, `softlockup_panic=1`, `hardlockup_panic=1`.
+      **Doar împreună cu (1)**, altfel se pierde și informația care există azi.
+- [ ] **3. Separare pe încărcare** — o noapte cu `facetimehd` pe blacklist. Dacă opririle nocturne
+      continuă, driverul e exclus definitiv; dacă se opresc, e primul suspect.
+- [ ] **4. Alimentare**, dacă (3) nu lămurește: consumul măsurat la priză sub încărcare, sau alt
+      alimentator.
 
 ### 8.2 Stare de fapt
 

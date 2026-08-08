@@ -90,9 +90,12 @@ Quick live test: `sudo apt install cheese && cheese` — webcam preview should a
 > ([!2941](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2941)), two more await
 > review, plus six driver PRs at
 > [patjak/facetimehd](https://github.com/patjak/facetimehd/pulls) (centred crop, controls surviving
-> STREAMON, real frame-size reporting, a buffer-context leak, and an out-of-bounds write). The
-> setup script installs **stock upstream** driver, so a fresh install has the plain upstream
-> behaviour. Status and evidence: [TODO.md §3](TODO.md).
+> STREAMON, real frame-size reporting, a buffer-context leak, and an out-of-bounds write).
+>
+> **None of that has reached you yet.** The accepted patch is in PipeWire *master*; Debian testing
+> ships `1.6.8`, and the driver PRs are unreviewed. This script installs the **stock upstream**
+> driver, so a fresh install behaves exactly like plain upstream — use the workaround above.
+> Status and evidence: [TODO.md §3](TODO.md).
 
 ### System fixes (backlight, suspend, lid behavior)
 
@@ -561,7 +564,8 @@ machine. The chronic desync remains a generic-firmware quirk, handled by the Sta
 ## Tested on
 
 Debian Testing/forky. **Currently `7.1.6+deb14-amd64`**, with `7.1.3` kept installed as a fallback
-and DKMS built for both — verified 2026-08-08, full hardware stack working.
+and DKMS built for both. Re-checked 2026-08-08: both DKMS modules installed for both kernels,
+camera verified end to end, Bluetooth and WiFi up.
 
 Nothing in this repo is pinned to a kernel version. The machine has run the whole `7.0.x` → `7.1.x`
 path since May 2026; the two DKMS modules rebuild themselves on upgrade and the camera stack was
