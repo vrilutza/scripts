@@ -95,7 +95,7 @@ Quick live test: `sudo apt install cheese && cheese` — webcam preview should a
 > **None of that has reached you yet.** The accepted patch is in PipeWire *master*; Debian testing
 > ships `1.6.8`, and the driver PRs are unreviewed. This script installs the **stock upstream**
 > driver, so a fresh install behaves exactly like plain upstream — use the workaround above.
-> Status and evidence: [TODO.md §3](TODO.md).
+> Status and evidence: [TODO.md, section 3](TODO.md#3--camera-facetime-hd--partajare-de-buffere-nesigură).
 
 ### System fixes (backlight, suspend, lid behavior)
 
@@ -272,7 +272,7 @@ uptime                                      # Boot time + load avg
 
 If `systemctl --failed` lists anything, drill in with `systemctl status <unit>` and `journalctl -u <unit>` for that specific unit.
 
-## Scripts
+## Scripts — what each one does
 
 ### `macbook-debian-setup.sh`
 
@@ -492,7 +492,7 @@ boots: a fast restart (<45 s gap) doubles the risk of a dead Bluetooth controlle
 but at `p = 0.055` that is suggestive, not proven. More importantly, **half the failures (12 of 24)
 happened after long power-offs**, one of them after 23.9 hours, which power-cycles the chip for
 certain. So warm reboot cannot be the only cause; there is also a race in the UART init sequence.
-Full analysis in [TODO.md §1.3](TODO.md).
+Full analysis in [TODO.md, section 1.3](TODO.md#13-teoria-warm-reboot--măsurată-nu-presupusă-27-iul).
 
 **Recovery: a full power-off, not a warm reboot.**
 
@@ -534,7 +534,7 @@ the `failed to load ...MacBookPro14,1.txt/.clm_blob` boot messages and the 2.4 G
   `/etc/NetworkManager/conf.d/wifi-powersave-off.conf` (the laptop always runs on AC, so this costs
   nothing). ⚠️ **Measured: this did not reduce the desync rate.** 23 events in the ~50 days before
   it, 70 in the ~31 days after — the rate went *up*, tracking usage rather than the setting. It is
-  kept because it costs nothing, not because it works. See [TODO.md §2.2](TODO.md).
+  kept because it costs nothing, not because it works. See [TODO.md, section 2.2](TODO.md#22-datele-reale--mitigarea-din-8-iulie-nu-a-oprit-desincronizarea).
 - `kernel.panic = 10` in `/etc/sysctl.d/99-panic-reboot.conf` — if it ever panics again, the
   machine reboots itself after 10 s instead of freezing until someone holds the power button.
 - The IOMMU stays **on**. Do **not** use `intel_iommu=off` to silence the DMAR faults — the IOMMU
@@ -580,4 +580,4 @@ from 320x240 to 1296x736). Newer 7.1.x releases are expected to be uneventful.
 > ```
 > Reported upstream ([issue #187](https://github.com/davidjo/snd_hda_macbookpro/issues/187),
 > [PR #189](https://github.com/davidjo/snd_hda_macbookpro/pull/189)); until that lands, the manual
-> step stays. Details in [TODO.md §7.9](TODO.md).
+> step stays. Details in [TODO.md, section 7.9](TODO.md#79-️-capcana-de-la-fiecare-upgrade-de-kernel--linux-source-întâi).

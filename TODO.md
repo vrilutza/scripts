@@ -9,7 +9,7 @@ Fișier unic: **ce e rezolvat**, **ce e deschis și se poate repara**, **ce e wo
 | **Hardware** | MacBookPro14,1 (A1708), i5-7360U 2C/4T, Iris 640, 8 GB RAM, Apple S3X NVMe, BCM4350C0 (WiFi PCIe + BT UART), FaceTime HD, CS8409/CS42L83 |
 | **Software** | Debian testing/forky, kernel `7.1.6+deb14-amd64` (+ `7.1.3` păstrat ca rezervă, DKMS construit pe ambele), pipewire 1.6.8-1, wireplumber 0.5.15-1, Chrome 151.0.7922.108, GNOME/Wayland |
 | **Verificat pe viu** | **8 august 2026** — reverificare completă a cifrelor de mai jos pe **196 de boot-uri** (19 mai → 8 aug). Verificarea anterioară: 27 iulie, 173 de boot-uri. Ce nu s-a putut reverifica e marcat explicit `⏳ neconfirmat`. |
-| **Stare de bază** | Hardware-ul e funcțional. Margini: 2 probleme cronice (BT, WiFi), 1 **nediagnosticată** (opriri spontane), 1 la upstream (cameră — 11 rapoarte trimise, 1 acceptat în master), 1 fizică (termic). Tabloul complet al rapoartelor: §0.1. |
+| **Stare de bază** | Hardware-ul e funcțional. Margini: 2 probleme cronice (BT, WiFi), 1 **nediagnosticată** (opriri spontane), 1 la upstream (cameră — 11 rapoarte trimise, 1 acceptat în master), 1 fizică (termic). Tabloul complet al rapoartelor: [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou). |
 
 **Legendă:**
 
@@ -42,18 +42,18 @@ Fișier unic: **ce e rezolvat**, **ce e deschis și se poate repara**, **ce e wo
 | Prioritate | Acțiune | Efort | Risc | Câștig |
 |---|---|---|---|---|
 | **P1** | Curățare fizică ventilator + radiator (+ eventual PTM7950) | 1-2 h | mediu (demontare) | marja termică — măsura principală anti-sacadare |
-| **P1** | **Netconsole către al doilea PC** (§8) | 30 min | zero | singura cale de a prinde următoarea oprire spontană |
+| **P1** | **Netconsole către al doilea PC** ([secțiunea 8](#8--opriri-spontane--cauză-nedeterminată)) | 30 min | zero | singura cale de a prinde următoarea oprire spontană |
 | **P2** | Identificat tab-ul Chrome de 10-13% (`Shift+Esc`) | 5 min | zero | ~10% CPU permanent |
-| **P2** | Hook de shutdown care logează verbul (`reboot`/`poweroff`) | 15 min | mic | răspunde la întrebarea BT `-110` **și** la §8 |
+| **P2** | Hook de shutdown care logează verbul (`reboot`/`poweroff`) | 15 min | mic | răspunde la întrebarea BT `-110` **și** la [secțiunea 8](#8--opriri-spontane--cauză-nedeterminată) |
 | **P3** | Raport upstream `brcmfmac` cu dovezile din pstore | 1-2 h | zero | poate scoate riscul de panică definitiv |
 | **P4** | Experiment s2idle (doar dacă vrei suspend) | 30 min | mediu, reversibil | lid-close real |
 | **P5** | Daemon de ventilator pe `fan1_min` dinamic | 2 h | mic (dacă se face corect) | mic — doar cazul „rafală după liniște" |
 
 *(Scos din listă pe 8 august: „persistența patch-ului `FTHD_BUFFERS=8`". Patch-ul nu mai există —
-vezi §3.)*
+vezi [secțiunea 3](#3--camera-facetime-hd--partajare-de-buffere-nesigură).)*
 
-**Nu e în tabelul de mai sus, dar e deschis:** §7.9 — capcana `linux-source` de la fiecare upgrade
-de kernel. Stă în §7 fiindcă acolo o cauți, la upgrade, nu în lista de probleme active.
+**Nu e în tabelul de mai sus, dar e deschis:** [secțiunea 7.9](#79-️-capcana-de-la-fiecare-upgrade-de-kernel--linux-source-întâi) — capcana `linux-source` de la fiecare upgrade
+de kernel. Stă în [secțiunea 7](#7--rezolvate-arhivă-tehnică) fiindcă acolo o cauți, la upgrade, nu în lista de probleme active.
 
 ---
 
@@ -64,19 +64,19 @@ să uiți că există. Stare verificată prin API pe **8 august 2026**.
 
 | Unde | Ce | Stare |
 |---|---|---|
-| [wireplumber #972](https://gitlab.freedesktop.org/pipewire/wireplumber/-/work_items/972) | hook-urile de linking crăpau pentru stream-uri fără `media.type` | ✅ **rezolvat upstream** (MR 861, în master) — §7.4 |
+| [wireplumber #972](https://gitlab.freedesktop.org/pipewire/wireplumber/-/work_items/972) | hook-urile de linking crăpau pentru stream-uri fără `media.type` | ✅ **rezolvat upstream** (MR 861, în master) — [secțiunea 7.4](#74-wireplumber-972--rezolvat-upstream-confirmat-19-iul) |
 | [pipewire !2941](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2941) | reciclare de buffer sub încuietoarea buclei + scurgere `buf_to_release` | ✅ **acceptat în master** `30ff8da17`, neatins, fast-forward |
 | [pipewire !2934](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2934) | gardă de depășire în `spa_v4l2_use_buffers()` | 🔵 deschis, `mergeable`, CI verde; recenzat de `pobrn`, răspuns dat |
 | [pipewire !2935](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2935) | copiere când pool-ul se golește | 🔵 **Draft intenționat** — ce a rămas e o decizie de politică |
 | [pipewire #5363](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/5363) | raportul de bază | 🔵 deschis, fără răspuns de mentenanț din 11 iulie |
 | [snapshot #367](https://gitlab.gnome.org/GNOME/snapshot/-/work_items/367) | viewfinder înghețat pe primul cadru | 🔵 deschis, **1 upvote** — altcineva a confirmat bug-ul (8 aug) |
-| [facetimehd #328…#333](https://github.com/patjak/facetimehd/pulls) | șase PR-uri de driver (vezi §3.3) | 🔵 toate deschise, `MERGEABLE`, **zero review-uri**; upstream nu s-a mișcat din 30 iunie |
+| [facetimehd #328…#333](https://github.com/patjak/facetimehd/pulls) | șase PR-uri de driver (vezi [secțiunea 3.3](#33--driver--șase-pr-uri-la-patjakfacetimehd)) | 🔵 toate deschise, `MERGEABLE`, **zero review-uri**; upstream nu s-a mișcat din 30 iunie |
 | [snd_hda_macbookpro #187](https://github.com/davidjo/snd_hda_macbookpro/issues/187) | `install.cirrus.driver.sh` pică pe Debian (`.tar.xz`) și pe kerneluri `-rc` (404 la kernel.org) | 🔵 deschis, 7 comentarii |
 | [snd_hda_macbookpro #189](https://github.com/davidjo/snd_hda_macbookpro/pull/189) | fix: folosește sursa de kernel instalată local | 🔵 deschis, 1 comentariu |
 
 ⚠️ **Ultimele două nu erau consemnate nicăieri în acest repo** până pe 8 august, deși
 `#187` descrie exact capcana de la **fiecare** upgrade de kernel pe mașina asta: dacă
-`linux-source-<X.Y>` nu e instalat **înainte**, build-ul DKMS al audio-ului pică. Vezi §7.9.
+`linux-source-<X.Y>` nu e instalat **înainte**, build-ul DKMS al audio-ului pică. Vezi [secțiunea 7.9](#79-️-capcana-de-la-fiecare-upgrade-de-kernel--linux-source-întâi).
 
 ---
 
@@ -254,7 +254,7 @@ tip 7 iulie la fiecare câteva luni. Nu e urgent, dar nici „rezolvat".
 ### 2.4 Mitigări deja aplicate (8 iul, live + ETAPA 5g în script)
 
 - [x] WiFi **power-save off** (persistent, `wifi.powersave = 2` în NetworkManager). Cost zero (laptop
-      mereu pe AC). **Efect real: nul** — vezi §2.2. Se păstrează, nu strică nimic.
+      mereu pe AC). **Efect real: nul** — vezi [secțiunea 2.2](#22-datele-reale--mitigarea-din-8-iulie-nu-a-oprit-desincronizarea). Se păstrează, nu strică nimic.
 - [x] **`kernel.panic = 10`** — reboot automat la 10 s după panic în loc de freeze permanent.
 - [x] **IOMMU rămâne pornit.** `intel_iommu=off` ar transforma scrierile DMA blocate în corupere
       silențioasă de memorie. ❌ Interzis, definitiv.
@@ -269,10 +269,10 @@ tip 7 iulie la fiecare câteva luni. Nu e urgent, dar nici „rezolvat".
 | Opțiune | Efort | Risc | Verdict |
 |---|---|---|---|
 | **A. Status quo** (IOMMU + `panic=10`) + monitorizare | zero | acceptat | **Baza.** Rămâne valabilă indiferent ce se alege mai jos |
-| **B. Raport upstream** (linux-wireless/netdev) cu dump-ul pstore din 7 iul | 1-2 h | zero | **Recomandat (P3), `⏳ nefăcut`.** Ai ceva ce raportorii obișnuiți n-au: panică completă capturată în pstore + **93** de evenimente datate. Aceeași strategie a funcționat deja de două ori: wireplumber #972 (rezolvat) și pipewire !2941 (acceptat în master) — vezi §0.1 |
-| **C. Hardening local prin DKMS** (§2.6) | mare | mediu | **Doar ca ultimă soluție.** `brcmfmac` e in-tree; un fork DKMS cere blacklist pe modulul din kernel, rebuild la fiecare update, taint suplimentar |
+| **B. Raport upstream** (linux-wireless/netdev) cu dump-ul pstore din 7 iul | 1-2 h | zero | **Recomandat (P3), `⏳ nefăcut`.** Ai ceva ce raportorii obișnuiți n-au: panică completă capturată în pstore + **93** de evenimente datate. Aceeași strategie a funcționat deja de două ori: wireplumber #972 (rezolvat) și pipewire !2941 (acceptat în master) — vezi [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou) |
+| **C. Hardening local prin DKMS** ([secțiunea 2.6](#26-patch-defensiv--versiunea-corectă-dacă-se-merge-pe-b-sau-c)) | mare | mediu | **Doar ca ultimă soluție.** `brcmfmac` e in-tree; un fork DKMS cere blacklist pe modulul din kernel, rebuild la fiecare update, taint suplimentar |
 | **D. Adaptor USB WiFi (~15 €)** | 15 € | zero | Ocolire completă a cipului Broadcom. Plan B dacă redevine frecvent + panici |
-| ❌ **`intel_iommu=off`** | — | — | **Interzis** (§2.4) |
+| ❌ **`intel_iommu=off`** | — | — | **Interzis** ([secțiunea 2.4](#24-mitigări-deja-aplicate-8-iul-live--etapa-5g-în-script)) |
 
 ### 2.6 Patch defensiv — versiunea corectă (dacă se merge pe B sau C)
 
@@ -352,7 +352,7 @@ retras: trata simptomul, iar ca patch upstream ar fi fost respins pe bună drept
 
 ### 3.2 🔵 PipeWire — un patch acceptat, două în așteptare
 
-Vezi tabloul complet din §0.1. Pe scurt:
+Vezi tabloul complet din [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou). Pe scurt:
 
 | MR | ce | stare |
 |---|---|---|
@@ -385,14 +385,14 @@ lent, e de așteptat, nu e un semnal.
 
 Driverul instalat pe mașină e **exact** suma lor *(verificat prin `diff -rq` pe 8 aug)*, construit
 pentru ambele kerneluri. Scriptul de instalare/revenire e local, în
-`pipewire-5363/camera-fix/install-pr333.sh` (nu e publicat — vezi nota din §3.2).
+`pipewire-5363/camera-fix/install-pr333.sh` (nu e publicat — vezi nota din [secțiunea 3.2](#32--pipewire--un-patch-acceptat-două-în-așteptare)).
 
 ### 3.4 ✅ Ce s-a închis din versiunea veche a acestei secțiuni
 
-- ~~patch local `FTHD_BUFFERS` 4→8~~ — **retras**, trata simptomul (§3.1)
-- ~~*fostul* §3.3, persistența patch-ului 4→8 în scriptul de setup~~ — **fără obiect**, patch-ul nu
-  mai există *(numerele se refereau la structura veche a secțiunii; azi §3.3 e altceva)*
-- ~~*fostul* §3.4, PR upstream `patjak/facetimehd` cu 4→8~~ — **nu s-a trimis și nu se mai trimite**;
+- ~~patch local `FTHD_BUFFERS` 4→8~~ — **retras**, trata simptomul ([secțiunea 3.1](#31-cauza-rădăcină-așa-cum-e-ea))
+- ~~*fosta* secțiune 3.3, persistența patch-ului 4→8 în scriptul de setup~~ — **fără obiect**, patch-ul nu
+  mai există *(numerele se refereau la structura veche a secțiunii; azi [secțiunea 3.3](#33--driver--șase-pr-uri-la-patjakfacetimehd) e altceva)*
+- ~~*fosta* secțiune 3.4, PR upstream `patjak/facetimehd` cu 4→8~~ — **nu s-a trimis și nu se mai trimite**;
   în locul lui au plecat cele șase de mai sus
 - ~~„fix-ul propus e de o linie (`SPA_MIN(8u, …)`)"~~ — **infirmat** de analiza de cauză rădăcină
 
@@ -492,7 +492,7 @@ confirmă imediat în `chrome://policy` după aplicare (acolo se vede dacă o ch
 
 ⚠️ **Limitare:** Memory Saver descarcă tab-uri **inactive**. Vinovatul măsurat e un tab **activ în
 fundal** (10-13% CPU permanent), pe care politica nu-l atinge. Util ca igienă generală, **nu** ca fix
-pentru sacadare. Fix-ul real rămâne identificarea tab-ului (§4.2).
+pentru sacadare. Fix-ul real rămâne identificarea tab-ului ([secțiunea 4.2](#42-de-făcut)).
 
 ### 4.5 ❌ Ce nu se face (respins pe datele de 3 h)
 
@@ -545,9 +545,9 @@ selecția s2idle se face din `mem_sleep_default=s2idle` sau scriind în `/sys/po
 
 **Așteptare onestă:** s2idle e mai puțin dependent de firmware decât S3, deci are șanse reale. Dar pe
 hardware Apple `brcmfmac` + `applespi` sunt exact componentele fragile la resume, iar cipul WiFi are deja
-o problemă de sincronizare documentată (§2). Probabilitate de succes: rezonabilă, nu garantată.
+o problemă de sincronizare documentată ([secțiunea 2](#2--wifi-bcm4350--desincronizare-ring-msgbuf)). Probabilitate de succes: rezonabilă, nu garantată.
 Beneficiul practic e mic (laptopul e mereu pe AC; lid-close ține sistemul pornit cu ecranul blocat; iar
-pornirea nedorită la capac e deja rezolvată — §7). De aceea **P4, nu P1**.
+pornirea nedorită la capac e deja rezolvată — [secțiunea 7](#7--rezolvate-arhivă-tehnică)). De aceea **P4, nu P1**.
 
 Elementele respinse din planurile de suspend (reset PCI pe discul de sistem, scriere 0 în RAPL,
 `unmask s2idle.target`): vezi **E1, E2, E7** în Anexa C.
@@ -570,7 +570,7 @@ DMAR: ANDD device: 9 name: \_SB.PCI0.UA00     ← nu se rezolvă
 
 - ❌ `intel_iommu=on,igfx_off` **nu ajută** (E9): `igfx_off` scoate din translație **doar iGPU-ul** —
   n-are nicio legătură cu I2C/UART. Mesajele ar rămâne identice.
-- ❌ `intel_iommu=off` — interzis (§2.4).
+- ❌ `intel_iommu=off` — interzis ([secțiunea 2.4](#24-mitigări-deja-aplicate-8-iul-live--etapa-5g-în-script)).
 - ❌ Override de tabelă DMAR din initramfs (`CONFIG_ACPI_TABLE_UPGRADE`) — teoretic posibil, dar DMAR e
   consumată foarte devreme la boot; o tabelă greșit reconstruită poate dezactiva IOMMU sau împiedica
   boot-ul. **Risc real pentru 3 linii cosmetice.**
@@ -581,8 +581,8 @@ DMAR: ANDD device: 9 name: \_SB.PCI0.UA00     ← nu se rezolvă
 
 | Item | De ce nu se poate |
 |---|---|
-| **Suspend S3 / hibernare** | S3 nu se trezește fiabil pe NVMe+EFI Apple → blocat via `systemctl mask` (ETAPA 5e). Hibernarea ar moșteni aceleași probleme de resume. Pentru s2idle vezi §5 |
-| **Broadcom WiFi/BT la repornire** | `reboot` nu power-cycle-ază cipul → poate rămâne mut (`Reset failed -110`). **Dar e doar un factor agravant, nu cauza unică** — vezi §1.3 (14% din boot-uri, jumătate după opriri lungi) |
+| **Suspend S3 / hibernare** | S3 nu se trezește fiabil pe NVMe+EFI Apple → blocat via `systemctl mask` (ETAPA 5e). Hibernarea ar moșteni aceleași probleme de resume. Pentru s2idle vezi [secțiunea 5](#5--suspend--s2idle) |
+| **Broadcom WiFi/BT la repornire** | `reboot` nu power-cycle-ază cipul → poate rămâne mut (`Reset failed -110`). **Dar e doar un factor agravant, nu cauza unică** — vezi [secțiunea 1.3](#13-teoria-warm-reboot--măsurată-nu-presupusă-27-iul) (14% din boot-uri, jumătate după opriri lungi) |
 | **Firmware Apple BCM4350 (WiFi/BT)** | Fișierele nu există public și nici în macOS pt. Mac-urile non-T2: calibrarea stă în OTP-ul cipului (citit deja de `brcmfmac`), datele regulatorii în firmware-ul Apple „bmac" (split-MAC, incompatibil). Investigat 8 iul 2026 — mesajele „failed to load …MacBookPro14,1.*" rămân cosmetice |
 | **facetimehd PLL lock** | `Failed to lock S2 PLL` — bug upstream `patjak/facetimehd`; camera merge pe PLL alternativ |
 | **ASPM PCIe** | `can't disable ASPM` — Apple BIOS restricționează; `pcie_aspm=off` ar avea alte efecte |
@@ -594,7 +594,7 @@ DMAR: ANDD device: 9 name: \_SB.PCI0.UA00     ← nu se rezolvă
 
 Probleme închise. Păstrate cu detaliul tehnic care contează, ca să nu fie re-deschise sau re-diagnosticate.
 
-⚠️ **Excepție: §7.9 nu e o problemă închisă.** E o capcană recurentă, care se manifestă doar la
+⚠️ **Excepție: [secțiunea 7.9](#79-️-capcana-de-la-fiecare-upgrade-de-kernel--linux-source-întâi) nu e o problemă închisă.** E o capcană recurentă, care se manifestă doar la
 upgrade de kernel; stă aici pentru că acolo o cauți, nu în lista de probleme active.
 
 ### 7.1 NVRAM `AutoBoot` — pornire nedorită la ridicarea capacului (PASUL 17 din optimize)
@@ -631,7 +631,7 @@ cameră: toate variantele de driver compilează fără warning, `v4l2-compliance
 50/7 ca pe 7.1.3, captura merge de la 320x240 la 1296x736.
 
 ⚠️ **Înainte de orice upgrade de kernel: `apt install linux-source-<X.Y>`** — altfel build-ul DKMS al
-audio-ului pică. Vezi §7.9.
+audio-ului pică. Vezi [secțiunea 7.9](#79-️-capcana-de-la-fiecare-upgrade-de-kernel--linux-source-întâi).
 
 ### 7.3 Curățenie repo experimental — **deja făcută** (reverificat 8 aug)
 
@@ -672,7 +672,7 @@ Fix: oneshot `bluetooth-rfkill-unblock.service` (unblock ordonat între `systemd
 + `AutoEnable=true`. **ETAPA 5f** + `rfkill` în deps.
 *(Fișierul de stare real: `/var/lib/systemd/rfkill/pci-0000:00:1e.0-platform-dw-apb-uart.2:bluetooth` —
 nu `platform-applespi:bluetooth`, cum apare prin unele documentații.)*
-**Alta** e problema din §1 (`-110` la init) — nu confunda cele două.
+**Alta** e problema din [secțiunea 1](#1--bluetooth-bcm4350c0--init-eșuat-la-14-din-boot-uri) (`-110` la init) — nu confunda cele două.
 
 ### 7.8 Restul
 
@@ -684,7 +684,7 @@ nu `platform-applespi:bluetooth`, cum apare prin unele documentații.)*
 - **Reboot hang** — `reboot=pci` în GRUB (ETAPA 5a), testat.
 - **Suspend hang S3** — toate sleep target-urile `masked` (ETAPA 5e), 4/4 confirmat.
 - **`udevadm settle` hang pe 7.0.10** — bound `--timeout=5` (ETAPA 8b); era efect al bug-ului audio.
-- **BT „down" după upgrade 7.0.10** — era stare Broadcom după repornire, **nu** kernel (vezi §1).
+- **BT „down" după upgrade 7.0.10** — era stare Broadcom după repornire, **nu** kernel (vezi [secțiunea 1](#1--bluetooth-bcm4350c0--init-eșuat-la-14-din-boot-uri)).
 
 ### 7.9 ⚠️ Capcana de la fiecare upgrade de kernel — `linux-source` întâi
 
@@ -779,12 +779,12 @@ rezolvat: intervalul dintre incidente a fost și de patru zile.
 | Scriere 0 în `constraint_0_power_limit_uw` | N-are legătură cu NVMe; ar șterge limita de 22 W | E2 |
 | `fan1_manual=1` | Scoate SMC-ul din buclă; fără rampă de siguranță dacă daemonul moare | E3 |
 | Shim `LD_PRELOAD` pe `VIDIOC_REQBUFS` | Atacă stratul greșit — numărul de buffere curge de sus în jos | E6 |
-| `intel_iommu=off` | Transformă DMA blocat în corupere silențioasă de memorie | §2.4 |
+| `intel_iommu=off` | Transformă DMA blocat în corupere silențioasă de memorie | [secțiunea 2.4](#24-mitigări-deja-aplicate-8-iul-live--etapa-5g-în-script) |
 | `intel_iommu=on,igfx_off` pentru mesajele DMAR | `igfx_off` afectează doar iGPU; mesajele vin din ANDD | E9 |
-| Override de tabelă DMAR din initramfs | Risc de boot/IOMMU pentru 3 linii de log | §6.1 |
+| Override de tabelă DMAR din initramfs | Risc de boot/IOMMU pentru 3 linii de log | [secțiunea 6.1](#61-dmar--și-de-ce-fix-ul-care-păstrează-iommu-nu-există) |
 | Extragerea `.hcd` din macOS | Nu rezolvă `-110`; ne-redistribuibil; transportul citat e greșit (USB vs UART) | E11 |
-| Plafonare turbo / zswap / modificări thermald | Respinse pe datele de 3 h din 19 iul | §4.5 |
-| DKMS fork pentru `brcmfmac` (ca primă opțiune) | Cost de întreținere mare; upstream e calea corectă | §2.5 |
+| Plafonare turbo / zswap / modificări thermald | Respinse pe datele de 3 h din 19 iul | [secțiunea 4.5](#45--ce-nu-se-face-respins-pe-datele-de-3-h) |
+| DKMS fork pentru `brcmfmac` (ca primă opțiune) | Cost de întreținere mare; upstream e calea corectă | [secțiunea 2.5](#25-opțiuni-deschise) |
 | `systemctl unmask s2idle.target` | Ținta nu există în systemd | E7 |
 | Politici Chrome `TabFreezingEnabled` / `BackgroundTracingAllowed` | Absente și din Chrome 150, și din **151** (reverificat 8 aug) — ignorate în tăcere | E8 |
 
@@ -799,7 +799,7 @@ rezolvat: intervalul dintre incidente a fost și de patru zile.
 | 8 | Thermal | thermald + lm-sensors + RAPL PL1=22 W/PL2=30 W + fan floor 3500 RPM (oneshot service, race-safe) |
 | 9 | Cosmetic / jurnal | GNOME media-keys (hibernate/playback-repeat) + usb-protection off + `applespi fnmode=1` |
 
-`macbook-debian-optimize.sh`: 17 pași, dintre care **pasul 17** = NVRAM `AutoBoot` (§7.1).
+`macbook-debian-optimize.sh`: 17 pași, dintre care **pasul 17** = NVRAM `AutoBoot` ([secțiunea 7.1](#71-nvram-autoboot--pornire-nedorită-la-ridicarea-capacului-pasul-17-din-optimize)).
 
 ---
 
@@ -814,11 +814,11 @@ singură excepție**, rândul marcat `A!` (Bluetooth `-110`), care apare pe **27
 | C | `ACPI Error: AE_ALREADY_EXISTS, SSDT already loaded` | 19×/boot | Apple SSDT-uri duplicate; kernel ignoră al doilea |
 | C | `ACPI Error: Aborting method \_PR.CPU*._OSC/PDC/GCAP/APPT` | ~10×/boot | Apple nu implementează metode ACPI standard |
 | C | `ACPI BIOS Error: Could not resolve symbol [\_SB.OSCP]` | 2×/boot | Apple nu expune `_OSC` global |
-| B | `DMAR: Failed to find handle … I2C0/I2C2/UA00` | 3×/boot | intrări ANDD Apple nerezolvabile (§6.1) |
-| B | `Bluetooth: hci0: BCM: failed to write update baudrate (-16)` | 168/195 boot-uri | BCM4350 refuză upgrade baud; rămâne 115200, BT OK (§1) |
-| **A!** | `Bluetooth: hci0: BCM: failed to write update baudrate (-110)` + `Reset failed (-110)` | **27/195 boot-uri** | **NU e benign: BT mort tot boot-ul** (§1) |
+| B | `DMAR: Failed to find handle … I2C0/I2C2/UA00` | 3×/boot | intrări ANDD Apple nerezolvabile ([secțiunea 6.1](#61-dmar--și-de-ce-fix-ul-care-păstrează-iommu-nu-există)) |
+| B | `Bluetooth: hci0: BCM: failed to write update baudrate (-16)` | 168/195 boot-uri | BCM4350 refuză upgrade baud; rămâne 115200, BT OK ([secțiunea 1](#1--bluetooth-bcm4350c0--init-eșuat-la-14-din-boot-uri)) |
+| **A!** | `Bluetooth: hci0: BCM: failed to write update baudrate (-110)` + `Reset failed (-110)` | **27/195 boot-uri** | **NU e benign: BT mort tot boot-ul** ([secțiunea 1](#1--bluetooth-bcm4350c0--init-eșuat-la-14-din-boot-uri)) |
 | B | `Bluetooth: hci0: BCM: firmware Patch file not found 'brcm/BCM.hcd'` | 168/195 | firmware patch opțional, nu există în Debian |
-| B | `brcmfmac: failed to load …MacBookPro14,1.bin/.txt/.clm_blob` | ~8×/boot | caută variante Apple, cade pe generic (WiFi OK; fișierele nu există — §6.2) |
+| B | `brcmfmac: failed to load …MacBookPro14,1.bin/.txt/.clm_blob` | ~8×/boot | caută variante Apple, cade pe generic (WiFi OK; fișierele nu există — [secțiunea 6.2](#62-restul-limitărilor-hardware--wont-fix-referință)) |
 | C | `nvme0n2: partition table beyond EOD, truncated` | 1×/boot | al 2-lea namespace al NVMe-ului Apple (proprietar/gol); pe toate kernelele |
 | C | `facetimehd: Failed to lock S2 PLL` | 1×/boot | bug upstream driver; camera merge pe PLL alternativ |
 | C | `facetimehd: can't disable ASPM` | 1×/boot | Apple BIOS restricționează ASPM |
@@ -830,7 +830,7 @@ singură excepție**, rândul marcat `A!` (Bluetooth `-110`), care apare pe **27
 
 **Concluzie:** zero crash/oops/UBSAN la un boot normal (0 din 8 iul încoace). Categoria A e curățată
 (ETAPA 9); restul sunt Apple ACPI/firmware quirks inevitabile (C) sau cu trade-off nejustificat (B).
-**Două excepții care NU sunt zgomot:** `-110` la Bluetooth (§1) și `Invalid packet id` la WiFi (§2).
+**Două excepții care NU sunt zgomot:** `-110` la Bluetooth ([secțiunea 1](#1--bluetooth-bcm4350c0--init-eșuat-la-14-din-boot-uri)) și `Invalid packet id` la WiFi ([secțiunea 2](#2--wifi-bcm4350--desincronizare-ring-msgbuf)).
 
 ---
 
@@ -863,7 +863,7 @@ journalctl _TRANSPORT=kernel --since "2026-05-19" -g "BCM: chip id"     | grep -
 hciconfig -a; bluetoothctl show
 readlink -f /sys/class/bluetooth/hci0        # -> …/dw-apb-uart.2/… (transport UART, nu USB)
 
-# --- Bluetooth: corelația eșec vs. durata opririi (§1.3) ---
+# --- Bluetooth: corelația eșec vs. durata opririi (secțiunea 1.3) ---
 # boot-urile ca JSON (index, boot_id, first_entry, last_entry în µs):
 journalctl --list-boots -o json > boots.json
 # boot_id-urile cu BT mort:
@@ -908,7 +908,7 @@ ls /etc/apt/sources.list.d/ /etc/apt/preferences.d/
 3. **`journalctl --list-boots | wc -l`** include linia de antet: N linii = **N−1 boot-uri**
    (la 8 august: 197 linii = 196 de boot-uri).
 4. **Verbul de shutdown nu e persistat** — `journald` se oprește înainte de `systemd-shutdown`. Nicio
-   linie `Rebooting.`/`Powering off.` în tot jurnalul. De aici nevoia hook-ului din §1.4.
+   linie `Rebooting.`/`Powering off.` în tot jurnalul. De aici nevoia hook-ului din [secțiunea 1.4](#14--de-făcut).
 5. **`dkms` nu e în `$PATH`-ul userului** — e la `/usr/sbin/dkms`.
 6. **Numerotarea `hwmonN` nu e stabilă între boot-uri** — se rezolvă întotdeauna după `name`.
 
@@ -927,36 +927,36 @@ dintre care **3 ar strica sistemul** dacă s-ar executa. Concluzia lor globală 
 |---|---|---|
 | **E1** | `echo 1 > /sys/bus/pci/devices/0000:01:00.0/reset` la wake — „resetează controllerul PCI NVMe" | `01:00.0` **este** controllerul NVMe pe care stă rootfs-ul: `Apple Inc. S3X NVMe Controller`. Un FLR pe discul de sistem, dintr-un script care rulează *de pe* acel disc = I/O eșuat în mijlocul resume-ului → în cel mai bun caz remount read-only, în cel mai rău corupere de filesystem. **De nu executat niciodată.** |
 | **E2** | `echo 0 > /sys/class/powercap/intel-rapl:0/constraint_0_power_limit_uw`, comentat „forțează NVMe în PS0" | N-are nicio legătură cu NVMe. E limita RAPL **long_term a CPU-ului**: `constraint_0_name = long_term`, `= 22000000`. Ar șterge exact setarea de 22 W pusă de ETAPA 8 și ar cere o limită de 0 W |
-| **E3** | Daemon de ventilator care citește `thermal_zone0` ca temperatură CPU și scrie `fan1_manual=1` | **Două erori.** (a) `thermal_zone0` = **BAT0** (bateria, 36,3°C); CPU-ul e `thermal_zone1 = x86_pkg_temp` (62°C) — praguri de 75°C nu s-ar atinge niciodată, daemonul n-ar face nimic. (b) `fan1_manual=1` **scoate SMC-ul din buclă** (`README.md` avertizează explicit) — dacă daemonul moare, ventilatorul rămâne fixat, fără rampă de siguranță. Plus plafon propus 6200 < `fan1_max` real 7200. Design corect: §4.3 |
+| **E3** | Daemon de ventilator care citește `thermal_zone0` ca temperatură CPU și scrie `fan1_manual=1` | **Două erori.** (a) `thermal_zone0` = **BAT0** (bateria, 36,3°C); CPU-ul e `thermal_zone1 = x86_pkg_temp` (62°C) — praguri de 75°C nu s-ar atinge niciodată, daemonul n-ar face nimic. (b) `fan1_manual=1` **scoate SMC-ul din buclă** (`README.md` avertizează explicit) — dacă daemonul moare, ventilatorul rămâne fixat, fără rampă de siguranță. Plus plafon propus 6200 < `fan1_max` real 7200. Design corect: [secțiunea 4.3](#43--p5--daemon-de-ventilator-designul-corect) |
 
 ### C.2 Ar face fix-ul inoperant
 
 | # | Propunerea | Realitatea verificată |
 |---|---|---|
-| **E4** | Patch `brcmfmac` în `brcmf_msgbuf_rx_process()`, apel `brcmf_msgbuf_pktid_find()` | Niciuna dintre funcții nu există în kernel 7.1 (`grep -c` = 0 în `msgbuf.c`). Numele reale: **`brcmf_msgbuf_process_rx_complete()`** (l. 1147) și **`brcmf_msgbuf_get_pktid()`** (l. 367). Patch-ul nu s-ar aplica. Versiunea corectată: §2.6 |
+| **E4** | Patch `brcmfmac` în `brcmf_msgbuf_rx_process()`, apel `brcmf_msgbuf_pktid_find()` | Niciuna dintre funcții nu există în kernel 7.1 (`grep -c` = 0 în `msgbuf.c`). Numele reale: **`brcmf_msgbuf_process_rx_complete()`** (l. 1147) și **`brcmf_msgbuf_get_pktid()`** (l. 367). Patch-ul nu s-ar aplica. Versiunea corectată: [secțiunea 2.6](#26-patch-defensiv--versiunea-corectă-dacă-se-merge-pe-b-sau-c) |
 | **E5** | `dev_kfree_skb_any(skb)` pe un skb cu `nr_frags` corupt | Chiar asta e calea care crapă: `skb_release_data()` iterează `shinfo->nr_frags` și dereferențează fiecare fragment. Eliberarea unui skb cu `nr_frags = 125` **re-declanșează** GPF-ul pe care patch-ul vrea să-l prevină. Trebuie sanitizat **înainte** de eliberare |
 | **E6** | Shim `LD_PRELOAD` pe `VIDIOC_REQBUFS` care „forțează PipeWire să aloce 8 buffere" | Atacă stratul greșit. `REQBUFS` e apelat de SPA **cu numărul deja negociat** cu clientul (tot 4). Un shim care umflă `req.count` în kernel nu spune nimănui de deasupra: SPA tot își dimensionează array-ul la 4, Snapshot tot le ține pe toate 4. **Dovadă:** driver nepatch-uit + `min-buffers=5` → **0 cadre** (`mmap_init -ENOMEM`) — numărul curge de sus în jos. În plus **driverul e deja la 8**. Pârghia reală e `min-buffers` pe client |
 | **E7** | `systemctl unmask s2idle.target` | `s2idle.target` nu există în systemd. Țintele reale: `sleep`, `suspend`, `hibernate`, `hybrid-sleep`, `suspend-then-hibernate`. Selecția s2idle se face din `mem_sleep_default=s2idle` sau `/sys/power/mem_sleep` |
-| **E8** | Politică Chrome cu `TabFreezingEnabled` + `BackgroundTracingAllowed` | Ambele **ABSENTE** din binarul Chrome 150 — ar fi ignorate în tăcere. JSON valid: §4.4 |
-| **E9** | `intel_iommu=on,igfx_off` elimină `DMAR: Failed to find handle` păstrând IOMMU | `igfx_off` scoate din translație **doar iGPU-ul**. Mesajele vin din intrările **ANDD** (I2C0/I2C2/UA00) — nicio legătură cu grafica. Ar rămâne identice. §6.1 |
-| **E10** | `PATCH[0]` în `dkms.conf` face patch-ul camerei să supraviețuiască reinstalării | Rezolvă doar jumătate: scriptul recreează **tot** `/usr/src/facetimehd-$VER` prin `cp -r` din clona proaspătă, deci și `dkms.conf` editat și `patches/` dispar. (`PATCH[0]`/`PATCH_MATCH[0]` **sunt** directive DKMS reale — problema e alta.) **Devenit fără obiect 8 aug:** patch-ul pe care trebuia să-l persiste a fost retras, vezi §3.4 |
-| **E11** | `.hcd`-ul extras din macOS ar rezolva „inclusiv upgrade-ul de baudrate" | **Trei probleme.** (a) Calea citată e `IOBluetoothHostControllerUSBTransport.kext`, dar cipul e pe **UART**, nu USB. (b) `.hcd` e un patch aplicat **după** reset-ul reușit; pe boot-urile cu `-110` secvența moare înainte — nu apare nici `chip id 92`, nici căutarea `.hcd` (§1.2). (c) Eroarea `-16` are cauza în ACPI (`No reset resource`), nu în lipsa patch-ului |
+| **E8** | Politică Chrome cu `TabFreezingEnabled` + `BackgroundTracingAllowed` | Ambele **ABSENTE** din binarul Chrome 150 — ar fi ignorate în tăcere. JSON valid: [secțiunea 4.4](#44--politica-chrome--json-valid-pe-chrome-150) |
+| **E9** | `intel_iommu=on,igfx_off` elimină `DMAR: Failed to find handle` păstrând IOMMU | `igfx_off` scoate din translație **doar iGPU-ul**. Mesajele vin din intrările **ANDD** (I2C0/I2C2/UA00) — nicio legătură cu grafica. Ar rămâne identice. [Secțiunea 6.1](#61-dmar--și-de-ce-fix-ul-care-păstrează-iommu-nu-există) |
+| **E10** | `PATCH[0]` în `dkms.conf` face patch-ul camerei să supraviețuiască reinstalării | Rezolvă doar jumătate: scriptul recreează **tot** `/usr/src/facetimehd-$VER` prin `cp -r` din clona proaspătă, deci și `dkms.conf` editat și `patches/` dispar. (`PATCH[0]`/`PATCH_MATCH[0]` **sunt** directive DKMS reale — problema e alta.) **Devenit fără obiect 8 aug:** patch-ul pe care trebuia să-l persiste a fost retras, vezi [secțiunea 3.4](#34--ce-s-a-închis-din-versiunea-veche-a-acestei-secțiuni) |
+| **E11** | `.hcd`-ul extras din macOS ar rezolva „inclusiv upgrade-ul de baudrate" | **Trei probleme.** (a) Calea citată e `IOBluetoothHostControllerUSBTransport.kext`, dar cipul e pe **UART**, nu USB. (b) `.hcd` e un patch aplicat **după** reset-ul reușit; pe boot-urile cu `-110` secvența moare înainte — nu apare nici `chip id 92`, nici căutarea `.hcd` ([secțiunea 1.2](#12-statistica--reverificată-pe-196-de-boot-uri-19-mai--8-aug)). (c) Eroarea `-16` are cauza în ACPI (`No reset resource`), nu în lipsa patch-ului |
 
 ### C.3 Afirmații nesusținute (nu greșite dovedit, dar nici verificabile)
 
 | Afirmație | Observație |
 |---|---|
 | senzorul ALS e „Intersil ISL29023" | Din Linux se vede doar `ACPI0008` / driverul generic `acpi-als`. Neverificabil — de nu prezentat ca fapt |
-| fișierul de stare rfkill = `platform-applespi:bluetooth` | Calea reală: `…/rfkill/pci-0000:00:1e.0-platform-dw-apb-uart.2:bluetooth`. Mecanismul descris e corect, numele nu (§7.7) |
+| fișierul de stare rfkill = `platform-applespi:bluetooth` | Calea reală: `…/rfkill/pci-0000:00:1e.0-platform-dw-apb-uart.2:bluetooth`. Mecanismul descris e corect, numele nu ([secțiunea 7.7](#77-bluetooth-nu-merge-deloc--soft-block-rfkill-persistat)) |
 | „Apple lasă PL1=100 W, **PL2=125 W**" | PL1=100 W e confirmat. PL2=125 W nu apare în nicio măsurătoare proprie |
-| plafonul de 16 MB al driverului = `FTHD_MAX_BUFFER_SIZE` | Constanta **nu există** în sursă. Observația rămâne validă ca notă istorică; PR-ul cu 8 buffere pentru care conta nu s-a mai trimis (§3.4) |
+| plafonul de 16 MB al driverului = `FTHD_MAX_BUFFER_SIZE` | Constanta **nu există** în sursă. Observația rămâne validă ca notă istorică; PR-ul cu 8 buffere pentru care conta nu s-a mai trimis ([secțiunea 3.4](#34--ce-s-a-închis-din-versiunea-veche-a-acestei-secțiuni)) |
 | „SMC așteaptă 6-10 s peste 85°C"; „PROCHOT → 1,4 GHz" | Ordinul de mărime al lag-ului e confirmat de README (~20-30 s la sarcină bruscă), dar cifrele exacte nu vin din nicio măsurătoare. Monitorizarea de 3 h a măsurat altceva: ventilator ≥7000 RPM ~85% din timp și **un singur** episod de throttling |
 | „100% solvabil" ×5 | Niciuna dintre cele 5 nu e demonstrat 100% solvabilă; 2 din 5 aveau propuneri care nu funcționează (E6) sau nu se aplică (E4) |
 
 ### C.4 Ce era corect în acele documente și s-a păstrat aici
 
 NVRAM `AutoBoot` binar vs `auto-boot` ASCII, inclusiv masca `07 00 00 00` vs `07 00 00 80` și respingerea
-cu `-EINVAL` (§7.1) · istoricul RAPL în 4 iterații (§7.8) · mecanismul race-ului rfkill (§7.7) ·
-aritmetica bufferelor camerei, 1280×720 NV12 ≈ 1,38 MB × 8 ≈ 11 MB (azi fără obiect, §3.4) · regresia audio 7.0.10
-(§7.6) · `PATCH[0]`/`PATCH_MATCH[0]` ca directive DKMS reale (E10) · ghidul de demontare A1708 —
-pentalobe P5, T5 înăuntru, bateria deconectată prima, PTM7950 pentru die expus (§4.2).
+cu `-EINVAL` ([secțiunea 7.1](#71-nvram-autoboot--pornire-nedorită-la-ridicarea-capacului-pasul-17-din-optimize)) · istoricul RAPL în 4 iterații ([secțiunea 7.8](#78-restul)) · mecanismul race-ului rfkill ([secțiunea 7.7](#77-bluetooth-nu-merge-deloc--soft-block-rfkill-persistat)) ·
+aritmetica bufferelor camerei, 1280×720 NV12 ≈ 1,38 MB × 8 ≈ 11 MB (azi fără obiect, [secțiunea 3.4](#34--ce-s-a-închis-din-versiunea-veche-a-acestei-secțiuni)) · regresia audio 7.0.10
+([secțiunea 7.6](#76-audio-rupt-pe-7010)) · `PATCH[0]`/`PATCH_MATCH[0]` ca directive DKMS reale (E10) · ghidul de demontare A1708 —
+pentalobe P5, T5 înăuntru, bateria deconectată prima, PTM7950 pentru die expus ([secțiunea 4.2](#42-de-făcut)).
