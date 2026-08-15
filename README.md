@@ -86,13 +86,15 @@ Quick live test: `sudo apt install cheese && cheese` — webcam preview should a
 > the stream. Raising the driver's buffer count only moves the threshold, which is why the old
 > `FTHD_BUFFERS 4→8` patch that used to live here was dropped.
 >
-> Reported and being fixed upstream — one patch is already in PipeWire master
-> ([!2941](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2941)), two more await
-> review, plus six driver PRs at
+> Reported and being fixed upstream — three patches are already in PipeWire master
+> ([!2933](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2933),
+> [!2941](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2941),
+> [!2934](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2934)), one more is a
+> deliberate draft, plus six driver PRs at
 > [patjak/facetimehd](https://github.com/patjak/facetimehd/pulls) (centred crop, controls surviving
 > STREAMON, real frame-size reporting, a buffer-context leak, and an out-of-bounds write).
 >
-> **None of that has reached you yet.** The accepted patch is in PipeWire *master*; Debian testing
+> **None of that has reached you yet.** The accepted patches are in PipeWire *master*; Debian testing
 > ships `1.6.8`, and the driver PRs are unreviewed. This script installs the **stock upstream**
 > driver, so a fresh install behaves exactly like plain upstream — use the workaround above.
 > Status and evidence: [TODO.md, section 3](TODO.md#3--camera-facetime-hd--partajare-de-buffere-nesigură).

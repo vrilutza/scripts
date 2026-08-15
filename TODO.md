@@ -9,7 +9,7 @@ Fișier unic: **ce e rezolvat**, **ce e deschis și se poate repara**, **ce e wo
 | **Hardware** | MacBookPro14,1 (A1708), i5-7360U 2C/4T, Iris 640, 8 GB RAM, Apple S3X NVMe, BCM4350C0 (WiFi PCIe + BT UART), FaceTime HD, CS8409/CS42L83 |
 | **Software** | Debian testing/forky, kernel `7.1.6+deb14-amd64` (+ `7.1.3` păstrat ca rezervă, DKMS construit pe ambele), pipewire 1.6.8-1, wireplumber 0.5.15-1, Chrome 151.0.7922.108, GNOME/Wayland |
 | **Verificat pe viu** | **8 august 2026** — reverificare completă a cifrelor de mai jos pe **196 de boot-uri** (19 mai → 8 aug). Verificarea anterioară: 27 iulie, 173 de boot-uri. Ce nu s-a putut reverifica e marcat explicit `⏳ neconfirmat`. |
-| **Stare de bază** | Hardware-ul e funcțional. Margini: 2 probleme cronice (BT, WiFi), 1 **nediagnosticată** (opriri spontane), 1 la upstream (cameră — 11 rapoarte trimise, 1 acceptat în master), 1 fizică (termic). Tabloul complet al rapoartelor: [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou). |
+| **Stare de bază** | Hardware-ul e funcțional. Margini: 2 probleme cronice (BT, WiFi), 1 **nediagnosticată** (opriri spontane), 1 la upstream (cameră — 15 rapoarte trimise, 3 patch-uri acceptate în master), 1 fizică (termic). Tabloul complet al rapoartelor: [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou). |
 
 **Legendă:**
 
@@ -30,7 +30,7 @@ Fișier unic: **ce e rezolvat**, **ce e deschis și se poate repara**, **ce e wo
 |---|---|---|---|---|
 | 1 | Bluetooth mort la ~14% din boot-uri (`-110`) | 🟡 activ | experiment de 3 linii care separă „warm vs cold"; SMC reset ca remediu | [1](#1--bluetooth-bcm4350c0--init-eșuat-la-14-din-boot-uri) |
 | 2 | WiFi BCM4350 — desincronizare ring, risc de panică | 🟡 activ | raport upstream cu dovezile din pstore; monitorizare cu prag | [2](#2--wifi-bcm4350--desincronizare-ring-msgbuf) |
-| 3 | Cameră — partajare de buffere fără `SPA_META_Busy` (aplicațiile îngheață) | 🔵 upstream | **1 patch acceptat în master**; restul așteaptă review | [3](#3--camera-facetime-hd--partajare-de-buffere-nesigură) |
+| 3 | Cameră — partajare de buffere fără `SPA_META_Busy` (aplicațiile îngheață) | 🔵 upstream | **3 patch-uri acceptate în master**; a rămas !2935, în Draft intenționat | [3](#3--camera-facetime-hd--partajare-de-buffere-nesigură) |
 | 4 | Sacadare cu 2 browsere + saturație termică | 🟢 | curățare fizică + tab-ul Chrome; abia apoi eventual daemon de ventilator | [4](#4--termic--sacadare) |
 | 5 | Suspend / s2idle | 🟡 opțional | experiment reversibil, dacă chiar vrei suspend | [5](#5--suspend--s2idle) |
 | 6 | Zgomot de log (DMAR / ACPI / SGX / nvme0n2) | 🔴 | nimic — vezi de ce „fix-ul fără dezactivarea IOMMU" nu funcționează | [6](#6--zgomot-de-log) |
@@ -59,17 +59,18 @@ de kernel. Stă în [secțiunea 7](#7--rezolvate-arhivă-tehnică) fiindcă acol
 
 ## 0.1 Rapoarte trimise upstream — tablou
 
-Toate raportate de aici. Ține-le într-un singur loc: două s-au și rezolvat, iar despre restul e ușor
-să uiți că există. Stare verificată prin API pe **8 august 2026**.
+Toate raportate de aici. Ține-le într-un singur loc: patru s-au și rezolvat, iar despre restul e ușor
+să uiți că există. Stare verificată prin API pe **15 august 2026**.
 
 | Unde | Ce | Stare |
 |---|---|---|
 | [wireplumber #972](https://gitlab.freedesktop.org/pipewire/wireplumber/-/work_items/972) | hook-urile de linking crăpau pentru stream-uri fără `media.type` | ✅ **rezolvat upstream** (MR 861, în master) — [secțiunea 7.4](#74-wireplumber-972--rezolvat-upstream-confirmat-19-iul) |
+| [pipewire !2933](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2933) | `module-client-node` ignora flag-ul `READ` la enumerarea parametrilor | ✅ **acceptat în master** `c81badc1b`, în aceeași zi în care a fost trimis (30 iul) |
 | [pipewire !2941](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2941) | reciclare de buffer sub încuietoarea buclei + scurgere `buf_to_release` | ✅ **acceptat în master** `30ff8da17`, neatins, fast-forward |
-| [pipewire !2934](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2934) | gardă de depășire în `spa_v4l2_use_buffers()` | 🔵 deschis, `mergeable`, CI verde; recenzat de `pobrn`, răspuns dat |
+| [pipewire !2934](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2934) | gardă de depășire în `spa_v4l2_use_buffers()` | ✅ **acceptat în master** `7a8e49384` (14 aug), rebazat de `wtaymans`, autor păstrat; recenzat de `pobrn`, singura lui cerere (`got`→`provided`) inclusă |
 | [pipewire !2935](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2935) | copiere când pool-ul se golește | 🔵 **Draft intenționat** — ce a rămas e o decizie de politică |
 | [pipewire #5363](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/5363) | raportul de bază | 🔵 deschis, fără răspuns de mentenanț din 11 iulie |
-| [snapshot #367](https://gitlab.gnome.org/GNOME/snapshot/-/work_items/367) | viewfinder înghețat pe primul cadru | 🔵 deschis, **1 upvote** — altcineva a confirmat bug-ul (8 aug) |
+| [snapshot #367](https://gitlab.gnome.org/GNOME/snapshot/-/work_items/367) | viewfinder înghețat pe primul cadru | 🔵 deschis, **1 upvote** — altcineva a confirmat bug-ul (8 aug). Mentenantul a propus [!464](https://gitlab.gnome.org/GNOME/snapshot/-/merge_requests/464) (`min-buffers=8`); infirmat cu măsurători pe 10 aug — pe camera asta dă **0 cadre**, nu e un fix. !464 e încă deschis, nemerged |
 | [facetimehd #328…#333](https://github.com/patjak/facetimehd/pulls) | șase PR-uri de driver (vezi [secțiunea 3.3](#33--driver--șase-pr-uri-la-patjakfacetimehd)) | 🔵 toate deschise, `MERGEABLE`, **zero review-uri**; upstream nu s-a mișcat din 30 iunie |
 | [snd_hda_macbookpro #187](https://github.com/davidjo/snd_hda_macbookpro/issues/187) | `install.cirrus.driver.sh` pică pe Debian (`.tar.xz`) și pe kerneluri `-rc` (404 la kernel.org) | 🔵 deschis, 7 comentarii |
 | [snd_hda_macbookpro #189](https://github.com/davidjo/snd_hda_macbookpro/pull/189) | fix: folosește sursa de kernel instalată local | 🔵 deschis, 1 comentariu |
@@ -269,7 +270,7 @@ tip 7 iulie la fiecare câteva luni. Nu e urgent, dar nici „rezolvat".
 | Opțiune | Efort | Risc | Verdict |
 |---|---|---|---|
 | **A. Status quo** (IOMMU + `panic=10`) + monitorizare | zero | acceptat | **Baza.** Rămâne valabilă indiferent ce se alege mai jos |
-| **B. Raport upstream** (linux-wireless/netdev) cu dump-ul pstore din 7 iul | 1-2 h | zero | **Recomandat (P3), `⏳ nefăcut`.** Ai ceva ce raportorii obișnuiți n-au: panică completă capturată în pstore + **93** de evenimente datate. Aceeași strategie a funcționat deja de două ori: wireplumber #972 (rezolvat) și pipewire !2941 (acceptat în master) — vezi [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou) |
+| **B. Raport upstream** (linux-wireless/netdev) cu dump-ul pstore din 7 iul | 1-2 h | zero | **Recomandat (P3), `⏳ nefăcut`.** Ai ceva ce raportorii obișnuiți n-au: panică completă capturată în pstore + **93** de evenimente datate. Aceeași strategie a funcționat deja de patru ori: wireplumber #972 (rezolvat) și pipewire !2933, !2941, !2934 (toate în master) — vezi [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou) |
 | **C. Hardening local prin DKMS** ([secțiunea 2.6](#26-patch-defensiv--versiunea-corectă-dacă-se-merge-pe-b-sau-c)) | mare | mediu | **Doar ca ultimă soluție.** `brcmfmac` e in-tree; un fork DKMS cere blacklist pe modulul din kernel, rebuild la fiecare update, taint suplimentar |
 | **D. Adaptor USB WiFi (~15 €)** | 15 € | zero | Ocolire completă a cipului Broadcom. Plan B dacă redevine frecvent + panici |
 | ❌ **`intel_iommu=off`** | — | — | **Interzis** ([secțiunea 2.4](#24-mitigări-deja-aplicate-8-iul-live--etapa-5g-în-script)) |
@@ -350,18 +351,21 @@ retras: trata simptomul, iar ca patch upstream ar fi fost respins pe bună drept
 
 `FTHD_BUFFERS` e azi **4**, valoarea upstream *(verificat 8 aug: `fthd_drv.h:30`)*.
 
-### 3.2 🔵 PipeWire — un patch acceptat, două în așteptare
+### 3.2 🔵 PipeWire — trei patch-uri acceptate, unul rămas în Draft
 
 Vezi tabloul complet din [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou). Pe scurt:
 
 | MR | ce | stare |
 |---|---|---|
+| **!2933** | `module-client-node` nu verifica flag-ul `READ` la enumerarea parametrilor | ✅ **în master** (`c81badc1b`), luat în ziua în care a fost trimis |
 | **!2941** | ordinea încuietorilor în `buffer_recycle()` + repararea scurgerii `buf_to_release` | ✅ **în master** (`30ff8da17`), luat neatins, fast-forward |
-| !2934 | gardă de depășire în `spa_v4l2_use_buffers()` | 🔵 `mergeable`, CI verde, așteaptă review |
+| **!2934** | gardă de depășire în `spa_v4l2_use_buffers()` | ✅ **în master** (`7a8e49384`, 14 aug), rebazat la merge, autor păstrat |
 | !2935 | copierea când pool-ul se golește | 🔵 **Draft intenționat** — decizie de politică |
 
-!2941 a fost acceptat la ~2 ore după ce a fost pus. Asta răspunde la întrebarea veche „de ce nu ne
-răspunde nimeni": **răspund**, dacă patch-ul e mic, izolat și măsurat.
+!2933 a fost acceptat în aceeași zi, !2941 la ~2 ore după ce a fost pus. Asta răspunde la întrebarea
+veche „de ce nu ne răspunde nimeni": **răspund**, dacă patch-ul e mic, izolat și măsurat. !2934 a
+avut singurul review propriu-zis — `pobrn`, două runde de întrebări tehnice, apoi o singură cerere
+de formulare (`got` → `provided` în mesajul de log); aplicată, și a intrat trei zile mai târziu.
 
 Evidența completă — bancul de test, măsurătorile, ce s-a retras și de ce — stă în
 `pipewire-5363/`, **numai local pe laptop** (nu e publicată: e material de lucru, nu documentație
@@ -385,7 +389,7 @@ lent, e de așteptat, nu e un semnal.
 
 Driverul instalat pe mașină e **exact** suma lor *(verificat prin `diff -rq` pe 8 aug)*, construit
 pentru ambele kerneluri. Scriptul de instalare/revenire e local, în
-`pipewire-5363/camera-fix/install-pr333.sh` (nu e publicat — vezi nota din [secțiunea 3.2](#32--pipewire--un-patch-acceptat-două-în-așteptare)).
+`pipewire-5363/camera-fix/install-pr333.sh` (nu e publicat — vezi nota din [secțiunea 3.2](#32--pipewire--trei-patch-uri-acceptate-unul-rămas-în-draft)).
 
 ### 3.4 ✅ Ce s-a închis din versiunea veche a acestei secțiuni
 
@@ -398,9 +402,10 @@ pentru ambele kerneluri. Scriptul de instalare/revenire e local, în
 
 ### 3.5 Ce înseamnă asta practic — încă nimic, pe mașina asta
 
-**Atenție la o confuzie ușor de făcut:** !2941 e în **master**-ul PipeWire, iar Debian testing are
-`1.6.8-1`. Până când Debian livrează o versiune care îl conține, pe mașina asta nu s-a schimbat
-nimic. La fel pentru cele șase PR-uri de driver — sunt instalate local, dar nu sunt încă upstream.
+**Atenție la o confuzie ușor de făcut:** !2933, !2941 și !2934 sunt în **master**-ul PipeWire, iar
+Debian testing are `1.6.8-1`. Până când Debian livrează o versiune care le conține, pe mașina asta
+nu s-a schimbat nimic. La fel pentru cele șase PR-uri de driver — sunt instalate local, dar nu sunt
+încă upstream.
 
 Workaround-ul rămâne valabil: `guvcview` sau camera din Chrome, ambele merg V4L2 direct și ocolesc
 PipeWire.
