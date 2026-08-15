@@ -9,7 +9,7 @@ Fișier unic: **ce e rezolvat**, **ce e deschis și se poate repara**, **ce e wo
 | **Hardware** | MacBookPro14,1 (A1708), i5-7360U 2C/4T, Iris 640, 8 GB RAM, Apple S3X NVMe, BCM4350C0 (WiFi PCIe + BT UART), FaceTime HD, CS8409/CS42L83 |
 | **Software** | Debian testing/forky, kernel `7.1.6+deb14-amd64` (+ `7.1.3` păstrat ca rezervă, DKMS construit pe ambele), pipewire 1.6.8-1, wireplumber 0.5.15-1, Chrome 151.0.7922.108, GNOME/Wayland |
 | **Verificat pe viu** | **8 august 2026** — reverificare completă a cifrelor de mai jos pe **196 de boot-uri** (19 mai → 8 aug). Verificarea anterioară: 27 iulie, 173 de boot-uri. Ce nu s-a putut reverifica e marcat explicit `⏳ neconfirmat`. |
-| **Stare de bază** | Hardware-ul e funcțional. Margini: 2 probleme cronice (BT, WiFi), 1 **nediagnosticată** (opriri spontane), 1 la upstream (cameră — 15 rapoarte trimise, 3 patch-uri acceptate în master), 1 fizică (termic). Tabloul complet al rapoartelor: [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou). |
+| **Stare de bază** | Hardware-ul e funcțional. Margini: 2 probleme cronice (BT, WiFi), 1 **nediagnosticată** (opriri spontane), 1 la upstream (cameră — 18 rapoarte trimise, 3 patch-uri acceptate în master), 1 fizică (termic). Tabloul complet al rapoartelor: [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou). |
 
 **Legendă:**
 
@@ -69,6 +69,9 @@ să uiți că există. Stare verificată prin API pe **15 august 2026**.
 | [pipewire !2941](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2941) | reciclare de buffer sub încuietoarea buclei + scurgere `buf_to_release` | ✅ **acceptat în master** `30ff8da17`, neatins, fast-forward |
 | [pipewire !2934](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2934) | gardă de depășire în `spa_v4l2_use_buffers()` | ✅ **acceptat în master** `7a8e49384` (14 aug), rebazat de `wtaymans`, autor păstrat; recenzat de `pobrn`, singura lui cerere (`got`→`provided`) inclusă |
 | [pipewire !2935](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2935) | copiere când pool-ul se golește | 🔵 **gata de review din 15 aug** — scos din Draft, rebazat pe `adfb948ec` (`9a118621e`), CI 62/62, `mergeable`, descriere rescrisă ca propunere |
+| [pipewire !2950](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2950) | o sursă care anunță un interval de dimensiuni era deschisă la **cea mai mică** | 🔵 trimis 15 aug, CI 62/62, `mergeable` |
+| [pipewire !2951](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951) | `pipewiresrc` repornea fluxul la renegocieri care nu cereau nimic | 🔵 trimis 15 aug, CI 62/62, `mergeable` |
+| [facetimehd #334](https://github.com/patjak/facetimehd/pull/334) | AE se așează în 200 ms, nu într-o secundă, la fiecare STREAMON | 🔵 trimis 15 aug, peste [#328](https://github.com/patjak/facetimehd/pull/328) |
 | [pipewire #5363](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/5363) | raportul de bază | 🔵 deschis, fără răspuns de mentenanț din 11 iulie; !2935 îl **închide automat la merge** (`Closes #5363`, verificat prin API) |
 | [snapshot #367](https://gitlab.gnome.org/GNOME/snapshot/-/work_items/367) | viewfinder înghețat pe primul cadru | 🔵 deschis, **1 upvote** — altcineva a confirmat bug-ul (8 aug). Mentenantul a propus [!464](https://gitlab.gnome.org/GNOME/snapshot/-/merge_requests/464) (`min-buffers=8`); infirmat cu măsurători pe 10 aug — pe camera asta dă **0 cadre**, nu e un fix. !464 e încă deschis, nemerged |
 | [facetimehd #328…#333](https://github.com/patjak/facetimehd/pulls) | șase PR-uri de driver (vezi [secțiunea 3.3](#33--driver--șase-pr-uri-la-patjakfacetimehd)) | 🔵 toate deschise, `MERGEABLE`, **zero review-uri**; upstream nu s-a mișcat din 30 iunie |
@@ -402,6 +405,53 @@ Evidența completă — bancul de test, măsurătorile, ce s-a retras și de ce 
 de proiect). De curățat după ce upstream se pronunță, mai puțin `camera-fix/`, care aparține
 proiectului ăstuia. Ce contează pentru cineva din afară e deja în MR-urile și PR-urile linkate
 mai sus.
+
+### 3.2b 🔵 Pornirea lentă a camerei — și de ce era vina noastră
+
+**Simptom:** dai click pe cameră și stă câteva secunde până apare imaginea. Investigat pe 15 august,
+după ce a fost descris ca senzație, nu ca bug.
+
+Descompunerea pornirii lui GNOME Snapshot, din jurnalul `pipewiresrc`:
+
+| t | ce se întâmplă |
+|---|---|
+| 0,00–0,35 s | pornirea aplicației + portalul xdg |
+| 0,35 s | conectare #1, format fixat `320x240` |
+| **1,55 s** | primul cadru — 1,19 s de la conectare |
+| 1,54 s | `reconfigure` din aval → deconectare → conectare #2 |
+| 2,84 s | al doilea cadru, alt `reconfigure` → conectare #3 |
+| ~4,1 s | abia acum fluxul devine continuu |
+
+Trei cauze, măsurate separat, **niciuna cauza celeilalte** (plan factorial complet, 2×2):
+
+1. **Driverul doarme o secundă la fiecare `STREAMON`** — `fthd_isp.c`, `msleep(1000)` „Needed to
+   settle AE", din commit-ul de bring-up din 2015. Măsurat cu parametru de modul: la 100 ms primul
+   cadru e deja corect, la 50 ms vine negru. Trimis ca [#334](https://github.com/patjak/facetimehd/pull/334) cu 200 ms.
+2. **`pipewiresrc` repornea fluxul degeaba.** Scurtătura care exista deja upstream compara caps-uri
+   fixate cu caps-uri care încă au intervale, deci nu se declanșa niciodată. Trimis ca
+   [!2951](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951).
+3. **Vizorul rula la 320x240** — implicitul unei surse cu interval era minimul, iar preferința se
+   pierdea la conversia în caps GStreamer. Trimis ca
+   [!2950](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2950).
+
+⚠️ **Simptomul l-a adus PR-ul nostru [#331](https://github.com/patjak/facetimehd/pull/331).** Izolat
+prin revocarea acelei singure comiteri peste restul seriei, cu Snapshot pe stiva din `/usr`:
+
+| | cu #331 | fără #331 |
+|---|---|---|
+| format | 320x240 | **1296x736** |
+| conectări la pornire | 3 | **1** |
+| continuu de la | ~4100 ms | **~1500 ms** |
+| `Skipping renegotiation` în jurnal | 0 | **2** |
+
+Ultimul rând e dovada: scurtătura upstream **funcționează** când caps-urile sunt fixate. #331 e
+corect — driverul chiar acceptă intervalul — dar a expus două defecte vechi din PipeWire
+(`853a46120` din 2024 și zona atinsă de `b8d533446` din 2025, plus scurtătura scrisă de `e2e8cf794`
+în 2024). Niciunul nu e al nostru.
+
+De-asta reparația nu a fost retragerea lui #331: aia ar fi ascuns simptomul și ar fi lăsat două
+bug-uri care lovesc orice cameră care raportează un interval. #331 are acum o notă care spune exact
+asta, cu cifrele de mai sus.
 
 ### 3.3 🔵 Driver — șase PR-uri la `patjak/facetimehd`
 
