@@ -9,7 +9,7 @@ Fișier unic: **ce e rezolvat**, **ce e deschis și se poate repara**, **ce e wo
 | **Hardware** | MacBookPro14,1 (A1708), i5-7360U 2C/4T, Iris 640, 8 GB RAM, Apple S3X NVMe, BCM4350C0 (WiFi PCIe + BT UART), FaceTime HD, CS8409/CS42L83 |
 | **Software** | Debian testing/forky, kernel `7.1.6+deb14-amd64` (+ `7.1.3` păstrat ca rezervă, DKMS construit pe ambele), pipewire 1.6.8-1, wireplumber 0.5.15-1, Chrome 151.0.7922.108, GNOME/Wayland |
 | **Verificat pe viu** | **8 august 2026** — reverificare completă a cifrelor de mai jos pe **196 de boot-uri** (19 mai → 8 aug). Verificarea anterioară: 27 iulie, 173 de boot-uri. Ce nu s-a putut reverifica e marcat explicit `⏳ neconfirmat`. |
-| **Stare de bază** | Hardware-ul e funcțional. Margini: 2 probleme cronice (BT, WiFi), 1 **nediagnosticată** (opriri spontane), 1 la upstream (cameră — 18 rapoarte trimise, 3 patch-uri acceptate în master), 1 fizică (termic). Tabloul complet al rapoartelor: [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou). |
+| **Stare de bază** | Hardware-ul e funcțional. Margini: 2 probleme cronice (BT, WiFi), 1 **nediagnosticată** (opriri spontane), 1 la upstream (cameră — 18 rapoarte trimise, 3 patch-uri acceptate în master, 2 laptopuri de test), 1 fizică (termic). Tabloul complet al rapoartelor: [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou). |
 
 **Legendă:**
 
@@ -69,7 +69,7 @@ să uiți că există. Stare verificată prin API pe **15 august 2026**.
 | [pipewire !2941](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2941) | reciclare de buffer sub încuietoarea buclei + scurgere `buf_to_release` | ✅ **acceptat în master** `30ff8da17`, neatins, fast-forward |
 | [pipewire !2934](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2934) | gardă de depășire în `spa_v4l2_use_buffers()` | ✅ **acceptat în master** `7a8e49384` (14 aug), rebazat de `wtaymans`, autor păstrat; recenzat de `pobrn`, singura lui cerere (`got`→`provided`) inclusă |
 | [pipewire !2935](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2935) | copiere când pool-ul se golește | 🔵 **gata de review din 15 aug** — scos din Draft, rebazat pe `adfb948ec` (`9a118621e`), CI 62/62, `mergeable`, descriere rescrisă ca propunere |
-| [pipewire !2950](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2950) | o sursă care anunță un interval de dimensiuni era deschisă la **cea mai mică** | 🔵 trimis 15 aug, CI 62/62, `mergeable` |
+| [pipewire !2950](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2950) | o sursă cu interval de dimensiuni era deschisă la **cea mai mică**; plus pasul raportat greșit | 🔵 trimis 15 aug, CI 62/62; **`pobrn` a pus două întrebări, ambele au primit răspuns** |
 | [pipewire !2951](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951) | `pipewiresrc` repornea fluxul la renegocieri care nu cereau nimic | 🔵 trimis 15 aug, CI 62/62, `mergeable` |
 | [facetimehd #334](https://github.com/patjak/facetimehd/pull/334) | AE se așează în 200 ms, nu într-o secundă, la fiecare STREAMON | 🔵 trimis 15 aug, peste [#328](https://github.com/patjak/facetimehd/pull/328) |
 | [pipewire #5363](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/5363) | raportul de bază | 🔵 deschis, fără răspuns de mentenanț din 11 iulie; !2935 îl **închide automat la merge** (`Closes #5363`, verificat prin API) |
@@ -452,6 +452,35 @@ corect — driverul chiar acceptă intervalul — dar a expus două defecte vech
 De-asta reparația nu a fost retragerea lui #331: aia ar fi ascuns simptomul și ar fi lăsat două
 bug-uri care lovesc orice cameră care raportează un interval. #331 are acum o notă care spune exact
 asta, cu cifrele de mai sus.
+
+### 3.2c 🔵 Al doilea laptop — ce a schimbat
+
+Pe 15 august am pus bancul și pe Lenovo IdeaPad Z580 (Ubuntu 24.04, webcam **UVC**, driver
+`uvcvideo`, dimensiuni **discrete**, `REQBUFS` dă până la **32** de buffere). Detalii de mediu în
+memoria proiectului; ce a produs, pe scurt:
+
+**#5363 nu e al camerei noastre și nu e recent.** Se reproduce acolo pe **PipeWire 1.0.5** din
+distribuție: pool de 16, merge până la 14 ținute, moare la 16. `always-copy=true` îl repară — adică
+exact confirmarea cerută raportorului din [#4797](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/4797),
+obținută acum pe hardware propriu.
+
+**!2935 verificat pe pool de 16**, cazul pe care descrierea MR-ului îl declara netestabil: se
+declanșează la 13 ținute, cum e proiectat, și **nu costă nimic** acolo (64 de cadre în ambele
+variante); la 16 și 20 salvează fluxul (38 și 37 de cadre față de 16-și-apoi-tăcere).
+
+**De ce a devenit ușor de atins.** Până în 1.4, `DEFAULT_MIN_BUFFERS` din `pipewiresrc` era 8 și o
+cameră v4l2 negocia **16** buffere. `e81fb7732` (mai 2025) l-a coborât la 1 — corect, fiindcă 8
+rupea negocierea cu libcamera. Din 1.6, aceeași cameră negociază **4**. Măsurat pe Lenovo, aceeași
+cameră, același build: `min-buffers` nesetat → 4, `=8` → 16.
+
+Deci blocajul se atinge acum când consumatorul ține **patru** cadre, nu șaisprezece. Nu s-a stricat
+nimic — s-a micșorat marja. Și întoarcerea nu e disponibilă: 8 rupe libcamera, iar pe o cameră
+plafonată la 4 dă zero cadre, exact cum am arătat la snapshot!464.
+
+**Neregresie pentru !2950 și !2951** pe cameră cu dimensiuni discrete: tot identic, în afară de un
+rând care s-a **îmbunătățit** — proba cu `reconfigure`, 30 → 54 de cadre. Ceea ce a infirmat propria
+mea explicație din !2951: defectul nu cere o sursă care anunță un interval, intervalele pot veni din
+aval (`videoconvert` e de ajuns). Descrierea MR-ului a fost corectată.
 
 ### 3.3 🔵 Driver — șase PR-uri la `patjak/facetimehd`
 
