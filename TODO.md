@@ -367,6 +367,15 @@ veche „de ce nu ne răspunde nimeni": **răspund**, dacă patch-ul e mic, izol
 avut singurul review propriu-zis — `pobrn`, două runde de întrebări tehnice, apoi o singură cerere
 de formulare (`got` → `provided` în mesajul de log); aplicată, și a intrat trei zile mai târziu.
 
+⚠️ **Atenție dacă reiei proba lui !2934: „daemonul moare 3/3" nu se mai reproduce.** Descrierea
+MR-ului, din 31 iulie, spune că daemonul nepatchat cade la fiecare rulare. Pe master-ul din 15
+august, cu același build injectat și aceeași negociere, **supraviețuiește 3 din 3**. Nu e o
+contrazicere: e o *citire* în afara tabloului, iar dacă pagina de după e mapată nu pică nimic —
+depinde de aranjarea heap-ului, nu de patch. Defectul e real și reparația e în master; ce nu mai e
+valabil e criteriul. Proba din banc folosește acum unul determinist, verificat pe ambele variante la
+`spa.v4l2:5`: amândouă scriu `got 4 buffers` pentru o negociere de 2 buffere, dar numai build-ul cu
+patch scrie `provided 4 buffers, using 2`.
+
 Evidența completă — bancul de test, măsurătorile, ce s-a retras și de ce — stă în
 `pipewire-5363/`, **numai local pe laptop** (nu e publicată: e material de lucru, nu documentație
 de proiect). De curățat după ce upstream se pronunță, mai puțin `camera-fix/`, care aparține
