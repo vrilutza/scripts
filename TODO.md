@@ -30,7 +30,7 @@ Fișier unic: **ce e rezolvat**, **ce e deschis și se poate repara**, **ce e wo
 |---|---|---|---|---|
 | 1 | Bluetooth mort la ~14% din boot-uri (`-110`) | 🟡 activ | experiment de 3 linii care separă „warm vs cold"; SMC reset ca remediu | [1](#1--bluetooth-bcm4350c0--init-eșuat-la-14-din-boot-uri) |
 | 2 | WiFi BCM4350 — desincronizare ring, risc de panică | 🟡 activ | raport upstream cu dovezile din pstore; monitorizare cu prag | [2](#2--wifi-bcm4350--desincronizare-ring-msgbuf) |
-| 3 | Cameră — partajare de buffere fără `SPA_META_Busy` (aplicațiile îngheață) | 🔵 upstream | **3 patch-uri acceptate în master**; a rămas !2935, în Draft intenționat | [3](#3--camera-facetime-hd--partajare-de-buffere-nesigură) |
+| 3 | Cameră — partajare de buffere fără `SPA_META_Busy` (aplicațiile îngheață) | 🔵 upstream | **3 patch-uri acceptate în master**; !2935 e gata de review din 15 aug | [3](#3--camera-facetime-hd--partajare-de-buffere-nesigură) |
 | 4 | Sacadare cu 2 browsere + saturație termică | 🟢 | curățare fizică + tab-ul Chrome; abia apoi eventual daemon de ventilator | [4](#4--termic--sacadare) |
 | 5 | Suspend / s2idle | 🟡 opțional | experiment reversibil, dacă chiar vrei suspend | [5](#5--suspend--s2idle) |
 | 6 | Zgomot de log (DMAR / ACPI / SGX / nvme0n2) | 🔴 | nimic — vezi de ce „fix-ul fără dezactivarea IOMMU" nu funcționează | [6](#6--zgomot-de-log) |
@@ -68,12 +68,26 @@ să uiți că există. Stare verificată prin API pe **15 august 2026**.
 | [pipewire !2933](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2933) | `module-client-node` ignora flag-ul `READ` la enumerarea parametrilor | ✅ **acceptat în master** `c81badc1b`, în aceeași zi în care a fost trimis (30 iul) |
 | [pipewire !2941](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2941) | reciclare de buffer sub încuietoarea buclei + scurgere `buf_to_release` | ✅ **acceptat în master** `30ff8da17`, neatins, fast-forward |
 | [pipewire !2934](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2934) | gardă de depășire în `spa_v4l2_use_buffers()` | ✅ **acceptat în master** `7a8e49384` (14 aug), rebazat de `wtaymans`, autor păstrat; recenzat de `pobrn`, singura lui cerere (`got`→`provided`) inclusă |
-| [pipewire !2935](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2935) | copiere când pool-ul se golește | 🔵 **Draft intenționat** — ce a rămas e o decizie de politică |
-| [pipewire #5363](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/5363) | raportul de bază | 🔵 deschis, fără răspuns de mentenanț din 11 iulie |
+| [pipewire !2935](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2935) | copiere când pool-ul se golește | 🔵 **gata de review din 15 aug** — scos din Draft, rebazat pe `adfb948ec` (`9a118621e`), CI 62/62, `mergeable`, descriere rescrisă ca propunere |
+| [pipewire #5363](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/5363) | raportul de bază | 🔵 deschis, fără răspuns de mentenanț din 11 iulie; !2935 îl **închide automat la merge** (`Closes #5363`, verificat prin API) |
 | [snapshot #367](https://gitlab.gnome.org/GNOME/snapshot/-/work_items/367) | viewfinder înghețat pe primul cadru | 🔵 deschis, **1 upvote** — altcineva a confirmat bug-ul (8 aug). Mentenantul a propus [!464](https://gitlab.gnome.org/GNOME/snapshot/-/merge_requests/464) (`min-buffers=8`); infirmat cu măsurători pe 10 aug — pe camera asta dă **0 cadre**, nu e un fix. !464 e încă deschis, nemerged |
 | [facetimehd #328…#333](https://github.com/patjak/facetimehd/pulls) | șase PR-uri de driver (vezi [secțiunea 3.3](#33--driver--șase-pr-uri-la-patjakfacetimehd)) | 🔵 toate deschise, `MERGEABLE`, **zero review-uri**; upstream nu s-a mișcat din 30 iunie |
 | [snd_hda_macbookpro #187](https://github.com/davidjo/snd_hda_macbookpro/issues/187) | `install.cirrus.driver.sh` pică pe Debian (`.tar.xz`) și pe kerneluri `-rc` (404 la kernel.org) | 🔵 deschis, 7 comentarii |
 | [snd_hda_macbookpro #189](https://github.com/davidjo/snd_hda_macbookpro/pull/189) | fix: folosește sursa de kernel instalată local | 🔵 deschis, 1 comentariu |
+
+**Două bug-uri deschise ale altora, cu aceeași semnătură**, legate de !2935 pe 15 august fără să fie
+revendicate — mecanismul se potrivește, dar nu poate fi testat aici: nicio cameră cu pool mai mare de
+patru buffere pe mașina asta. Ambele au primit o cerere de testare, cu o rețetă care nu instalează
+nimic (patch-ul e doar în `libgstpipewire.so`, deci `GST_PLUGIN_PATH` e de ajuns).
+
+| Unde | Ce | De ce se potrivește |
+|---|---|---|
+| [pipewire #4797](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/4797) | `buffer was not recycled` cu `x264enc`, două webcam-uri USB, pool ~16 | `@arun` descrie exact mecanismul și numește fix-ul ca nescris încă |
+| [pipewire #2489](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/2489) | deschis din 2022, același tip de pipeline | workaround-ul confirmat acolo e `always-copy=true` — adică fix ce automatizează !2935 |
+
+**Doar #5363 e revendicat** (`Closes`). Celelalte două sunt doar menționate: a închide automat bugul
+altcuiva pe baza unei deduceri, fără să-l fi testat pe hardware-ul lui, e exact felul de afirmație
+care strică încrederea într-un patch bun.
 
 ⚠️ **Ultimele două nu erau consemnate nicăieri în acest repo** până pe 8 august, deși
 `#187` descrie exact capcana de la **fiecare** upgrade de kernel pe mașina asta: dacă
@@ -351,7 +365,7 @@ retras: trata simptomul, iar ca patch upstream ar fi fost respins pe bună drept
 
 `FTHD_BUFFERS` e azi **4**, valoarea upstream *(verificat 8 aug: `fthd_drv.h:30`)*.
 
-### 3.2 🔵 PipeWire — trei patch-uri acceptate, unul rămas în Draft
+### 3.2 🔵 PipeWire — trei patch-uri acceptate, al patrulea în review
 
 Vezi tabloul complet din [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou). Pe scurt:
 
@@ -360,12 +374,19 @@ Vezi tabloul complet din [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou)
 | **!2933** | `module-client-node` nu verifica flag-ul `READ` la enumerarea parametrilor | ✅ **în master** (`c81badc1b`), luat în ziua în care a fost trimis |
 | **!2941** | ordinea încuietorilor în `buffer_recycle()` + repararea scurgerii `buf_to_release` | ✅ **în master** (`30ff8da17`), luat neatins, fast-forward |
 | **!2934** | gardă de depășire în `spa_v4l2_use_buffers()` | ✅ **în master** (`7a8e49384`, 14 aug), rebazat la merge, autor păstrat |
-| !2935 | copierea când pool-ul se golește | 🔵 **Draft intenționat** — decizie de politică |
+| !2935 | copierea când pool-ul se golește | 🔵 **gata de review** (15 aug), `9a118621e` pe `adfb948ec`, CI 62/62 |
 
 !2933 a fost acceptat în aceeași zi, !2941 la ~2 ore după ce a fost pus. Asta răspunde la întrebarea
 veche „de ce nu ne răspunde nimeni": **răspund**, dacă patch-ul e mic, izolat și măsurat. !2934 a
 avut singurul review propriu-zis — `pobrn`, două runde de întrebări tehnice, apoi o singură cerere
 de formulare (`got` → `provided` în mesajul de log); aplicată, și a intrat trei zile mai târziu.
+
+**!2935 a ieșit din Draft pe 15 august.** Draft-ul era auto-impus, cu un motiv scris în MR: decizia
+de politică — *când* anume ar trebui `pipewiresrc` să înceteze să partajeze — nu părea a fi a
+noastră. Se hrănea singur: pe GitLab, un MR în Draft e filtrat din cozile de review, deci așteptai o
+părere de la exact cine nu-l vedea. Descrierea propune acum un răspuns (`PRODUCER_HEADROOM 3`, cu
+raționamentul și măsurătorile), în loc să lase întrebarea deschisă. Zero postări noi în fir: nota
+veche a fost editată, iar restul sunt note de sistem.
 
 ⚠️ **Atenție dacă reiei proba lui !2934: „daemonul moare 3/3" nu se mai reproduce.** Descrierea
 MR-ului, din 31 iulie, spune că daemonul nepatchat cade la fiecare rulare. Pe master-ul din 15
@@ -398,7 +419,7 @@ lent, e de așteptat, nu e un semnal.
 
 Driverul instalat pe mașină e **exact** suma lor *(verificat prin `diff -rq` pe 8 aug)*, construit
 pentru ambele kerneluri. Scriptul de instalare/revenire e local, în
-`pipewire-5363/camera-fix/install-pr333.sh` (nu e publicat — vezi nota din [secțiunea 3.2](#32--pipewire--trei-patch-uri-acceptate-unul-rămas-în-draft)).
+`pipewire-5363/camera-fix/install-pr333.sh` (nu e publicat — vezi nota din [secțiunea 3.2](#32--pipewire--trei-patch-uri-acceptate-al-patrulea-în-review)).
 
 ### 3.4 ✅ Ce s-a închis din versiunea veche a acestei secțiuni
 
