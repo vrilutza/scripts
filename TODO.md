@@ -60,7 +60,11 @@ de kernel. Stă în [secțiunea 7](#7--rezolvate-arhivă-tehnică) fiindcă acol
 ## 0.1 Rapoarte trimise upstream — tablou
 
 Toate raportate de aici. Ține-le într-un singur loc: patru s-au și rezolvat, iar despre restul e ușor
-să uiți că există. Stare verificată prin API pe **15 august 2026**.
+să uiți că există. Stare verificată prin API pe **16 august 2026**.
+
+⚠️ **Niciunul dintre cele trei patch-uri acceptate nu e într-o versiune lansată.** Verificat cu
+`git merge-base --is-ancestor` pe ramura `1.6`: !2933, !2934 și !2941 sunt toate doar în master. De
+reținut înainte de a-i spune cuiva că „are deja" vreuna dintre reparații.
 
 | Unde | Ce | Stare |
 |---|---|---|
@@ -68,29 +72,28 @@ să uiți că există. Stare verificată prin API pe **15 august 2026**.
 | [pipewire !2933](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2933) | `module-client-node` ignora flag-ul `READ` la enumerarea parametrilor | ✅ **acceptat în master** `c81badc1b`, în aceeași zi în care a fost trimis (30 iul) |
 | [pipewire !2941](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2941) | reciclare de buffer sub încuietoarea buclei + scurgere `buf_to_release` | ✅ **acceptat în master** `30ff8da17`, neatins, fast-forward |
 | [pipewire !2934](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2934) | gardă de depășire în `spa_v4l2_use_buffers()` | ✅ **acceptat în master** `7a8e49384` (14 aug), rebazat de `wtaymans`, autor păstrat; recenzat de `pobrn`, singura lui cerere (`got`→`provided`) inclusă |
-| [pipewire !2935](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2935) | copiere când pool-ul se golește | 🔵 **gata de review din 15 aug** — scos din Draft, rebazat pe `adfb948ec` (`9a118621e`), CI 62/62, `mergeable`, descriere rescrisă ca propunere |
-| [pipewire !2950](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2950) | o sursă cu interval de dimensiuni era deschisă la **cea mai mică**; plus pasul raportat greșit | 🔵 trimis 15 aug, CI 62/62; **`pobrn` a pus două întrebări, ambele au primit răspuns** |
-| [pipewire !2951](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951) | `pipewiresrc` repornea fluxul la renegocieri care nu cereau nimic | 🔵 trimis 15 aug, CI 62/62, `mergeable` |
+| [pipewire !2935](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2935) | copiere când pool-ul se golește | 🔵 gata de review din 15 aug, `9a118621e`, CI verde, `mergeable`. **Descriere rescrisă pe 16 aug** (9681 → 7688 caractere) cu tot ce s-a măsurat pe a doua mașină; cod neatins |
+| [pipewire !2950](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2950) | o sursă cu interval de dimensiuni era deschisă la **cea mai mică**; plus pasul raportat greșit | 🔵 **cod schimbat pe 16 aug**: `908a66c05` → `14619fffa`, default-ul vine acum din `CROP_BOUNDS` (nativ), nu din maxim. CI verde. `pobrn` a pus două întrebări; la a doua **avea dreptate**, iar răspunsul meu a fost editat ca s-o spună |
+| [pipewire !2951](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951) | `pipewiresrc` repornea fluxul la renegocieri care nu cereau nimic | 🔵 trimis 15 aug, `c72c54f15`, CI verde, `mergeable`. Descriere rescrisă 16 aug: argumentul principal e acum fereastra redimensionată, nu un eveniment trimis cu mâna. **Zero comentarii de la cineva din afară** |
 | [facetimehd #334](https://github.com/patjak/facetimehd/pull/334) | AE se așează în 200 ms, nu într-o secundă, la fiecare STREAMON | 🔵 trimis 15 aug, peste [#328](https://github.com/patjak/facetimehd/pull/328) |
 | [pipewire #5363](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/5363) | raportul de bază | 🔵 deschis, fără răspuns de mentenanț din 11 iulie; !2935 îl **închide automat la merge** (`Closes #5363`, verificat prin API) |
 | [snapshot #367](https://gitlab.gnome.org/GNOME/snapshot/-/work_items/367) | viewfinder înghețat pe primul cadru | 🔵 deschis, **1 upvote** — altcineva a confirmat bug-ul (8 aug). Mentenantul a propus [!464](https://gitlab.gnome.org/GNOME/snapshot/-/merge_requests/464) (`min-buffers=8`); infirmat cu măsurători pe 10 aug — pe camera asta dă **0 cadre**, nu e un fix. !464 e încă deschis, nemerged |
-| [facetimehd #328…#333](https://github.com/patjak/facetimehd/pulls) | șase PR-uri de driver (vezi [secțiunea 3.3](#33--driver--șase-pr-uri-la-patjakfacetimehd)) | 🔵 toate deschise, `MERGEABLE`, **zero review-uri**; upstream nu s-a mișcat din 30 iunie |
+| [facetimehd #328…#333](https://github.com/patjak/facetimehd/pulls) | șase PR-uri de driver (vezi [secțiunea 3.3](#33--driver--șase-pr-uri-la-patjakfacetimehd)) | 🟡 toate deschise, zero review-uri — dar **`patjak` a răspuns pe 15 aug**, primul semn de la întreținător: nu primise notificări, se uită „săptămâna viitoare". Menționează că cineva ar fi trimis driverul în kernelul upstream; **n-am putut confirma** (lore și patchwork blochează accesul automat, iar căutările dau doar Apple ISP pentru M-series, alt hardware). De întrebat direct |
 | [snd_hda_macbookpro #187](https://github.com/davidjo/snd_hda_macbookpro/issues/187) | `install.cirrus.driver.sh` pică pe Debian (`.tar.xz`) și pe kerneluri `-rc` (404 la kernel.org) | 🔵 deschis, 7 comentarii |
 | [snd_hda_macbookpro #189](https://github.com/davidjo/snd_hda_macbookpro/pull/189) | fix: folosește sursa de kernel instalată local | 🔵 deschis, 1 comentariu |
 
-**Două bug-uri deschise ale altora, cu aceeași semnătură**, legate de !2935 pe 15 august fără să fie
-revendicate — mecanismul se potrivește, dar nu poate fi testat aici: nicio cameră cu pool mai mare de
-patru buffere pe mașina asta. Ambele au primit o cerere de testare, cu o rețetă care nu instalează
-nimic (patch-ul e doar în `libgstpipewire.so`, deci `GST_PLUGIN_PATH` e de ajuns).
+**Patru bug-uri deschise ale altora**, la care am contribuit fără să le revendicăm.
 
-| Unde | Ce | De ce se potrivește |
+| Unde | Ce | Ce am adus |
 |---|---|---|
-| [pipewire #4797](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/4797) | `buffer was not recycled` cu `x264enc`, două webcam-uri USB, pool ~16 | `@arun` descrie exact mecanismul și numește fix-ul ca nescris încă |
+| [pipewire #4797](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/4797) | `buffer was not recycled` cu `x264enc`, două webcam-uri USB, pool ~16 | `@arun` descrie exact mecanismul și numește fix-ul ca nescris încă. **Reprodus pe 16 aug** cu un encoder adevărat, pe a doua mașină |
 | [pipewire #2489](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/2489) | deschis din 2022, același tip de pipeline | workaround-ul confirmat acolo e `always-copy=true` — adică fix ce automatizează !2935 |
+| [pipewire #4174](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/4174) | producătorul suprascrie un buffer pe care consumatorul încă îl ține | deschis din **august 2024**, un singur răspuns, argumentat exclusiv din citit cod. **Comentat pe 16 aug** (nota `3617445`) cu primul reproducător: bugetul din „*consumers are supposed to use them before they are reused*" e `pool / rată de cadre`, adică ~0,7 s la pool 4 |
+| [pipewire #4863](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/4863) | același defect, ridicat de `pobrn` în august 2025 pentru noduri async | **Comentat pe 16 aug** (nota `3617448`): mai multe buffere nu elimină cursa, doar lungesc fereastra — ceea ce susține punctul lui `pobrn` rămas fără răspuns |
 
-**Doar #5363 e revendicat** (`Closes`). Celelalte două sunt doar menționate: a închide automat bugul
-altcuiva pe baza unei deduceri, fără să-l fi testat pe hardware-ul lui, e exact felul de afirmație
-care strică încrederea într-un patch bun.
+**Doar #5363 e revendicat** (`Closes`). Restul sunt doar menționate sau comentate: a închide automat
+bugul altcuiva pe baza unei deduceri, fără să-l fi testat pe hardware-ul lui, e exact felul de
+afirmație care strică încrederea într-un patch bun.
 
 ⚠️ **Ultimele două nu erau consemnate nicăieri în acest repo** până pe 8 august, deși
 `#187` descrie exact capcana de la **fiecare** upgrade de kernel pe mașina asta: dacă
@@ -368,7 +371,7 @@ retras: trata simptomul, iar ca patch upstream ar fi fost respins pe bună drept
 
 `FTHD_BUFFERS` e azi **4**, valoarea upstream *(verificat 8 aug: `fthd_drv.h:30`)*.
 
-### 3.2 🔵 PipeWire — trei patch-uri acceptate, al patrulea în review
+### 3.2 🔵 PipeWire — trei patch-uri acceptate, trei în review
 
 Vezi tabloul complet din [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou). Pe scurt:
 
@@ -377,7 +380,9 @@ Vezi tabloul complet din [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou)
 | **!2933** | `module-client-node` nu verifica flag-ul `READ` la enumerarea parametrilor | ✅ **în master** (`c81badc1b`), luat în ziua în care a fost trimis |
 | **!2941** | ordinea încuietorilor în `buffer_recycle()` + repararea scurgerii `buf_to_release` | ✅ **în master** (`30ff8da17`), luat neatins, fast-forward |
 | **!2934** | gardă de depășire în `spa_v4l2_use_buffers()` | ✅ **în master** (`7a8e49384`, 14 aug), rebazat la merge, autor păstrat |
-| !2935 | copierea când pool-ul se golește | 🔵 **gata de review** (15 aug), `9a118621e` pe `adfb948ec`, CI 62/62 |
+| !2935 | copierea când pool-ul se golește | 🔵 **gata de review** (15 aug), `9a118621e` pe `adfb948ec`, CI verde |
+| !2950 | dimensiunea implicită a unei surse cu interval | 🔵 `14619fffa` — **cod schimbat pe 16 aug**, vezi [3.2d](#32d--16-august--campania-de-validare-și-un-patch-de-al-nostru-infirmat) |
+| !2951 | repornirea fluxului la renegocieri inutile | 🔵 `c72c54f15`, CI verde, **zero comentarii din afară** |
 
 !2933 a fost acceptat în aceeași zi, !2941 la ~2 ore după ce a fost pus. Asta răspunde la întrebarea
 veche „de ce nu ne răspunde nimeni": **răspund**, dacă patch-ul e mic, izolat și măsurat. !2934 a
@@ -468,10 +473,15 @@ obținută acum pe hardware propriu.
 declanșează la 13 ținute, cum e proiectat, și **nu costă nimic** acolo (64 de cadre în ambele
 variante); la 16 și 20 salvează fluxul (38 și 37 de cadre față de 16-și-apoi-tăcere).
 
-**De ce a devenit ușor de atins.** Până în 1.4, `DEFAULT_MIN_BUFFERS` din `pipewiresrc` era 8 și o
-cameră v4l2 negocia **16** buffere. `e81fb7732` (mai 2025) l-a coborât la 1 — corect, fiindcă 8
-rupea negocierea cu libcamera. Din 1.6, aceeași cameră negociază **4**. Măsurat pe Lenovo, aceeași
-cameră, același build: `min-buffers` nesetat → 4, `=8` → 16.
+**De ce a devenit ușor de atins.** `DEFAULT_MIN_BUFFERS` din `pipewiresrc` era 8 și o cameră v4l2
+negocia **16** buffere. `e81fb7732` (mai 2025) l-a coborât la 1 — corect, fiindcă 8 rupea negocierea
+cu libcamera. Aceeași cameră negociază acum **4**. Măsurat pe Lenovo, aceeași cameră, același build:
+`min-buffers` nesetat → 4, `=8` → 16.
+
+⚠️ **Corectat pe 16 august, era greșit și aici și în descrierea MR-ului:** formularea „până în 1.4"
+lasă impresia că seria 1.4 e nevinovată. Valorile reale, citite din arbore: 8 până la **1.4.3**
+inclusiv (13 mai 2025), 1 din **1.4.4** (29 mai 2025, retroportare `eda42ef2f`, la patru zile după
+commit-ul din master) și din **1.6.0** (27 ian 2026). Deci **1.4.4–1.4.11 sunt și ele afectate**.
 
 Deci blocajul se atinge acum când consumatorul ține **patru** cadre, nu șaisprezece. Nu s-a stricat
 nimic — s-a micșorat marja. Și întoarcerea nu e disponibilă: 8 rupe libcamera, iar pe o cameră
@@ -481,6 +491,64 @@ plafonată la 4 dă zero cadre, exact cum am arătat la snapshot!464.
 rând care s-a **îmbunătățit** — proba cu `reconfigure`, 30 → 54 de cadre. Ceea ce a infirmat propria
 mea explicație din !2951: defectul nu cere o sursă care anunță un interval, intervalele pot veni din
 aval (`videoconvert` e de ajuns). Descrierea MR-ului a fost corectată.
+
+### 3.2d 🔵 16 august — campania de validare, și un patch de-al nostru infirmat
+
+Nouă puncte plănuite, opt făcute. Ce contează:
+
+**`vivid` a infirmat politica din !2950.** Driverul virtual de test din kernel (`modprobe vivid`) dă
+o a doua sursă cu interval, independentă de `facetimehd`. A confirmat ambele defecte — și a arătat
+că alegerea noastră de default era greșită. `ENUM_FRAMESIZES` pe un dispozitiv cu scaler raportează
+ce poate **întinde scaler-ul**, nu ce livrează sursa: `vivid` oferă 16x16 – 16384x8640 dintr-o sursă
+de 720x576. A cere maximul acolo nu e „rezoluție mai mare", e 720x576 mărit până la 283 MB pe cadru,
+măsurat: 20,5 fps față de 25,6.
+
+V4L2 răspunde separat la întrebarea corectă — `VIDIOC_G_SELECTION` cu `CROP_BOUNDS` dă dreptunghiul
+sursei, și distinge cele trei intrări `vivid` (720x576, 720x576, 1280x720) acolo unde
+`ENUM_FRAMESIZES` raportează același interval pentru toate. Commit rescris: default = nativ, cu
+revenire la maxim pentru dispozitivele fără API-ul de selecție. `facetimehd` nu-l implementează, deci
+dă tot 1296x736 — **toate măsurătorile de pe MacBook rămân valabile**.
+
+Două rute eliminate prin măsurătoare, ca să nu se mai reia: intervalele de cadru nu pot mărgini nimic
+(`vivid` pretinde 25 fps la orice dimensiune, inclusiv la maxim), iar `VIDIOC_G_FMT` e definitiv mort
+— formatul e stare globală pe dispozitiv care supraviețuiește lui close/open, deci orice proces
+anterior o otrăvește.
+
+**#4797 reprodus cu un encoder adevărat**, după două modele greșite pe care le-am măsurat și
+aruncat — amândouă merită știute de oricine încearcă să reproducă:
+
+* un element care **convertește** între sursă și consumator face defectul **imposibil**
+  (`videoconvert` eliberează bufferul din pool imediat, nici măcar partajarea forțată nu blochează);
+* un consumator **doar lent** nu ajunge — sursa se auto-reglează la ritmul lui.
+
+Mecanismul e „are nevoie de N cadre înainte să elibereze primul, cu N > pool", adică `rc-lookahead`.
+Pe camera reală cu pool de 16: stock se oprește **fix la 16 cadre**, patch-ul duce pipeline-ul de la
+**0 la 38 de cadre codate**.
+
+**!2935 curat sub sanitizer.** ASAN + UBSAN, zero rapoarte, cu control pozitiv verificat. Fără
+scurgeri (528 de octeți diferență față de nepatchat, toate în contexte eliberate la ieșire). Soak de
+10 minute: 2617 cadre copiate, RSS plat la 49 kB.
+
+**Blocajul lovește 1.6.8**, seria lansată curentă, **cu configurația implicită** — pool 4, consumator
+care ține 4, mort în 0,79 s; 50 de cadre cu patch-ul. `!2941` și `!2935` se aplică prin cherry-pick
+curat pe 1.6, în ordinea aia. Până acum descrierea spunea doar că patch-ul *se aplică* pe 1.6.8.
+
+**Totul rula deja pe DMA-BUF** — `uvcvideo` suportă `EXPBUF` și alocatorul văzut de client e
+`dmabufallocator0`. Ramura „DMA-BUF necopiabil" nu se poate obține de la o cameră v4l2 (plugin-ul
+pune întotdeauna `MAPPABLE`), deci a fost verificată prin injecție de defect: patch-ul refuză să
+copieze și cade înapoi pe comportamentul de bază, fără crăpătură.
+
+**#4174/#4863 au acum un reproducător.** Ții **un** buffer și îi recalculezi amprenta: conținutul se
+schimbă sub tine, cu control pozitiv (copiere → niciodată) și cu aritmetica `pool / rată de cadre`
+care se potrivește. Ambele fire erau argumentate exclusiv din citit cod, de doi ani respectiv unul.
+
+**Publicat prin editare, nu prin postări noi** — la cererea explicită: descrierile celor trei MR-uri
+rescrise în loc (!2935 s-a și **scurtat**, 9681 → 7688 caractere), titlul lui !2950 aliniat la
+commit, și răspunsul meu către `pobrn` **editat** ca să spună că măsurătoarea i-a dat lui dreptate.
+Verificat după: numărul de comentarii neschimbat peste tot.
+
+Rămas nefăcut din plan: kernelul de debug cu KASAN/lockdep. Iar `netconsole` (secțiunea 2) e pe
+jumătate: receptorul merge, emițătorul pornește, dar rămâne de verificat dacă transmisia rară trece.
 
 ### 3.3 🔵 Driver — șase PR-uri la `patjak/facetimehd`
 
