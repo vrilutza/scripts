@@ -76,6 +76,7 @@ reținut înainte de a-i spune cuiva că „are deja" vreuna dintre reparații.
 | [pipewire !2950](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2950) | o sursă cu interval de dimensiuni era deschisă la **cea mai mică**; plus pasul raportat greșit | 🔵 **cod schimbat pe 16 aug**: `908a66c05` → `14619fffa`, default-ul vine acum din `CROP_BOUNDS` (nativ), nu din maxim. CI verde. `pobrn` a pus două întrebări; la a doua **avea dreptate**, iar răspunsul meu a fost editat ca s-o spună |
 | [pipewire !2951](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951) | `pipewiresrc` repornea fluxul la renegocieri care nu cereau nimic | 🔵 trimis 15 aug, `c72c54f15`, CI verde, `mergeable`. Descriere rescrisă 16 aug: argumentul principal e acum fereastra redimensionată, nu un eveniment trimis cu mâna. **Zero comentarii de la cineva din afară** |
 | [facetimehd #334](https://github.com/patjak/facetimehd/pull/334) | AE se așează în 200 ms, nu într-o secundă, la fiecare STREAMON | 🔵 trimis 15 aug, peste [#328](https://github.com/patjak/facetimehd/pull/328) |
+| [wireplumber #986](https://gitlab.freedesktop.org/pipewire/wireplumber/-/work_items/986) | un nod de cameră `vivid` nu primește niciodată session item, deci clientul pică cu `target not found` | 🔵 **trimis 17 aug**. Izolat: nu e profilul, nu e versiunea de PipeWire, nu e forma cu mai multe dispozitive; merge pe WirePlumber 0.4.17, pică pe master `bf2a473d`. Reproducere în două comenzi, **dar numai dacă `vivid` e singura cameră** |
 | [pipewire #5363](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/5363) | raportul de bază | 🔵 deschis, fără răspuns de mentenanț din 11 iulie; !2935 îl **închide automat la merge** (`Closes #5363`, verificat prin API) |
 | [snapshot #367](https://gitlab.gnome.org/GNOME/snapshot/-/work_items/367) | viewfinder înghețat pe primul cadru | 🔵 deschis, **1 upvote** — altcineva a confirmat bug-ul (8 aug). Mentenantul a propus [!464](https://gitlab.gnome.org/GNOME/snapshot/-/merge_requests/464) (`min-buffers=8`); infirmat cu măsurători pe 10 aug — pe camera asta dă **0 cadre**, nu e un fix. !464 e încă deschis, nemerged |
 | [facetimehd #328…#333](https://github.com/patjak/facetimehd/pulls) | șase PR-uri de driver (vezi [secțiunea 3.3](#33--driver--șase-pr-uri-la-patjakfacetimehd)) | 🟡 toate deschise, zero review-uri — dar **`patjak` a răspuns pe 15 aug**, primul semn de la întreținător: nu primise notificări, se uită „săptămâna viitoare". Menționează că cineva ar fi trimis driverul în kernelul upstream; **n-am putut confirma** (lore și patchwork blochează accesul automat, iar căutările dau doar Apple ISP pentru M-series, alt hardware). De întrebat direct |
@@ -547,8 +548,50 @@ rescrise în loc (!2935 s-a și **scurtat**, 9681 → 7688 caractere), titlul lu
 commit, și răspunsul meu către `pobrn` **editat** ca să spună că măsurătoarea i-a dat lui dreptate.
 Verificat după: numărul de comentarii neschimbat peste tot.
 
-Rămas nefăcut din plan: kernelul de debug cu KASAN/lockdep. Iar `netconsole` (secțiunea 2) e pe
-jumătate: receptorul merge, emițătorul pornește, dar rămâne de verificat dacă transmisia rară trece.
+### 3.2e 🔵 17 august — cele trei defecte „ale altora", triate
+
+Din cele trei observate pe 16 august, **unul s-a dovedit al meu**:
+
+* **`pipewiresrc` cu caps ANY nu negociază** — **RETRAS**, nu e defect. Caps ANY merge pe master pe
+  ambele camere reale (UVC pe Lenovo, `facetimehd` pe MacBook). Eșua doar împotriva unui nod
+  `vivid` declarat de mine prin `context.objects`, care n-are proprietățile unuia creat de monitor.
+  O notă veche din `repro.py` susținea că pe master e stricat; era nesusținută și am corectat-o la
+  sursă.
+* **WirePlumber nu leagă `vivid`** — **al lor**, izolat prin schimbarea fiecărei variabile separat
+  și raportat ca [wireplumber #986](https://gitlab.freedesktop.org/pipewire/wireplumber/-/work_items/986).
+* **`update_controls` → `-EINVAL` pe `vivid`** — rămâne neraportat. E zgomot în log, cu efect
+  practic aproape nul; merită cel mult o frază, nu un raport propriu.
+
+Recitirea raportului înainte de postare a prins ceva ce merită reținut: reproducerea scrisă inițial
+**nu reproducea** — rulată exact așa cum era scrisă, clientul reușea, fiindcă orice altă cameră
+funcțională maschează complet defectul. Condiția lipsă („`vivid` să fie singura cameră") e acum
+îngroșată în raport.
+
+Rămas nefăcut din plan: nimic — kernelul de debug cu KASAN/lockdep e făcut (secțiunea 3.2f).
+`netconsole` (secțiunea 2) e pe jumătate: receptorul merge, emițătorul pornește, dar rămâne de
+verificat dacă transmisia rară trece.
+
+### 3.2f 🔵 Kernel de depanare pe Lenovo — KASAN, lockdep, KFENCE
+
+Compilat mainline **7.1.8** (aceeași versiune cu MacBook-ul, deci relevant direct) cu `KASAN`,
+`PROVE_LOCKING`, `DEBUG_VM`, `DEBUG_LIST`, `DEBUG_ATOMIC_SLEEP` și `KFENCE_NUM_OBJECTS=16383`.
+Instalat ca `7.1.8-kasan`, **nu** implicit — `GRUB_DEFAULT` e fixat explicit pe `7.0.0-28-generic`,
+fiindcă intrarea „Ubuntu" din GRUB alege mereu cel mai recent kernel, adică ar fi ales tăcut pe cel
+de 2–5× mai lent și ar fi falsificat orice măsurătoare ulterioară.
+
+**Rezultat pe căile noastre: zero rapoarte.** Stres v4l2 pe camera reală, pe `vivid` inclusiv
+alocări de 3840x2160, plus sarcina PipeWire completă. Ambele detectoare au control pozitiv verificat:
+o depășire de redzone (`slub_debug`) și o **citire** în afara limitelor (`KASAN`), amândouă
+raportate corect.
+
+Singurul lucru găsit e un impas potențial AB-BA în `nouveau`, la suspendarea automată a GPU-ului —
+dar e [cunoscut din 2021](https://gitlab.freedesktop.org/drm/nouveau/-/issues/101), aceeași pereche
+de mutex-uri, și n-are legătură cu camera.
+
+⚠️ **Kernelul Ubuntu are deja `KFENCE` compilat, dar e inutil fără rebuild:** pool-ul de 255 de
+obiecte se umple la boot cu alocări de lungă durată, și de atunci refuză tăcut orice eșantion — în
+prima fază a arătat `skipped allocations (capacity): 121648` și **zero** eșantioane reale. Verifică
+întotdeauna acel contor înainte să crezi un „zero bug-uri".
 
 ### 3.3 🔵 Driver — șase PR-uri la `patjak/facetimehd`
 
