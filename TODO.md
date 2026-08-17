@@ -79,7 +79,7 @@ reținut înainte de a-i spune cuiva că „are deja" vreuna dintre reparații.
 | [wireplumber #986](https://gitlab.freedesktop.org/pipewire/wireplumber/-/work_items/986) | un nod de cameră `vivid` nu primește niciodată session item, deci clientul pică cu `target not found` | 🔵 **trimis 17 aug**. Izolat: nu e profilul, nu e versiunea de PipeWire, nu e forma cu mai multe dispozitive; merge pe WirePlumber 0.4.17, pică pe master `bf2a473d`. Reproducere în două comenzi, **dar numai dacă `vivid` e singura cameră** |
 | [pipewire #5363](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/5363) | raportul de bază | 🔵 deschis, fără răspuns de mentenanț din 11 iulie; !2935 îl **închide automat la merge** (`Closes #5363`, verificat prin API) |
 | [snapshot #367](https://gitlab.gnome.org/GNOME/snapshot/-/work_items/367) | viewfinder înghețat pe primul cadru | 🔵 deschis, **1 upvote** — altcineva a confirmat bug-ul (8 aug). Mentenantul a propus [!464](https://gitlab.gnome.org/GNOME/snapshot/-/merge_requests/464) (`min-buffers=8`); infirmat cu măsurători pe 10 aug — pe camera asta dă **0 cadre**, nu e un fix. !464 e încă deschis, nemerged |
-| [facetimehd #328…#333](https://github.com/patjak/facetimehd/pulls) | șase PR-uri de driver (vezi [secțiunea 3.3](#33--driver--șase-pr-uri-la-patjakfacetimehd)) | 🟡 toate deschise, zero review-uri — dar **`patjak` a răspuns pe 15 aug**, primul semn de la întreținător: nu primise notificări, se uită „săptămâna viitoare". Menționează că cineva ar fi trimis driverul în kernelul upstream; **n-am putut confirma** (lore și patchwork blochează accesul automat, iar căutările dau doar Apple ISP pentru M-series, alt hardware). De întrebat direct |
+| [facetimehd #328…#334](https://github.com/patjak/facetimehd/pulls) | șapte PR-uri de driver (vezi [secțiunea 3.3](#33--driver--șapte-pr-uri-la-patjakfacetimehd)) | 🟡 toate deschise, zero review-uri — dar **`patjak` a răspuns pe 15 aug**, primul semn de la întreținător: nu primise notificări, se uită peste ele. **Toate verificate prin măsurătoare pe 17 aug**, master curat față de master+PR ([3.3a](#33a--17-august--fiecare-patch-verificat-prin-măsurătoare)); doar #332 rămâne netestabil. Menționează că cineva ar fi trimis driverul în kernelul upstream; **n-am putut confirma** (lore și patchwork blochează accesul automat, iar căutările dau doar Apple ISP pentru M-series, alt hardware) — întrebat direct pe #328 |
 | [snd_hda_macbookpro #187](https://github.com/davidjo/snd_hda_macbookpro/issues/187) | `install.cirrus.driver.sh` pică pe Debian (`.tar.xz`) și pe kerneluri `-rc` (404 la kernel.org) | 🔵 deschis, 7 comentarii |
 | [snd_hda_macbookpro #189](https://github.com/davidjo/snd_hda_macbookpro/pull/189) | fix: folosește sursa de kernel instalată local | 🔵 deschis, 1 comentariu |
 
@@ -632,10 +632,11 @@ obiecte se umple la boot cu alocări de lungă durată, și de atunci refuză t�
 prima fază a arătat `skipped allocations (capacity): 121648` și **zero** eșantioane reale. Verifică
 întotdeauna acel contor înainte să crezi un „zero bug-uri".
 
-### 3.3 🔵 Driver — șase PR-uri la `patjak/facetimehd`
+### 3.3 🔵 Driver — șapte PR-uri la `patjak/facetimehd`
 
-Toate deschise, `MERGEABLE`, bazate direct pe `364b1c6`. **Zero review-uri** — upstream-ul ăsta e
-lent, e de așteptat, nu e un semnal.
+Toate deschise, `MERGEABLE`, bazate direct pe `364b1c6`, și verificate că se aplică și **toate
+împreună**, fără conflict. `patjak` a răspuns pe 15 august — primul semn de la întreținător — și
+spune că se uită peste ele; vezi [3.3a](#33a--17-august--fiecare-patch-verificat-prin-măsurătoare).
 
 | PR | Ce repară |
 |---|---|
@@ -646,15 +647,56 @@ lent, e de așteptat, nu e un semnal.
 | [#332](https://github.com/patjak/facetimehd/pull/332) | un singur timeout de firmware lăsa camera fără buffere până la reîncărcarea modulului |
 | [#333](https://github.com/patjak/facetimehd/pull/333) | **coruperea de memorie**: până la 4095 de octeți scriși *înaintea* bufferului, când acesta nu începe pe graniță de pagină |
 
+| [#334](https://github.com/patjak/facetimehd/pull/334) | așteptarea AE de la fiecare STREAMON: 1000 ms → 200 ms *(stivuit peste #328, îl conține)* |
+
 Driverul instalat pe mașină e **exact** suma lor *(verificat prin `diff -rq` pe 8 aug)*, construit
 pentru ambele kerneluri. Scriptul de instalare/revenire e local, în
 `pipewire-5363/camera-fix/install-pr333.sh` (nu e publicat — vezi nota din [secțiunea 3.2](#32--pipewire--trei-patch-uri-acceptate-al-patrulea-în-review)).
+
+### 3.3a 🔵 17 august — fiecare patch verificat prin măsurătoare
+
+Aceeași întrebare ca la PipeWire: patch-urile chiar repară ce pretind, sau am dedus pe alocuri?
+
+**Metoda:** șapte module compilate din git, fiecare din HEAD-ul exact al PR-ului său, peste un master
+**verificat că e chiar `364b1c6`** și că nu conține patch-urile noastre. Md5-uri distincte, tipărite
+înainte de fiecare măsurătoare, `insmod` cu cale explicită, variantele alternate.
+
+| PR | master | cu patch-ul |
+|---|---|---|
+| #328 | 1198 ms, **1130 ms CPU ars (94% dintr-un nucleu)** | 1231 ms, **50 ms CPU (4%)** |
+| #329 `TRY_FMT(321)` | **321** — nealiniat, trece neatins | **328** |
+| #329 luminozitate 128→255 | 14,4 → **14,0** (niciun efect) | 14,5 → **141,0** |
+| #330 | colț **0,996** / centrat −0,028 | colț −0,070 / centrat **0,996** |
+| #331 | `Discrete 1296x736`, Scaling **FAIL** | `Stepwise 320x240–1296x736 step 8/1`, Scaling **OK** |
+| #333 | **8176** linii „scris înaintea bufferului" | **0** |
+| #334 | 1198 / 1231 ms | **463 / 461 ms** |
+
+Fiecare repetare confirmă; la #330 corelațiile se inversează complet. Detalii în
+`pipewire-5363/results/VERIFICARE-FACETIMEHD.md`.
+
+**#332 nu se poate testa** — cere un timeout de firmware, care nu se declanșează la comandă. Rămâne
+verificat doar prin recitire de cod.
+
+**Ce am corectat:** #328 avea în corpul PR-ului o justificare greșită pentru `break` — spunea că
+devine capcană „*as soon as anything calls `s_ctrl` for every control*". Fals: cazul cade în
+`default: break;`, identic cu un `break;`, indiferent câte apeluri se fac. Mesajul commit-ului
+spunea de la început formularea corectă, deci istoricul era curat; corectat doar corpul, prin
+editare.
+
+⚠️ **Două capcane, ambele ale mele.** Arborele `fthd-master-src` din cache **avea deja patch-urile
+noastre**, deci orice verificare pe el ar fi fost fără valoare. Și prima serie de compilări a
+etichetat drept „master" un arbore aflat de fapt la `a9c99dd` — master cu toate PR-urile — fiindcă
+`checkout` eșuase tăcut peste un index murdar. Prinsă doar pentru că tipăream hash-ul fiecărui build;
+altfel aș fi comparat master cu master și aș fi raportat că patch-urile n-au niciun efect.
+
+**Precizie de spus:** proba mea măsoară `STREAMON` plus un cadru plus pornirea procesului, nu
+`STREAMON` singur ca tabelul din #334 — aceeași direcție și mărime, dar nu aceeași măsurătoare.
 
 ### 3.4 ✅ Ce s-a închis din versiunea veche a acestei secțiuni
 
 - ~~patch local `FTHD_BUFFERS` 4→8~~ — **retras**, trata simptomul ([secțiunea 3.1](#31-cauza-rădăcină-așa-cum-e-ea))
 - ~~*fosta* secțiune 3.3, persistența patch-ului 4→8 în scriptul de setup~~ — **fără obiect**, patch-ul nu
-  mai există *(numerele se refereau la structura veche a secțiunii; azi [secțiunea 3.3](#33--driver--șase-pr-uri-la-patjakfacetimehd) e altceva)*
+  mai există *(numerele se refereau la structura veche a secțiunii; azi [secțiunea 3.3](#33--driver--șapte-pr-uri-la-patjakfacetimehd) e altceva)*
 - ~~*fosta* secțiune 3.4, PR upstream `patjak/facetimehd` cu 4→8~~ — **nu s-a trimis și nu se mai trimite**;
   în locul lui au plecat cele șase de mai sus
 - ~~„fix-ul propus e de o linie (`SPA_MIN(8u, …)`)"~~ — **infirmat** de analiza de cauză rădăcină
