@@ -72,9 +72,9 @@ reținut înainte de a-i spune cuiva că „are deja" vreuna dintre reparații.
 | [pipewire !2933](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2933) | `module-client-node` ignora flag-ul `READ` la enumerarea parametrilor | ✅ **acceptat în master** `c81badc1b`, în aceeași zi în care a fost trimis (30 iul) |
 | [pipewire !2941](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2941) | reciclare de buffer sub încuietoarea buclei + scurgere `buf_to_release` | ✅ **acceptat în master** `30ff8da17`, neatins, fast-forward |
 | [pipewire !2934](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2934) | gardă de depășire în `spa_v4l2_use_buffers()` | ✅ **acceptat în master** `7a8e49384` (14 aug), rebazat de `wtaymans`, autor păstrat; recenzat de `pobrn`, singura lui cerere (`got`→`provided`) inclusă |
-| [pipewire !2935](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2935) | copiere când pool-ul se golește | 🔵 gata de review din 15 aug, `9a118621e`, CI verde, `mergeable`. **Descriere rescrisă pe 16 aug** (9681 → 7688 caractere) cu tot ce s-a măsurat pe a doua mașină; cod neatins |
+| [pipewire !2935](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2935) | copiere când pool-ul se golește | 🔵 gata de review din 15 aug, acum `6fe4eaca2`, CI verde. Descriere rescrisă 16 aug; pe **17 aug** mesajul de commit corectat — citatul lui `wtaymans` era greșit (`starting` în loc de `stating`), referința `#5190` scoasă ca nesusținută, corp 63 → 43 rânduri. Codul neatins |
 | [pipewire !2950](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2950) | o sursă cu interval de dimensiuni era deschisă la **cea mai mică**; plus pasul raportat greșit | 🔵 **cod schimbat pe 16 aug**: `908a66c05` → `14619fffa`, default-ul vine acum din `CROP_BOUNDS` (nativ), nu din maxim. CI verde. `pobrn` a pus două întrebări; la a doua **avea dreptate**, iar răspunsul meu a fost editat ca s-o spună |
-| [pipewire !2951](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951) | `pipewiresrc` repornea fluxul la renegocieri care nu cereau nimic | 🔵 trimis 15 aug, `c72c54f15`, CI verde, `mergeable`. Descriere rescrisă 16 aug: argumentul principal e acum fereastra redimensionată, nu un eveniment trimis cu mâna. **Zero comentarii de la cineva din afară** |
+| [pipewire !2951](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951) | `pipewiresrc` repornea fluxul la renegocieri care nu cereau nimic | 🔵 trimis 15 aug, acum `1da2d9604`. Descriere rescrisă 16 aug; pe **17 aug** mesajul de commit corectat — spunea că defectul cere „*any source that advertises a range*", ceea ce infirmasem deja: intervalele pot veni din aval. Codul neatins. **Zero comentarii de la cineva din afară** |
 | [facetimehd #334](https://github.com/patjak/facetimehd/pull/334) | AE se așează în 200 ms, nu într-o secundă, la fiecare STREAMON | 🔵 trimis 15 aug, peste [#328](https://github.com/patjak/facetimehd/pull/328) |
 | [wireplumber #986](https://gitlab.freedesktop.org/pipewire/wireplumber/-/work_items/986) | un nod de cameră `vivid` nu primește niciodată session item, deci clientul pică cu `target not found` | 🔵 **trimis 17 aug**. Izolat: nu e profilul, nu e versiunea de PipeWire, nu e forma cu mai multe dispozitive; merge pe WirePlumber 0.4.17, pică pe master `bf2a473d`. Reproducere în două comenzi, **dar numai dacă `vivid` e singura cameră** |
 | [pipewire #5363](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/5363) | raportul de bază | 🔵 deschis, fără răspuns de mentenanț din 11 iulie; !2935 îl **închide automat la merge** (`Closes #5363`, verificat prin API) |
@@ -570,6 +570,45 @@ funcțională maschează complet defectul. Condiția lipsă („`vivid` să fie 
 Rămas nefăcut din plan: nimic — kernelul de debug cu KASAN/lockdep e făcut (secțiunea 3.2f).
 `netconsole` (secțiunea 2) e pe jumătate: receptorul merge, emițătorul pornește, dar rămâne de
 verificat dacă transmisia rară trece.
+
+### 3.2g 🔵 17 august — verificare pe stivă curată, și curățenie în ce am trimis
+
+Întrebare pusă direct: *defectele chiar se reproduc, sau le-am dedus din banc — care ar putea fi el
+problema?* Întemeiată, fiindcă exact în ziua precedentă „caps ANY" se dovedise a fi tocmai așa ceva.
+
+**Regula impusă: niciun cod construit local, niciun daemon privat, nicio variabilă de mediu.** Doar
+pachete de distribuție, în sesiunea reală, cu mediul curățat explicit și cu plugin-ul GStreamer
+verificat de fiecare dată că vine din `/usr`. Două stive independente: Debian + PipeWire 1.6.8 +
+WirePlumber 0.5.15, și Ubuntu + PipeWire 1.0.5 + WirePlumber 0.4.17.
+
+| MR | ce susține | ce a ieșit pe stivă curată |
+|---|---|---|
+| !2935 | fluxul moare când consumatorul ține tot pool-ul | 1/2/3 ținute → 145 cadre; **4 ținute → 4 cadre, mort la t=1,29 s** |
+| !2950 | clientul fără preferință primește minimul | `facetimehd` 320x240–1296x736 → **320x240**; `vivid` 16x16–16384x8640 → **16x16** |
+| !2951 | renegociere inutilă care demontează fluxul | 3 pauze × ~1,30 s pe 1.6.8, 3 × ~0,73 s pe 1.0.5, caps-urile sursei neschimbate |
+
+Pentru !2951 și **mecanismul**, nu doar simptomul: `GST_DEBUG=pipewiresrc:4` pe binarul din
+distribuție arată `gst_pipewire_src_negotiate: set format` de trei ori în plus, de fiecare dată cu
+exact același format, iar „Skipping renegotiation" nu apare niciodată.
+
+**Toate trei se reproduc fără niciun cod de-al nostru. Niciunul nu poate fi pus pe seama bancului.**
+Detaliile în `pipewire-5363/results/VERIFICARE-STIVA-CURATA.md`.
+
+⚠️ **Capcană găsită tot aici.** Prima rulare a lui !2951 pe 1.0.5 a fost cu `vivid` și a arătat
+**zero pauze** — era gata să raportez „nu se reproduce pe 1.0.5". Schimbasem însă două variabile
+deodată, versiunea și camera. Reluat pe aceeași stivă cu camera reală: trei pauze. `vivid` e driver
+virtual, `STREAMON` la el e instantaneu, deci remontarea fluxului nu costă nimic măsurabil.
+**Defectul e prezent, costul nu se vede** — cine încearcă să reproducă pe un dispozitiv virtual va
+zice „nu reproduc", și va avea dreptate despre simptom, greșit despre defect.
+
+**Curățenie în cele trei MR-uri**, toată prin editarea primului post, zero postări noi:
+
+* scoase liniile de tipul „*Two commits, +66/−5, on …*" din toate trei — se văd în GitLab deasupra
+  descrierii, iar repetate în text nu fac decât să rămână în urmă. Chiar rămăseseră: `+36/−4` era
+  vechi după rescrierea patch-ului.
+* corectate **mesajele de commit**, care intră permanent în istoric: citatul greșit al lui
+  `wtaymans` și referința nesusținută `#5190` din !2935, plus formularea din !2951 care sugera că
+  defectul cere o sursă cu intervale.
 
 ### 3.2f 🔵 Kernel de depanare pe Lenovo — KASAN, lockdep, KFENCE
 
