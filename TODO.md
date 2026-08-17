@@ -76,7 +76,7 @@ reținut înainte de a-i spune cuiva că „are deja" vreuna dintre reparații.
 | [pipewire !2950](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2950) | o sursă cu interval de dimensiuni era deschisă la **cea mai mică**; plus pasul raportat greșit | 🔵 **cod schimbat pe 16 aug**: `908a66c05` → `14619fffa`, default-ul vine acum din `CROP_BOUNDS` (nativ), nu din maxim. CI verde. `pobrn` a pus două întrebări; la a doua **avea dreptate**, iar răspunsul meu a fost editat ca s-o spună |
 | [pipewire !2951](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951) | `pipewiresrc` repornea fluxul la renegocieri care nu cereau nimic | 🔵 trimis 15 aug, acum `1da2d9604`. Descriere rescrisă 16 aug; pe **17 aug** mesajul de commit corectat — spunea că defectul cere „*any source that advertises a range*", ceea ce infirmasem deja: intervalele pot veni din aval. Codul neatins. **Zero comentarii de la cineva din afară** |
 | [facetimehd #334](https://github.com/patjak/facetimehd/pull/334) | AE se așează în 200 ms, nu într-o secundă, la fiecare STREAMON | 🔵 trimis 15 aug, peste [#328](https://github.com/patjak/facetimehd/pull/328) |
-| [wireplumber #986](https://gitlab.freedesktop.org/pipewire/wireplumber/-/work_items/986) | un nod de cameră `vivid` nu primește niciodată session item, deci clientul pică cu `target not found` | 🔵 **trimis 17 aug**, **primul răspuns de întreținător** în aceeași zi: `julian` a cerut testare cu !876. Testat — presupunerea lui (activare eșuată) e **falsă**; **cauza reală e în PipeWire**: `spa_v4l2_enum_controls()` înregistrează un control cu payload, `VIDIOC_G_CTRL` dă EINVAL și toată enumerarea `Props` cade. Patch de 7 linii, A/B alternat 2-din-2 ([3.2h](#32h--17-august-seara--986-cauza-găsită-și-în-alt-loc-decât-credeau-toți)). Răspuns redactat, **nepostat** |
+| [wireplumber #986](https://gitlab.freedesktop.org/pipewire/wireplumber/-/work_items/986) | un nod de cameră `vivid` nu primește niciodată session item, deci clientul pică cu `target not found` | 🔵 **trimis 17 aug**, **primul răspuns de întreținător** în aceeași zi: `julian` a cerut testare cu !876. Testat — presupunerea lui (activare eșuată) e **falsă**; **cauza reală e în PipeWire**: `spa_v4l2_enum_controls()` înregistrează un control cu payload, `VIDIOC_G_CTRL` dă EINVAL și toată enumerarea `Props` cade. Patch de 7 linii, A/B alternat, plus trei probe de infirmare, toate trecute ([3.2h](#32h--17-august-seara--986-cauza-găsită-și-în-alt-loc-decât-credeau-toți), [3.2i](#32i--17-august-târziu--auditul-bancului-cerut-înainte-de-a-crede-rezultatul)). ⚠️ **Un rând din raportul postat e greșit** și trebuie corectat la răspuns ([3.2j](#32j--17-august--o-eroare-în-ce-postasem-deja-pe-986)): defectul se vede pe **toate** versiunile de WirePlumber, nu doar pe master. Răspuns redactat, **nepostat**; patch **local** |
 | [pipewire #5363](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/5363) | raportul de bază | 🔵 deschis, fără răspuns de mentenanț din 11 iulie; !2935 îl **închide automat la merge** (`Closes #5363`, verificat prin API) |
 | [snapshot #367](https://gitlab.gnome.org/GNOME/snapshot/-/work_items/367) | viewfinder înghețat pe primul cadru | 🔵 deschis, **1 upvote** — altcineva a confirmat bug-ul (8 aug). Mentenantul a propus [!464](https://gitlab.gnome.org/GNOME/snapshot/-/merge_requests/464) (`min-buffers=8`); infirmat cu măsurători pe 10 aug — pe camera asta dă **0 cadre**, nu e un fix. !464 e încă deschis, nemerged |
 | [facetimehd #328…#334](https://github.com/patjak/facetimehd/pulls) | șapte PR-uri de driver (vezi [secțiunea 3.3](#33--driver--șapte-pr-uri-la-patjakfacetimehd)) | 🟡 toate deschise, zero review-uri — dar **`patjak` a răspuns pe 15 aug**, primul semn de la întreținător: nu primise notificări, se uită peste ele. **Toate verificate prin măsurătoare pe 17 aug**, master curat față de master+PR ([3.3a](#33a--17-august--fiecare-patch-verificat-prin-măsurătoare)); doar #332 rămâne netestabil. Menționează că cineva ar fi trimis driverul în kernelul upstream; **n-am putut confirma** (lore și patchwork blochează accesul automat, iar căutările dau doar Apple ISP pentru M-series, alt hardware) — întrebat direct pe #328 |
@@ -816,8 +816,65 @@ Non-regresie pe camera reală: `pw-cli enum-params PropInfo` + `Props` pe UVC, m
 cazul, fiindcă activarea din monitor reușește; nodul e aruncat după aceea. Un `wp_warning_object`
 acolo ar fi făcut diagnosticul imediat — exact ce voia `julian` de la !876.
 
+### 3.2i 🔵 17 august, târziu — auditul bancului cerut înainte de a crede rezultatul
+
+Întrebarea pusă: *„verifică bancul a 11-a oară — ce te face așa sigur că defectul e cel
+diagnosticat și că patch-ul e corect?"* Șase probleme găsite, una dintre ele gravă.
+
+* **`git stash` întoarce 0 și când n-are ce pune deoparte.** Rețeta de construire a variantelor
+  era `git stash && ninja && cp`. După ce patch-ul a fost **comis**, `git stash` n-a mai avut ce
+  lua, `&&` a mers mai departe, și a copiat varianta patch-uită peste `/tmp/v4l2-master.so`.
+  **Ambele „variante" erau același fișier.** Prins doar fiindcă tipăream md5-urile. Înlocuit cu
+  `fa-variante.py`: fiecare variantă se face prin `git checkout <comit> -- <fișier>`, cu
+  verificare **în sursă** înainte de compilare și cu asertarea că toate au md5-uri distincte.
+* **Trei directoare de build erau învechite** — dar doar ca mtime: după rebuild complet,
+  md5-ul fiecărui artefact e neschimbat. Măsurătorile anterioare n-au fost afectate, și în plus
+  se vede că build-urile sunt reproductibile.
+* **Sonda mea ocolea verificarea bancului** (`whichplugin.py`), fiindcă rula `gst-launch`
+  direct. Reintrodusă.
+* **`wt-ctrl` era configurat altfel** decât build-ul principal (`libcamera` pornit). Aliniat —
+  și după aliniere, varianta „master" are `.text` și `.rodata` **identice la bit** cu plugin-ul
+  build-ului principal, compilat separat din același comit. Deci brațul de control chiar e
+  master-ul upstream.
+* **`pkill -f` s-a potrivit iar cu propria mea linie de comandă** — a șasea oară în sesiune, de
+  data asta omorându-mi sesiunea SSH în mijlocul unei probe.
+* **`gst-launch` nu iese după `stream error`** — rămâne blocat; vechea sondă ascundea asta în
+  spatele lui `timeout`.
+
+**Probe construite ca să răstoarne diagnosticul**, cu predicțiile scrise înainte, două treceri, a
+doua în ordine inversă:
+
+| variantă | ce schimbă | rezultat |
+|---|---|---|
+| `log` | master + sondă în `update_controls` | pică, și spune **care** control: `ctrl_id=0098f90f errno=22`, unul singur |
+| `tolerant` | master + `EINVAL` tratat ca `EACCES` — alt cod, controlul **rămâne** în `PropInfo` | **repară** → legătura e „enumerarea `Props` eșuează", nu „controlul a dispărut" |
+| `sabotat` | fix + eșec forțat al enumerării | **strică la loc** → simptomul urmărește eșecul, nu vreun efect secundar al patch-ului |
+
+Verificat și pe **WirePlumber master de azi** (`35d5d199`): master pică, fix merge, de două ori.
+
+### 3.2j ⚠️ 17 august — o eroare în ce **postasem deja** pe #986
+
+Auditul a scos la iveală că randul din raportul trimis —
+
+> | 1.0.5 (Ubuntu) | 0.4.17 (Ubuntu) | implicit | **works** — links and streams, YUY2 320x180 |
+
+— **nu se reproduce**. Cu reproducerea scrisă în același raport (`media.role=Camera`), `vivid`
+pică la fel și pe stiva distribuției. Ce merge acolo e `pipewiresrc` **simplu**, fără proprietăți
+de flux; aproape sigur asta măsurasem, fără să notez că schimbasem comanda.
+
+Controlul care exclude explicația comodă („0.4.17 n-ar ști de rolul de cameră"): pe aceeași
+stivă, **camera UVC reală merge cu exact aceeași comandă**.
+
+Și atunci, o singură variabilă schimbată — daemon master + **WirePlumber 0.4.17 al
+distribuției**, alternat de patru ori: cu plugin-ul master clientul pică, cu patch-ul merge.
+
+**Concluzia corectă: defectul e în PipeWire și se vede pe fiecare versiune de WirePlumber
+încercată.** Diferă doar cât de departe ajunge simptomul. Fraza din raportul postat, *„it is
+neither the profile nor the PipeWire version"*, a fost dedusă dintr-un rând măsurat greșit și
+trebuie corectată când răspundem. Corectarea e deja în draft.
+
 Raport complet: `pipewire-5363/results/VIVID-CAUZA-17aug.md`. Draft de răspuns, **nepostat**:
-`results/NOTA-986-raspuns.md`.
+`results/NOTA-986-raspuns.md`. Patch-ul rămâne **local**, pe `wt-ctrl:v4l2-payload`.
 
 ### 3.4 ✅ Ce s-a închis din versiunea veche a acestei secțiuni
 
