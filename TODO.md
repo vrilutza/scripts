@@ -726,6 +726,34 @@ a lui `insmod`, și `fs.protected_regular=2` care împiedică root-ul să scrie 
 de o rulare anterioară ca utilizator. `bash -n` nu execută nimic, iar o rulare ca utilizator nu poate
 găsi o problemă care apare doar sub root.
 
+### 3.3c 🔵 Auditul de declarare pe cele trei MR-uri PipeWire
+
+Întrebarea care l-a declanșat: dacă !2950 se sprijinea nedeclarat pe un driver modificat local, are
+și !2935 aceeași problemă?
+
+| MR | depinde de driver modificat? | era declarat? |
+|---|---|---|
+| **!2950** | **da** — intervalul de dimensiuni vine din #331, încă în review | **nu** → corectat, cu trimitere la #331 și cu precizarea că `vivid` nu cere nimic |
+| **!2951** | da | **da**, deja: „*by reverting one commit in its driver*" |
+| **!2935** | **nu** | acum spune explicit că nu cere nimic out-of-tree |
+
+La !2935 am procedat invers decât la !2950: în loc să adaug o precauție, am **eliminat îndoiala prin
+măsurătoare**. Driverul publicat încărcat direct (identitate verificată: `Discrete 1296x736`,
+`TRY_FMT(321) → 321`), pragul cade în același loc:
+
+| cadre ținute | driver publicat | driver cu patch-urile noastre |
+|---|---|---|
+| 1 / 2 / 3 | 146 / 145 / 146 | 145 / 144 / 145 |
+| **4** | **4 cadre, mort la t=1,26 s** | 4 cadre, mort la t=1,29 s |
+| 6 / 12 | 4 / 4 | 4 / 4 |
+
+Pool-ul de patru e `FTHD_BUFFERS` al driverului, adică upstream. Precizat în descriere, fiindcă
+preîntâmpină exact întrebarea pe care un recenzent și-o va pune după ce citește precauția din !2950.
+
+Precizat tot acolo și că sursa I420 din proba cu `x264enc` era un `v4l2loopback`, nu o cameră, iar
+pool-ul de acolo e 2–3, **sub pragul patch-ului** — altfel „2 frames, then dead" se putea citi ca
+„patch-ul nu rezolvă cazul din #4797".
+
 ### 3.4 ✅ Ce s-a închis din versiunea veche a acestei secțiuni
 
 - ~~patch local `FTHD_BUFFERS` 4→8~~ — **retras**, trata simptomul ([secțiunea 3.1](#31-cauza-rădăcină-așa-cum-e-ea))
