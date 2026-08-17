@@ -873,6 +873,53 @@ distribuției**, alternat de patru ori: cu plugin-ul master clientul pică, cu p
 neither the profile nor the PipeWire version"*, a fost dedusă dintr-un rând măsurat greșit și
 trebuie corectată când răspundem. Corectarea e deja în draft.
 
+### 3.2k 🔵 Câte drivere reale au defectul: **niciunul**
+
+Căutat în `linux-source-7.1`, `drivers/media` + `drivers/staging/media`. Forma periculoasă e
+precisă: un control **array** al cărui **tip de bază** e `INTEGER`, `BOOLEAN` sau `MENU` —
+singurele trei pe care `spa_v4l2_enum_controls()` le înregistrează. Toate celelalte (`U8`, `U16`,
+`U32`, `INTEGER64`, `STRING`, tipurile compuse) cad deja pe `default: goto next`.
+
+Toate cele 14 fișiere cu `.dims`: `go7007` (U8), `tw5864` și `solo6x10` (U16), `si4713` (U32),
+`vsp1` lut/clu (U32) și hgt (U8), `dw100` (U32), `hantro`/`rkvdec`/`visl`/`cedrus`/`mtk-vcodec`
+(structuri compuse) — **niciunul atins**. Singurul din tot arborele e `vivid`, cu
+`"S32 2 Element Array"` (`V4L2_CTRL_TYPE_INTEGER`, `.dims = { 2 }`). Chiar și celălalt array al
+lui `vivid`, `"S64 5 Element Array"`, e `INTEGER64` și e deja sărit.
+
+Din afara arborelui: `facetimehd` folosește numai `v4l2_ctrl_new_std` cu controale scalare;
+`v4l2loopback` nu e instalat pe niciuna dintre mașini.
+
+Confirmat și în nucleu de ce pică exact acolo: `ctrl->is_int = !ctrl->is_ptr && type !=
+INTEGER64` (`v4l2-ctrls-core.c:2173`), iar `v4l2_g_ctrl()` întoarce `-EINVAL` dacă `!is_int`
+(`v4l2-ctrls-api.c:797`). `WRITE_ONLY` dă `EACCES` — singurul caz pe care codul spa îl tratează.
+
+**Deci severitatea pentru utilizatorul cu cameră reală e zero azi.** Ce rămâne: `vivid` e
+driverul de test standard, folosit tocmai ca să se probeze stivele de cameră; codul e greșit
+oricum, fiindcă un singur control necitibil dărâmă enumerarea `Props` a întregului nod; și
+aceeași cădere apare fără niciun array — pentru un control `VOLATILE`, eroarea întoarsă de
+`g_volatile_ctrl` al driverului se propagă până la `VIDIOC_G_CTRL` (`v4l2-ctrls-api.c:788`), deci
+un driver USB care întoarce `-EIO` ar dărâma la fel toată enumerarea. De aceea varianta
+`tolerant` merită propusă **pe lângă** sărirea controalelor cu payload, nu în locul ei.
+
+### 3.2l 🟢 `verifica-bancul.sh` — răspunsul la „e bancul ok?", măsurat
+
+Întrebarea a venit a 11-a oară, deci am făcut din ea un script: `~/pw-test/verifica-bancul.sh`,
+opt verificări, ieșire 0/1. Verifică build-urile la zi (`ninja -n`), arborii git curați, ramurile
+care există **doar local** (criteriul e comitul, nu numele — altfel rândul reclamă mereu și nu-l
+mai citește nimeni), daemonii de banc rămași în urmă (căutați după executabil, **niciodată** cu
+`pgrep -f`, care s-a potrivit de șase ori cu propria mea linie de comandă), modulele de test
+încărcate, camerele prezente, dacă directorul suprascris `spa-ctrl` conține plugin-ul curat sau o
+variantă de probă, și amprentele artefactelor principale.
+
+La prima rulare a prins imediat capcana rămasă: `spa-ctrl` avea încă varianta **patch-uită**, deci
+orice rulare ulterioară cu `PWSPA` ar fi folosit-o în tăcere. Repus cel curat, sonda depășită
+(`vivid-ab.sh`, cea fără verificare de identitate) ștearsă. A doua rulare: totul verde.
+
+Pe MacBook: `facetimehd` din DKMS (0.7.0.1, instalat pentru 7.1.7 și 7.1.8), cameră normală,
+niciun proces de test rămas, 113 MB de capturi brute șterse din `~/.cache/facetimehd-fix/tmp`.
+Tot aici, încă o sondă care nu putea reuși: verificarea provenienței modulului dădea „n/a" fiindcă
+`modinfo` nu e în `PATH`-ul unei sesiuni neinteractive — nu fiindcă ar fi fost ceva în neregulă.
+
 Raport complet: `pipewire-5363/results/VIVID-CAUZA-17aug.md`. Draft de răspuns, **nepostat**:
 `results/NOTA-986-raspuns.md`. Patch-ul rămâne **local**, pe `wt-ctrl:v4l2-payload`.
 
