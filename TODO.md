@@ -76,7 +76,7 @@ reținut înainte de a-i spune cuiva că „are deja" vreuna dintre reparații.
 | [pipewire !2950](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2950) | o sursă cu interval de dimensiuni era deschisă la **cea mai mică**; plus pasul raportat greșit | 🔵 **cod schimbat pe 16 aug**: `908a66c05` → `14619fffa`, default-ul vine acum din `CROP_BOUNDS` (nativ), nu din maxim. CI verde. `pobrn` a pus două întrebări; la a doua **avea dreptate**, iar răspunsul meu a fost editat ca s-o spună |
 | [pipewire !2951](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951) | `pipewiresrc` repornea fluxul la renegocieri care nu cereau nimic | 🔵 trimis 15 aug, acum `1da2d9604`. Descriere rescrisă 16 aug; pe **17 aug** mesajul de commit corectat — spunea că defectul cere „*any source that advertises a range*", ceea ce infirmasem deja: intervalele pot veni din aval. Codul neatins. **Zero comentarii de la cineva din afară** |
 | [facetimehd #334](https://github.com/patjak/facetimehd/pull/334) | AE se așează în 200 ms, nu într-o secundă, la fiecare STREAMON | 🔵 trimis 15 aug, peste [#328](https://github.com/patjak/facetimehd/pull/328) |
-| [wireplumber #986](https://gitlab.freedesktop.org/pipewire/wireplumber/-/work_items/986) | un nod de cameră `vivid` nu primește niciodată session item, deci clientul pică cu `target not found` | 🔵 **trimis 17 aug**. Izolat: nu e profilul, nu e versiunea de PipeWire, nu e forma cu mai multe dispozitive; merge pe WirePlumber 0.4.17, pică pe master `bf2a473d`. Reproducere în două comenzi, **dar numai dacă `vivid` e singura cameră** |
+| [wireplumber #986](https://gitlab.freedesktop.org/pipewire/wireplumber/-/work_items/986) | un nod de cameră `vivid` nu primește niciodată session item, deci clientul pică cu `target not found` | 🔵 **trimis 17 aug**, **primul răspuns de întreținător** în aceeași zi: `julian` a cerut testare cu !876. Testat — presupunerea lui (activare eșuată) e **falsă**; **cauza reală e în PipeWire**: `spa_v4l2_enum_controls()` înregistrează un control cu payload, `VIDIOC_G_CTRL` dă EINVAL și toată enumerarea `Props` cade. Patch de 7 linii, A/B alternat 2-din-2 ([3.2h](#32h--17-august-seara--986-cauza-găsită-și-în-alt-loc-decât-credeau-toți)). Răspuns redactat, **nepostat** |
 | [pipewire #5363](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/5363) | raportul de bază | 🔵 deschis, fără răspuns de mentenanț din 11 iulie; !2935 îl **închide automat la merge** (`Closes #5363`, verificat prin API) |
 | [snapshot #367](https://gitlab.gnome.org/GNOME/snapshot/-/work_items/367) | viewfinder înghețat pe primul cadru | 🔵 deschis, **1 upvote** — altcineva a confirmat bug-ul (8 aug). Mentenantul a propus [!464](https://gitlab.gnome.org/GNOME/snapshot/-/merge_requests/464) (`min-buffers=8`); infirmat cu măsurători pe 10 aug — pe camera asta dă **0 cadre**, nu e un fix. !464 e încă deschis, nemerged |
 | [facetimehd #328…#334](https://github.com/patjak/facetimehd/pulls) | șapte PR-uri de driver (vezi [secțiunea 3.3](#33--driver--șapte-pr-uri-la-patjakfacetimehd)) | 🟡 toate deschise, zero review-uri — dar **`patjak` a răspuns pe 15 aug**, primul semn de la întreținător: nu primise notificări, se uită peste ele. **Toate verificate prin măsurătoare pe 17 aug**, master curat față de master+PR ([3.3a](#33a--17-august--fiecare-patch-verificat-prin-măsurătoare)); doar #332 rămâne netestabil. Menționează că cineva ar fi trimis driverul în kernelul upstream; **n-am putut confirma** (lore și patchwork blochează accesul automat, iar căutările dau doar Apple ISP pentru M-series, alt hardware) — întrebat direct pe #328 |
@@ -559,8 +559,11 @@ Din cele trei observate pe 16 august, **unul s-a dovedit al meu**:
   sursă.
 * **WirePlumber nu leagă `vivid`** — **al lor**, izolat prin schimbarea fiecărei variabile separat
   și raportat ca [wireplumber #986](https://gitlab.freedesktop.org/pipewire/wireplumber/-/work_items/986).
-* **`update_controls` → `-EINVAL` pe `vivid`** — rămâne neraportat. E zgomot în log, cu efect
-  practic aproape nul; merită cel mult o frază, nu un raport propriu.
+* **`update_controls` → `-EINVAL` pe `vivid`** — ~~rămâne neraportat, e zgomot în log, cu efect
+  practic aproape nul~~. **Greșit, corectat pe 17 aug seara:** este exact cauza lui #986. Vezi
+  [3.2h](#32h--17-august-seara--986-cauza-gasita-si-in-alta-parte-decat-credeau-toti). Lecția:
+  „zgomot în log" a fost o presupunere, nu o măsurătoare — n-am urmărit niciodată unde ajunge
+  acel `-EINVAL`.
 
 Recitirea raportului înainte de postare a prins ceva ce merită reținut: reproducerea scrisă inițial
 **nu reproducea** — rulată exact așa cum era scrisă, clientul reușea, fiindcă orice altă cameră
@@ -753,6 +756,68 @@ preîntâmpină exact întrebarea pe care un recenzent și-o va pune după ce ci
 Precizat tot acolo și că sursa I420 din proba cu `x264enc` era un `v4l2loopback`, nu o cameră, iar
 pool-ul de acolo e 2–3, **sub pragul patch-ului** — altfel „2 frames, then dead" se putea citi ca
 „patch-ul nu rezolvă cazul din #4797".
+
+### 3.2h 🔵 17 august seara — #986: cauza găsită, și în alt loc decât credeau toți
+
+**Primul răspuns de la un întreținător de WirePlumber.** `julian` a presupus în #986 că nodul
+`vivid` *nu reușește să se activeze* și a cerut să testăm cu
+[!876](https://gitlab.freedesktop.org/pipewire/wireplumber/-/merge_requests/876) — între timp
+în master ca `35d5d199` — care face hook-ul `monitor/v4l2/create-node` asincron și raportează
+eroarea activării.
+
+Testat pe **Lenovo**, cu `35d5d199` luat prin cherry-pick **exact peste `bf2a473d`**, comitul pe
+care fusese raportat bug-ul, ca să nu se schimbe decât o singură variabilă.
+
+**Presupunerea lui e falsă.** Cu !876 aplicat nu apare niciun mesaj: activarea nodului reușește,
+iar nodul chiar există în graf (`44 Video/Source v4l2_input.platform-vivid.0`). Eșecul e mai
+târziu, în object manager:
+
+```
+wp-proxy  <WpNode:44> error res:-22 enum params id:2 (Spa:Enum:ParamId:Props) failed
+wp-object-manager  on_proxy_ready: proxy activation failed: Object activation aborted
+```
+
+Lanțul complet, urmărit până la `ioctl`:
+
+1. `spa_v4l2_enum_controls()` comută **doar pe `queryctrl.type`**, iar `VIDIOC_QUERY_EXT_CTRL`
+   raportează un **array de întregi** ca `V4L2_CTRL_TYPE_INTEGER`. Măsurat pe controlul vinovat:
+   `"S32 2 Element Array" type=1 elems=2 nr_of_dims=1 flags=0x1100 (HAS_PAYLOAD|…)`.
+2. E înregistrat deci ca proprietate `Int` scalară.
+3. `spa_v4l2_update_controls()` îl citește cu `VIDIOC_G_CTRL` → **EINVAL** (nucleul nu permite
+   `G_CTRL` pe controale cu payload). Doar `EACCES` e tratat ca netatal.
+4. `SPA_PARAM_Props` întoarce `-EINVAL` **în întregime**.
+5. WirePlumber cere `WP_OBJECT_FEATURES_ALL` pe fiecare nod, deci activarea obiectului e
+   abandonată → `node-added` nu se emite → `create-item.lua` nu vede nodul → `target not found`.
+
+Deci **defectul e în PipeWire, nu în WirePlumber**, deși simptomul apare la WirePlumber.
+
+Sondă scrisă ca să refacă exact selecția făcută de spa: din **53** de controale înregistrate pe
+`vivid`, **exact unul** pică la `VIDIOC_G_CTRL`; pe camera UVC reală, **0 din 9**. De aceea numai
+`vivid` e afectat — și de aceea am crezut o zi întreagă că e „zgomot în log".
+
+**Reparație**, `~/pw-test/wt-ctrl` branch `v4l2-payload`, comit `216c897f5`, +7 linii: se sare
+peste controalele cu `V4L2_CTRL_FLAG_HAS_PAYLOAD`. Flag-ul e păstrat și pe calea de rezervă
+`VIDIOC_QUERYCTRL`, deci merge și pe drivere fără `QUERY_EXT_CTRL`.
+
+A/B alternat, ambele variante din același comit și aceeași configurare meson, cu md5-ul
+plugin-ului **chiar încărcat de daemon** citit din `/proc/PID/maps` la fiecare rulare:
+
+| rulare | plugin | `enum_params` eșuat | session item | client |
+|---|---|---|---|---|
+| 1, 3 | master | 2 | 0 | `target not found` |
+| 2, 4 | +patch | 0 | 1 | OK, 10 cadre |
+
+Non-regresie pe camera reală: `pw-cli enum-params PropInfo` + `Props` pe UVC, master vs patch —
+**ieșire identică**, 150 de linii. Pe `vivid`, singura diferență e dispariția intrării
+`"S32 2 Element Array"`, adică exact controlul care nu putea fi citit oricum.
+
+**A doua observație, pentru WirePlumber:** eșecul e complet mut la nivelul implicit de log —
+`on_proxy_ready()` (`lib/wp/object-manager.c:780`) folosește `wp_debug_object`. !876 nu acoperă
+cazul, fiindcă activarea din monitor reușește; nodul e aruncat după aceea. Un `wp_warning_object`
+acolo ar fi făcut diagnosticul imediat — exact ce voia `julian` de la !876.
+
+Raport complet: `pipewire-5363/results/VIVID-CAUZA-17aug.md`. Draft de răspuns, **nepostat**:
+`results/NOTA-986-raspuns.md`.
 
 ### 3.4 ✅ Ce s-a închis din versiunea veche a acestei secțiuni
 
