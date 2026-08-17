@@ -692,6 +692,40 @@ altfel aș fi comparat master cu master și aș fi raportat că patch-urile n-au
 **Precizie de spus:** proba mea măsoară `STREAMON` plus un cadru plus pornirea procesului, nu
 `STREAMON` singur ca tabelul din #334 — aceeași direcție și mărime, dar nu aceeași măsurătoare.
 
+### 3.3b 🔵 Cele șapte împreună — și o declarație lipsă găsită astfel
+
+Fiecare patch fusese verificat separat; asta verifică ce ar lua efectiv un întreținător.
+
+| | master curat | toate cele șapte |
+|---|---|---|
+| `framesizes` | `Discrete 1296x736` | `Stepwise 320x240–1296x736 step 8/1` |
+| `TRY_FMT(321)` | **321** | **328** |
+| STREAMON | 1222 ms, **1040 ms CPU (85%)** | **496 ms**, 20 ms CPU (4%) |
+| luminozitate 128→255 | 53,1 → **51,8** (niciun efect) | 53,7 → **180,6** |
+| decupare | **COLȚ STÂNGA-SUS** | **CENTRAT** |
+| scrieri înaintea bufferului | **8176** | **0** |
+| `v4l2-compliance` | 51 reușite, **6 eșecuri** | 52 reușite, **5 eșecuri** |
+| captură 1296x736 | 30/30 cadre | 30/30 cadre |
+
+Toate efectele apar simultan, niciun patch nu-l anulează pe altul, iar `v4l2-compliance` **scade** de
+la 6 eșecuri la 5 — deci setul nu introduce regresii, ci repară un test în plus.
+
+⚠️ **Ce a scos la iveală runda asta, și e cel mai important lucru din ea:** prima coloană arată că
+`facetimehd` de pe `patjak/master` raportează **o singură dimensiune discretă**. Intervalul vine din
+**#331, un patch de-al nostru încă în review acolo**. Adică toate cifrele despre `facetimehd` din
+descrierea lui **!2950** depindeau de un driver modificat local, iar un recenzent PipeWire cu un
+MacBook și driverul publicat **n-ar fi reprodus nimic** — și ar fi închis MR-ul ca nereproductibil.
+
+!2951 declara deja asta („*by reverting one commit in its driver*"); !2950 nu. Corectat prin editarea
+descrierii, cu trimitere la #331 și cu precizarea că `vivid` nu cere nimic, fiind în arborele
+kernelului. **Piciorul solid al lui !2950 rămâne `vivid`**, nu `facetimehd`.
+
+**Trei defecte în scriptul de test**, toate de aceeași formă — verificate într-un mod care nu putea
+găsi defectul: variabilă neinițializată sub `set -u`, funcție care returna starea lui `tee` în loc de
+a lui `insmod`, și `fs.protected_regular=2` care împiedică root-ul să scrie fișiere din `/tmp` lăsate
+de o rulare anterioară ca utilizator. `bash -n` nu execută nimic, iar o rulare ca utilizator nu poate
+găsi o problemă care apare doar sub root.
+
 ### 3.4 ✅ Ce s-a închis din versiunea veche a acestei secțiuni
 
 - ~~patch local `FTHD_BUFFERS` 4→8~~ — **retras**, trata simptomul ([secțiunea 3.1](#31-cauza-rădăcină-așa-cum-e-ea))
