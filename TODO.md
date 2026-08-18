@@ -76,7 +76,7 @@ reținut înainte de a-i spune cuiva că „are deja" vreuna dintre reparații.
 | [pipewire !2950](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2950) | o sursă cu interval de dimensiuni era deschisă la **cea mai mică**; plus pasul raportat greșit | 🔵 **cod schimbat pe 16 aug**: `908a66c05` → `14619fffa`, default-ul vine acum din `CROP_BOUNDS` (nativ), nu din maxim. CI verde. `pobrn` a pus două întrebări; la a doua **avea dreptate**, iar răspunsul meu a fost editat ca s-o spună |
 | [pipewire !2951](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951) | `pipewiresrc` repornea fluxul la renegocieri care nu cereau nimic | 🔵 trimis 15 aug, acum `1da2d9604`. Descriere rescrisă 16 aug; pe **17 aug** mesajul de commit corectat — spunea că defectul cere „*any source that advertises a range*", ceea ce infirmasem deja: intervalele pot veni din aval. Codul neatins. **Zero comentarii de la cineva din afară** |
 | [facetimehd #334](https://github.com/patjak/facetimehd/pull/334) | AE se așează în 200 ms, nu într-o secundă, la fiecare STREAMON | 🔵 trimis 15 aug, peste [#328](https://github.com/patjak/facetimehd/pull/328) |
-| [wireplumber #986](https://gitlab.freedesktop.org/pipewire/wireplumber/-/work_items/986) | un nod de cameră `vivid` nu primește niciodată session item, deci clientul pică cu `target not found` | 🔵 **trimis 17 aug**, **primul răspuns de întreținător** în aceeași zi: `julian` a cerut testare cu !876. Testat — presupunerea lui (activare eșuată) e **falsă**; **cauza reală e în PipeWire**: `spa_v4l2_enum_controls()` înregistrează un control cu payload, `VIDIOC_G_CTRL` dă EINVAL și toată enumerarea `Props` cade. Patch de 7 linii, A/B alternat, plus trei probe de infirmare, toate trecute ([3.2h](#32h--17-august-seara--986-cauza-găsită-și-în-alt-loc-decât-credeau-toți), [3.2i](#32i--17-august-târziu--auditul-bancului-cerut-înainte-de-a-crede-rezultatul)). ⚠️ **Un rând din raportul postat e greșit** și trebuie corectat la răspuns ([3.2j](#32j--17-august--o-eroare-în-ce-postasem-deja-pe-986)): defectul se vede pe **toate** versiunile de WirePlumber, nu doar pe master. Răspuns redactat, **nepostat**; patch **local** |
+| [wireplumber #986](https://gitlab.freedesktop.org/pipewire/wireplumber/-/work_items/986) | un nod de cameră `vivid` nu primește niciodată session item, deci clientul pică cu `target not found` | 🔵 **trimis 17 aug**, **primul răspuns de întreținător** în aceeași zi: `julian` a cerut testare cu !876. Testat — presupunerea lui (activare eșuată) e **falsă**; **cauza reală e în PipeWire**: `spa_v4l2_enum_controls()` înregistrează un control cu payload, `VIDIOC_G_CTRL` dă EINVAL și toată enumerarea `Props` cade. Patch de 7 linii, A/B alternat, plus trei probe de infirmare, toate trecute. ✅ **Răspuns postat 18 aug** (nota `3619570`) și **descrierea corectată în patru locuri** — rândul `1.0.5 → works` retras, secțiunea „Where I stopped" înlocuită cu „Cause". Verificat după: comentarii 1 → 2. Defectul e în **PipeWire**, se reproduce de la **1.3.81** încolo ([3.2h](#32h--17-august-seara--986-cauza-găsită-și-în-alt-loc-decât-credeau-toți)–[3.2m](#32m--18-august--postat-si-o-corectie-proprie-105-nu-arata-defectul)). Patch încă **local**, MR abia după ce răspunde |
 | [pipewire #5363](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/5363) | raportul de bază | 🔵 deschis, fără răspuns de mentenanț din 11 iulie; !2935 îl **închide automat la merge** (`Closes #5363`, verificat prin API) |
 | [snapshot #367](https://gitlab.gnome.org/GNOME/snapshot/-/work_items/367) | viewfinder înghețat pe primul cadru | 🔵 deschis, **1 upvote** — altcineva a confirmat bug-ul (8 aug). Mentenantul a propus [!464](https://gitlab.gnome.org/GNOME/snapshot/-/merge_requests/464) (`min-buffers=8`); infirmat cu măsurători pe 10 aug — pe camera asta dă **0 cadre**, nu e un fix. !464 e încă deschis, nemerged |
 | [facetimehd #328…#334](https://github.com/patjak/facetimehd/pulls) | șapte PR-uri de driver (vezi [secțiunea 3.3](#33--driver--șapte-pr-uri-la-patjakfacetimehd)) | 🟡 toate deschise, zero review-uri — dar **`patjak` a răspuns pe 15 aug**, primul semn de la întreținător: nu primise notificări, se uită peste ele. **Toate verificate prin măsurătoare pe 17 aug**, master curat față de master+PR ([3.3a](#33a--17-august--fiecare-patch-verificat-prin-măsurătoare)); doar #332 rămâne netestabil. Menționează că cineva ar fi trimis driverul în kernelul upstream; **n-am putut confirma** (lore și patchwork blochează accesul automat, iar căutările dau doar Apple ISP pentru M-series, alt hardware) — întrebat direct pe #328 |
@@ -900,6 +900,35 @@ aceeași cădere apare fără niciun array — pentru un control `VOLATILE`, ero
 `g_volatile_ctrl` al driverului se propagă până la `VIDIOC_G_CTRL` (`v4l2-ctrls-api.c:788`), deci
 un driver USB care întoarce `-EIO` ar dărâma la fel toată enumerarea. De aceea varianta
 `tolerant` merită propusă **pe lângă** sărirea controalelor cu payload, nu în locul ei.
+
+### 3.2m 🔵 18 august — postat, și o corecție proprie: 1.0.5 **nu** arată defectul
+
+Verificând reproducătorul **înainte** de postare, am dat peste ceva ce infirma o frază scrisă de
+mine cu o zi înainte: *„codul fatal e în toate versiunile, în 1.0.5 e chiar mai rău"*. Codul chiar
+e acolo, dar **defectul nu se manifestă pe 1.0.5**: enumerarea controalelor folosea un buffer de
+pod **static**, care dă peste margine (`can't create Control 'Test Pattern' overflow 1080`) și se
+oprește înainte să ajungă la controlul vinovat. Builder-ul dinamic a intrat cu `2c1ec7fa4`
+(9 iulie 2024), prima versiune care îl conține fiind **1.3.81**.
+
+Ce rămâne și ce cade:
+
+* **Rămâne valid** experimentul decisiv — același daemon master, schimbat doar plugin-ul v4l2,
+  rezultatul se răstoarnă și cu WirePlumber master, și cu 0.4.17.
+* **Nu mai atribui nouă** eșecul clientului măsurat ieri pe stiva 1.0.5 + 0.4.17: acolo `Props`
+  nu eșuează deloc, deci acel eșec are altă cauză, **neidentificată**. Nu l-am pus în ce am
+  postat. Dacă îl scriam, trimiteam dezvoltatorii pe pistă greșită — exact ce voiai evitat.
+
+Reproducătorul final e de două comenzi, **fără WirePlumber și fără client media**, și nu cere ca
+`vivid` să fie singura cameră: `pw-cli enum-params <nod> PropInfo` arată `"S32 2 Element Array"`,
+iar `pw-cli enum-params <nod> Props` întoarce `res:-22 (Invalid argument)`.
+
+Postat ca **un** comentariu (nota `3619570`, 04:17 UTC) plus **o** editare a descrierii în patru
+locuri: nota de sus, rândul retras, concluzia trasă din el, secțiunea „Where I stopped" (cu
+tabelul de proprietăți, care era o pistă falsă) înlocuită cu „Cause", și rândul din „Versions".
+Verificat după: comentarii **1 → 2**, toate cele trei afirmații vechi dispărute.
+
+Textul postat: `results/NOTA-986-POSTAT.md`. **Patch-ul rămâne local**; MR-ul la PipeWire, cu două
+comituri, abia după ce răspunde.
 
 ### 3.2l 🟢 `verifica-bancul.sh` — răspunsul la „e bancul ok?", măsurat
 
