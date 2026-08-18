@@ -930,6 +930,48 @@ Verificat după: comentarii **1 → 2**, toate cele trei afirmații vechi dispă
 Textul postat: `results/NOTA-986-POSTAT.md`. **Patch-ul rămâne local**; MR-ul la PipeWire, cu două
 comituri, abia după ce răspunde.
 
+### 3.2n 🔵 18 august — toate patch-urile deschise, retestate pe master-ul de azi
+
+Cerut: *„testează PipeWire master la zi cu patch-ul tău și ia și patch-urile trimise de noi care
+așteaptă review, să vedem dacă mai sunt valabile și dacă fixează ce spun că fixează."*
+
+Punctul de plecare, verificat înainte de orice măsurătoare: `origin/master` = `adfb948ec`, **n-a
+mișcat**; cele trei MR-uri aduse prin `refs/merge-requests/N/head` (deci **exact ce văd
+recenzenții**, nu ramurile mele locale); toate trei se aplică curat, **CI verde**, `mergeable`,
+fără conflicte; iar cele cinci comituri se combină într-un singur arbore fără conflict.
+
+| MR | ce pretinde | stock | cu patch | verdict |
+|---|---|---|---|---|
+| **!2935** | nu blochează fluxul când consumatorul ține bufferele | 4 cadre, mort la t=0,78 s (×2) | 53 și 65 cadre, ultimul la t≈5,9 s | **valid** |
+| **!2951** | nu repornește fluxul la renegocieri inofensive | 3 pauze de ~715 ms (×2) | **0 pauze**, 119 cadre vs ~90 | **valid** |
+| **!2950** SPA | implicit = nativul, pasul e pasul | `16x16`, pas `16384x8640` | `1280x720`, pas `2x2` | **valid** |
+| **!2950** GStreamer | clientul fără preferință primește implicitul | `16x16` | `720x576` / `1280x720` | **valid** |
+| **v4l2-payload** | `vivid` devine utilizabil | `Props` EROARE, `target not found` | `Props` DATE, 74 cadre | **valid** |
+
+Fiecare rând alternat, cu identitatea verificată la fiecare rulare (daemonul din
+`/proc/PID/maps`, plugin-ul GStreamer prin `whichplugin.py`). Punct de funcționare de control la
+!2935 (`hold=1`, care trebuie să meargă peste tot): 78 / 45 / 78 cadre. !2951 **nu** repară
+blocajul și !2935 **nu** repară repornirile — fiecare face exact ce spune, nici mai mult.
+
+Partea GStreamer a lui !2950 măsurată pe **două** configurații native diferite ale lui `vivid`
+(HDMI 1280x720 și TV 720x576): valoarea urmărește `CROP_BOUNDS` în ambele. Iar în arborele
+combinat, `vivid` devine utilizabil **și** primește dimensiunea nativă în aceeași rulare — deci
+patch-urile nu se încurcă.
+
+**Ce a prins bancul de data asta:** stare de plecare greșită (rămăsese `vivid` singura cameră, de
+la verificarea reproducătorului, deci prima calibrare a dat `target not found` peste tot);
+un filtru pentru `EnumFormat` care nu se potrivea cu nimic în **ambele** brațe; și `spa-ctrl`
+rămas cu varianta de probă. Toate trei prinse înainte să producă un număr fals. La final,
+`verifica-bancul.sh` iese 0 pe toate cele opt verificări, cu zece directoare de build la zi.
+
+**Două capcane noi de la `vivid`**, salvate și în memorie: intrarea 3 (HDMI) livrează **un singur
+cadru** prin PipeWire, fiindcă cere DV timings pe care sursa v4l2 nu le tratează (driverul direct
+dă 30 de cadre repede) — pentru numărat cadre se folosește intrarea 1 (TV), unde ies 99 în 4 s;
+iar intrarea 0 (webcam) merge sub 1 fps chiar la nivel de driver.
+
+Măsurători complete: `results/MATRICE-18aug.md`. **Nimic nu s-a trimis**: patch-ul v4l2 rămâne pe
+`wt-ctrl:v4l2-payload`, MR-ul abia după ce răspunde `julian`.
+
 ### 3.2l 🟢 `verifica-bancul.sh` — răspunsul la „e bancul ok?", măsurat
 
 Întrebarea a venit a 11-a oară, deci am făcut din ea un script: `~/pw-test/verifica-bancul.sh`,
