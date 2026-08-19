@@ -972,6 +972,122 @@ iar intrarea 0 (webcam) merge sub 1 fps chiar la nivel de driver.
 Măsurători complete: `results/MATRICE-18aug.md`. **Nimic nu s-a trimis**: patch-ul v4l2 rămâne pe
 `wt-ctrl:v4l2-payload`, MR-ul abia după ce răspunde `julian`.
 
+### 3.2o 🔵 19 august — tichetul mutat în PipeWire (#5431), și un fix propus de upstream identic cu al nostru
+
+`wireplumber#986` a fost **închis și mutat** de `julian` în `pipewire#5431` pe 18 aug 12:43 UTC
+(`moved_to_id=155435`), cu descrierea și nota noastră intacte. Două lucruri noi acolo:
+
+- **`julian`** confirmă diagnosticul și explică de ce mesajul din object manager stă la `debug`:
+  a fost coborât intenționat (`3fa4165513`), fiindcă apare normal când clienții creează și distrug
+  noduri repede. Propune, în schimb, un semnal `"object-error"` în object manager, ca monitorul V4L2
+  să avertizeze doar pentru nodurile video — cc `gkiagia`. E design pe partea lor; punctul nostru
+  („e tăcut la nivelul implicit") a fost preluat, nu respins.
+- **`pobrn`** propune, într-un comentariu, exact schimbarea pe care o măsurasem:
+  `if (queryctrl.flags & (V4L2_CTRL_FLAG_DISABLED | V4L2_CTRL_FLAG_HAS_PAYLOAD))`. Aceeași funcție,
+  același loc, același predicat — noi îl pusesem ca `if` separat, el l-a împăturit în cel existent.
+  **Nu e alt fix, e același fix.** Confirmare independentă, nu divergență. Antetul lui de hunk
+  (`@@ -1439,7 +1443,7 @@`) nu se potrivește cu master, deci e o sugestie scrisă din arborele lui,
+  nu un patch trimis: **nimeni nu a deschis MR** (verificat prin API — niciun MR legat de #5431 în
+  afară de `wireplumber!876`, deja merged).
+
+**Ramura pregătită:** `wt-ctrl:v4l2-payload-v2`, peste `adfb948ec` (master n-a mișcat nici azi),
+două comituri: `23f742e59` *do not expose compound controls as props* (forma lui `pobrn`, cu
+`Suggested-by:`) și `c940697ce` *keep reading the other controls when one cannot be read*.
+Patch-uri exportate în `pipewire-5363/patches/5431/`, descrierea MR-ului în
+`results/MR-5431-DESCRIERE.md`.
+
+**Trimis pe 19 august ca [!2954](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2954)**
+— ramura `v4l2-compound-controls` pe fork, țintă `master`, `mergeable`, fără conflicte, `+15 -11`
+într-un singur fișier. Referința a apărut automat pe #5431 (`mentioned in merge request !2954`),
+numărul de comentarii a rămas 4 — nicio postare stivuită. Push-ul s-a făcut prin HTTPS cu un
+credential helper care ia jetonul **din mediu** (`/tmp/cred.sh`), fiindcă portul 22 către
+`gitlab.freedesktop.org` e blocat din rețeaua asta și Lenovo-ul n-are cheie SSH; jetonul n-a atins
+nici linia de comandă, nici vreun fișier.
+
+**CI verde pe MR:** pipeline-ul `1729503`, 62/62 joburi trecute.
+
+**Întărirea comitului 2, 19 august — cerută fiindcă e plauzibil ca upstream să ia cauza dar nu și
+efectul.** Argumentul „orice control VOLATILE poate pica" suna a speculație; l-am transformat în
+dovadă, din sursa nucleului 7.1:
+
+- `get_ctrl()` are **patru** căi de eșec, dintre care doar două se văd **înainte** de citire:
+  compound (comitul 1) și `WRITE_ONLY` (scutit din 2017). Celelalte două — controlul dispărut și
+  `VOLATILE` — se văd doar la citire, deci nu există filtru posibil.
+- Din **40** de handlere `g_volatile_ctrl` înregistrate în `drivers/media`, **11** au cale reală de
+  eroare (nu `default: return -EINVAL` de neatins): `ov5648`, `ov7740`, `ov965x`, `mt9m114`,
+  `vd55g1`, `vd56g3` propagă eroarea de citire I2C; `pwc` una USB; **`s5c73m3` întoarce `-EBUSY`
+  cât timp senzorul nu e alimentat** — stare perfect normală.
+- **`uvcvideo` nu înregistrează niciun `ctrl_handler`.** Lanțul verificat în sursă:
+  `VIDIOC_G_CTRL` → `v4l_g_ctrl()` → (ambele `ctrl_handler` NULL) → `ops->vidioc_g_ext_ctrls` =
+  `uvc_ioctl_g_ext_ctrls` → `uvc_ctrl_get` → `uvc_query_ctrl(UVC_GET_CUR)` → `usb_control_msg()`.
+  Deci pe **orice webcam USB** citirea unui control e un transfer USB, iar un stall/timeout face azi
+  să pice toată enumerarea `Props` și, prin ea, activarea nodului.
+
+Descrierea MR-ului **editată** cu asta (nu comentariu nou — numărul de comentarii 0 înainte și după).
+Ce rămâne declarat nemăsurat: n-am reușit să fac un dispozitiv de aici să pice așa, și scriu asta
+explicit în MR. Dacă upstream ia doar comitul 1, #5431 se închide oricum, iar comitul 2 se
+repropune separat — acum cu driverele numite, nu cu un raționament.
+
+Pipeline-ul de pe ramura fork-ului (`1729499`) **eșuează la etapa `container`** — nu din cauza
+codului: *„Looks like you don't have enough privileges"*, [fd.o#540](https://gitlab.freedesktop.org/freedesktop/freedesktop/-/issues/540),
+fork-ul n-are voie să construiască imagini. Pipeline-ul MR-ului (`1729503`) rulează în contextul
+oficial și acolo etapa `container` a trecut.
+
+**Măsurat pe Lenovo, kernel 7.0.0-29, `vivid n_devs=1 node_types=0x1` singura cameră**, fiecare
+comit separat și amândouă, secvența rulată și în ordine inversă — rezultat identic de ambele dăți:
+
+| plugin | enum `Props` | session item | client cameră |
+|---|---|---|---|
+| master `adfb948ec` | eșuează, -EINVAL | 0 | `target not found` |
+| numai comitul 1 | ok | 1 | 10 cadre |
+| numai comitul 2 | ok | 1 | 10 cadre |
+| amândouă | ok | 1 | 10 cadre |
+
+**De ce e nevoie de amândouă, deși oricare singur ascunde simptomul.** Diferența se vede în ce
+rămâne expus, nu în dacă merge camera:
+
+| | `PropInfo` pe vivid | `Props` pe vivid |
+|---|---|---|
+| master | 1001 linii (include `"S32 2 Element Array"`) | **eroare** |
+| comitul 1 | 990 linii — controlul dispare | 111 linii |
+| comitul 2 | 1001 linii — controlul **rămâne** | 113 linii, controlul raportează `Int 0` |
+
+Comitul 2 singur repară efectul și lasă în graf o proprietate care minte: un `Int` scalar cu min/max
+din array, care citit dă mereu 0 și scris nu face nimic. Comitul 1 e cauza; comitul 2 e raza de
+explozie — orice control VOLATILE al cărui `g_volatile_ctrl` întoarce eroare (orice `errno`, e la
+latitudinea driverului) omoară la fel toată enumerarea.
+
+**Neregresie pe cameră reală:** pe UVC, `PropInfo` și `Props` sunt **identice octet cu octet** cu și
+fără cele două comituri, măsurat intercalat (master / patch / master / patch). UVC-ul nu are niciun
+control cu payload, deci comitul 1 nu are ce scoate.
+
+**Review propriu pe patch, cerut înainte de trimitere — un defect găsit în el.** Comitul 2 punea
+`c->value = 0` când citirea eșua. Dar `spa_v4l2_enum_controls()` inițializează fiecare control cu
+`queryctrl.default_value` (l. 1456), deci zeroizarea **arunca valoarea implicită** și raporta 0 —
+care nu e neapărat în intervalul anunțat de control. Corectat: se lasă valoarea în pace, deci
+rămâne ultima citită cu succes, sau implicita. Măsurat direct pe vivid, controlul cu payload citit
+fără comitul 1: `Int 0` înainte, **`Int 2`** (implicita lui) după. Comitul 2 e acum `c940697ce`;
+binarul reconstruit are md5-ul măsurat `b25de7404f9b`. Pe UVC, tot identic octet cu octet — camera
+aia n-are niciun control write-only sau volatile, deci comitul 2 n-are ce schimba acolo.
+
+Restul review-ului, verificat în sursa nucleului 7.1 (`linux-source-7.1`), nu presupus:
+`v4l2_query_ext_ctrl_to_v4l2_queryctrl()` copiază `to->flags = from->flags` **verbatim**, deci
+`HAS_PAYLOAD` se vede și prin `VIDIOC_QUERYCTRL`-ul vechi — și fără verificarea noastră un control
+compound ar fi ajuns înregistrat cu min=max=step=0, fiindcă acolo conversia le pune pe 0 pentru
+tipurile compound. `get_ctrl()` confirmă cele trei căi: `!is_int` → `-EINVAL`, `WRITE_ONLY` →
+`-EACCES`, iar pentru `VOLATILE` întoarce **exact** ce întoarce `g_volatile_ctrl` al driverului.
+`V4L2_CTRL_FLAG_NEXT_COMPOUND` e în cod din 2017 (`e5e360d5d`, Wim), nu adăugat intenționat pentru
+suport compound — deci alternativa „scoate NEXT_COMPOUND" ar merge și ea, dar e mai fragilă:
+verificarea pe flag prinde și calea `QUERYCTRL`. Singurul apelant al lui
+`spa_v4l2_update_controls()` e `v4l2-source.c:322`; după comitul 2 funcția mai poate eșua doar dacă
+`spa_v4l2_open()` eșuează — adică exact cazul în care eșecul chiar înseamnă ceva.
+
+Verificări de banc, făcute explicit: cele patru variante generate prin `git checkout <comit> --`, cu
+aserțiuni în sursă (numărul de `HAS_PAYLOAD` și prezența căii fatale) și md5-uri distincte; md5-ul
+chiar încărcat de daemon **și** de wireplumber citit din `/proc/PID/maps`; după corectarea mesajelor
+de comit, binarele reconstruite din SHA-urile finale au **exact md5-urile măsurate** — deci ce se
+trimite e ce s-a măsurat. `verifica-bancul.sh`: verde, înainte și după.
+
 ### 3.2l 🟢 `verifica-bancul.sh` — răspunsul la „e bancul ok?", măsurat
 
 Întrebarea a venit a 11-a oară, deci am făcut din ea un script: `~/pw-test/verifica-bancul.sh`,
