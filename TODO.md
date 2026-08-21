@@ -75,6 +75,7 @@ reținut înainte de a-i spune cuiva că „are deja" vreuna dintre reparații.
 | [pipewire !2935](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2935) | copiere când pool-ul se golește | 🔵 gata de review din 15 aug, acum `6fe4eaca2`, CI verde. Descriere rescrisă 16 aug; pe **17 aug** mesajul de commit corectat — citatul lui `wtaymans` era greșit (`starting` în loc de `stating`), referința `#5190` scoasă ca nesusținută, corp 63 → 43 rânduri. Codul neatins |
 | [pipewire !2950](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2950) | o sursă cu interval de dimensiuni era deschisă la **cea mai mică**; plus pasul raportat greșit | 🔵 **cod schimbat pe 16 aug**: `908a66c05` → `14619fffa`, default-ul vine acum din `CROP_BOUNDS` (nativ), nu din maxim. CI verde. `pobrn` a pus două întrebări; la a doua **avea dreptate**, iar răspunsul meu a fost editat ca s-o spună |
 | [pipewire !2951](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951) | `pipewiresrc` repornea fluxul la renegocieri care nu cereau nimic | 🔵 trimis 15 aug, acum `1da2d9604`. Descriere rescrisă 16 aug; pe **17 aug** mesajul de commit corectat — spunea că defectul cere „*any source that advertises a range*", ceea ce infirmasem deja: intervalele pot veni din aval. Codul neatins. **Zero comentarii de la cineva din afară** |
+| [pipewire !2954](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2954) | enumerarea `SPA_PARAM_Props` cădea din cauza unui singur control | 🔵 trimis 19 aug cu **două** comituri; **decuplat pe 21 aug** la unul singur, `23f742e59` (forma lui `pobrn`, cu `Suggested-by:`). Al doilea comit — citirea non-fatală — a plecat pe ramura locală `v4l2-nonfatal-read`, fiindcă era **nemăsurat**. Între timp a fost măsurat pe un driver scris anume ([secțiunea 3.2p](#32p--21-august--2954-decuplat-și-comitul-al-doilea-măsurat-pe-un-driver-scris-anume)) și s-a dovedit că are cauză proprie. `mergeable`, CI verde, 👍 de la `rmader`, zero comentarii |
 | [facetimehd #334](https://github.com/patjak/facetimehd/pull/334) | AE se așează în 200 ms, nu într-o secundă, la fiecare STREAMON | 🔵 trimis 15 aug, peste [#328](https://github.com/patjak/facetimehd/pull/328) |
 | [wireplumber #986](https://gitlab.freedesktop.org/pipewire/wireplumber/-/work_items/986) | un nod de cameră `vivid` nu primește niciodată session item, deci clientul pică cu `target not found` | 🔵 **trimis 17 aug**, **primul răspuns de întreținător** în aceeași zi: `julian` a cerut testare cu !876. Testat — presupunerea lui (activare eșuată) e **falsă**; **cauza reală e în PipeWire**: `spa_v4l2_enum_controls()` înregistrează un control cu payload, `VIDIOC_G_CTRL` dă EINVAL și toată enumerarea `Props` cade. Patch de 7 linii, A/B alternat, plus trei probe de infirmare, toate trecute. ✅ **Răspuns postat 18 aug** (nota `3619570`) și **descrierea corectată în patru locuri** — rândul `1.0.5 → works` retras, secțiunea „Where I stopped" înlocuită cu „Cause". Verificat după: comentarii 1 → 2. Defectul e în **PipeWire**, se reproduce de la **1.3.81** încolo ([3.2h](#32h--17-august-seara--986-cauza-găsită-și-în-alt-loc-decât-credeau-toți)–[3.2m](#32m--18-august--postat-si-o-corectie-proprie-105-nu-arata-defectul)). Patch încă **local**, MR abia după ce răspunde |
 | [pipewire #5363](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/5363) | raportul de bază | 🔵 deschis, fără răspuns de mentenanț din 11 iulie; !2935 îl **închide automat la merge** (`Closes #5363`, verificat prin API) |
@@ -1087,6 +1088,94 @@ aserțiuni în sursă (numărul de `HAS_PAYLOAD` și prezența căii fatale) și
 chiar încărcat de daemon **și** de wireplumber citit din `/proc/PID/maps`; după corectarea mesajelor
 de comit, binarele reconstruite din SHA-urile finale au **exact md5-urile măsurate** — deci ce se
 trimite e ce s-a măsurat. `verifica-bancul.sh`: verde, înainte și după.
+
+### 3.2p 🔵 21 august — !2954 decuplat, și comitul al doilea măsurat pe un driver scris anume
+
+**De unde a pornit.** Întrebarea pusă direct: din cele două comituri ale lui !2954, al doilea
+repară cauza sau efectul, și mai e nevoie de el aici? Răspunsul scurt e că **pentru #5431 e efect**,
+dar **are cauză proprie**, iar la momentul acela cauza aia era **nemăsurată** — scria chiar în
+descrierea MR-ului: *„that part is not measured"*. Cu regula „nu trimitem nimic copt pe jumătate",
+asta îl scotea din MR.
+
+**Decuplarea.** `fork/v4l2-compound-controls` forțat de la `c940697ce` la `23f742e59`; comitul 2
+păstrat pe ramura locală `v4l2-nonfatal-read`. Cele două hunk-uri sunt în funcții diferite, la 117
+linii distanță (`spa_v4l2_enum_controls()` l. 1439 vs `spa_v4l2_update_controls()` l. 1556) — un
+`cherry-pick` al comitului 2 pe `adfb948ec` a intrat curat, `1 file changed, 10 insertions(+),
+10 deletions(-)`, ceea ce **dovedește** independența, nu doar o sugerează. Descrierea MR-ului
+rescrisă (editată, nu postată peste); numărul de comentarii a rămas 0.
+
+**Bancul, actualizat — și !883 chiar schimbă ce se măsoară.** WirePlumber `35d5d199` → `8cf44a43`,
+care conține !883 și !861. Din !883, monitorul activează `Features.ALL` și **nu mai stochează nodul**
+când activarea eșuează: pe un plugin nereparat camera nu mai apare deloc în graf, în loc să apară
+inutilizabilă, iar eșecul se scrie la nivel **N**:
+
+```
+N wp-event-dispatche <WpAsyncEventHook> failed: Failed to activate V4L2 node
+  v4l2_input.platform-vivid.0: Object activation aborted: enum params id:2 failed
+```
+
+Adică exact ce lipsea când raportasem #986 — atunci era mut. Poarta veche din `banc.sh`
+(„camera prezentă") expira; acum acceptă și a doua stare terminală. Copie: `banc.sh.pre883`.
+
+**Un defect de măsurare, prins înainte să conteze.** Coloana nouă „nod Video/Source" dădea **0
+pentru toate** variantele, inclusiv cele care mergeau. Cauza: `pw-dump` are nevoie de
+`SPA_PLUGIN_DIR` ca să găsească `support.system`; fără el eșuează tăcut, `json.loads` arunca, iar
+`except` întorcea listă goală. Aceeași familie cu „un grep care nu găsește nimic nu e o măsurătoare".
+Reparat: primește mediul bancului, iar o ieșire goală oprește proba.
+
+**!2954 retestat pe `vivid`**, patru variante distincte prin md5, fiecare verificată în sursă pe doi
+markeri independenți înainte de compilare, și verificată la rulare că e chiar cea încărcată de
+**ambele** procese:
+
+| plugin | enum Props | nod | eroare N | item | props | prop falsă | client |
+|---|---|---|---|---|---|---|---|
+| master | eșuează, -EINVAL | 0 | 1 | 0 | — | — | `target not found` |
+| cauza `23f742e59` | ok | 1 | 0 | 1 | **257** | nu | 10 cadre |
+| efect `b7aabe7ac` | ok | 1 | 0 | 1 | **258** | **`S32 2 Element Array`** | 10 cadre |
+| ambele `c940697ce` | ok | 1 | 0 | 1 | **257** | nu | 10 cadre |
+
+**257 vs 258** e dovada numerică că efectul singur doar maschează: proprietatea falsă rămâne expusă.
+Non-regresie pe camera UVC reală, alternat master/cauza ×4: `PropInfo` `fc73087f1273` și `Props`
+`6ae844c01873` identice în toate patru rulările.
+
+**Driverul care eșuează la `G_CTRL`.** Cazul comitului 2 nu poate fi produs de nimic din casă:
+singurul `g_volatile_ctrl` din `vivid` (`vivid-ctrls.c:426`) se termină în `return 0;`
+necondiționat, iar o cameră UVC sănătoasă nu-ți blochează un transfer de control la comandă.
+Sursele `vivid` nu există pentru kernelul de pe Lenovo (în `linux-headers` sunt doar `Kconfig` și
+`Makefile`). Deci **`failctrl`** (`pipewire-5363/failctrl/`): dispozitiv V4L2 de captură minimal cu
+trei controale, dintre care `V4L2_CID_GAIN` e VOLATILE și al cărui `g_volatile_ctrl` întoarce
+`-EIO`. Drumul e cel real din kernel — `get_ctrl()` face `ret = call_op(master, g_volatile_ctrl);`
+și duce errno-ul driverului direct în userspace. Verificat înainte de orice măsurătoare:
+`--get-ctrl=gain` → `Input/output error`, `--get-ctrl=brightness` → `128`. Defectul se stinge la
+cald prin `/sys/module/failctrl/parameters/fail`, deci există **control negativ pe același
+dispozitiv**, iar fiecare rulare verifică întâi că injecția chiar se comportă cum s-a cerut.
+
+| # | plugin | fail | enum Props | nod | item | client |
+|---|---|---|---|---|---|---|
+| 1 | master | 1 | eșuează | 0 | 0 | `target not found` |
+| 2 | efect | 1 | ok | 1 | 1 | 10 cadre |
+| 3 | **cauza** | 1 | **eșuează** | 0 | 0 | **`target not found`** |
+| 4 | ambele | 1 | ok | 1 | 1 | 10 cadre |
+| 5 | master | **0** | ok | 1 | 1 | 10 cadre |
+| 6 | master | 1 | eșuează | 0 | 0 | `target not found` |
+| 7 | efect | 1 | ok | 1 | 1 | 10 cadre |
+
+Brațele alternate, nu în loturi. Rândurile 6–7 repetă 1–2 identic; rândul 5 e controlul negativ —
+același plugin, același dispozitiv, defectul stins, merge.
+
+**Rândul 3 e concluzia:** comitul 1 nu ajută deloc acolo. Cu un control volatil care eșuează, camera
+e la fel de moartă ca pe master. Deci comitul 2 **nu e efectul comitului 1** — are cauză proprie, iar
+acum e măsurată, nu citită din sursă. S-a verificat și afirmația din mesajul lui despre valoarea
+păstrată: `gain` rămâne în `Props` cu **42**, implicitul stocat de `spa_v4l2_enum_controls()`, nu 0.
+
+**Ce s-a greșit la origine, ca să nu se repete:** comitul 2 a fost scris și trimis pe baza unui
+raționament citit din sursa kernelului, fără niciun dispozitiv pe care să eșueze. Raționamentul s-a
+dovedit corect — dar asta se știe abia acum, iar între timp ținea ostatic un fix de o linie care are
+`Suggested-by:` de la recenzent. Argumentul din sursă justifică o **investigație**, nu o trimitere.
+
+Artefacte: `pipewire-5363/failctrl/failctrl.c`, probele în `pipewire-5363/scripts/`
+(`fa-variante2.py`, `proba986b.py`, `probauvc.py`, `probafail.py`), raportul complet în
+`pipewire-5363/results/PLAN-UPSTREAM-20aug.md` secțiunea 10. Comitul 2 **nu s-a trimis**.
 
 ### 3.2l 🟢 `verifica-bancul.sh` — răspunsul la „e bancul ok?", măsurat
 
