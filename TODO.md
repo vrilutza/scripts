@@ -1173,6 +1173,19 @@ raționament citit din sursa kernelului, fără niciun dispozitiv pe care să e�
 dovedit corect — dar asta se știe abia acum, iar între timp ținea ostatic un fix de o linie care are
 `Suggested-by:` de la recenzent. Argumentul din sursă justifică o **investigație**, nu o trimitere.
 
+**Reverificat pe kernelul nou.** Lenovo-ul a fost trecut pe `7.0.0-30-generic` — GRUB era **fixat**
+pe `7.0.0-28-generic` prin `GRUB_DEFAULT`, deci upgrade-ul nu se lua singur; schimbat (copie:
+`/etc/default/grub.bak-21aug`), `update-grub`, restart. Kernelul vechi purjat, `7.1.8-kasan`
+(cel compilat de noi, [secțiunea 3.2f](#32f--kernel-de-depanare-pe-lenovo--kasan-lockdep-kfence))
+păstrat și verificat că e încă în meniul GRUB. Șterse și cinci directoare rămase în `/lib/modules`
+de la kerneluri demult scoase (`6.17.0-22/23/29/35`, `7.0.0-29`) — fiecare cu **zero** module și
+fără `vmlinuz`, verificat înainte de ștergere.
+
+`failctrl` recompilat pentru `7.0.0-30-generic`, cele patru variante de plugin reconstruite cu
+**exact aceleași md5-uri** ca înainte, iar ambele probe rulate din nou: rezultatele de mai sus se
+reproduc identic, rând cu rând. La fel și non-regresia pe camera UVC — `PropInfo` `fc73087f1273`,
+`Props` `6ae844c01873` în toate cele patru rulări alternate.
+
 Artefacte: `pipewire-5363/failctrl/failctrl.c`, probele în `pipewire-5363/scripts/`
 (`fa-variante2.py`, `proba986b.py`, `probauvc.py`, `probafail.py`), raportul complet în
 `pipewire-5363/results/PLAN-UPSTREAM-20aug.md` secțiunea 10. Comitul 2 **nu s-a trimis**.
