@@ -1337,8 +1337,26 @@ Un al patrulea, mai mic: comentariul nostru de pe #331 din 15 august zice *„th
 for this commit alone"*. Când l-am scris, #331 avea un singur comit; acum are două, deci „this
 commit" a devenit ambiguu.
 
-Corecturile sunt pregătite în `descrieri/dupa-22aug-b/` — **doar descrieri, niciun cod** — și
-așteaptă acordul lui vik, pentru că #328 și #332 nu erau în lista aprobată.
+**Aplicate, cu acordul lui vik pentru toate patru.** Doar descrieri și un comentariu editat, niciun
+cod atins:
+
+* **#328** — lista seriei rescrisă pe conținutul de azi, toate șase celelalte enumerate corect, plus
+  nota că `msleep` apare și în #334 și că oricare ar intra prima, git îl ia pe celălalt deasupra.
+* **#332** — nota de testare spune acum că build-ul măsurat conținea și rescrierea decupajului, care
+  a ieșit din #330 și n-a fost retrimisă, deci setul exact nu mai e reproductibil din PR-urile
+  deschise.
+* **#333** — aceeași corectură, plus întărirea care lipsea: **măsurătoarea santinelei a fost făcută
+  pe master curat**, deci nu depinde de restul seriei.
+* **comentariul de pe #331** — *editat, nu adăugat*: „this commit" → „the enumeration commit alone",
+  cu o paranteză care spune că ramura poartă între timp și fixul `ALIGN`, venit din #329 după ce
+  comentariul fusese scris.
+
+Verificat după: descrierile live identice cu fișierele locale la toate șapte; numărul de comentarii
+**neschimbat** (#328 la 3, #331 la 1, restul 0); toate șapte `mergeable=true`, `clean`. Baleiaj
+final peste **fiecare** referință `#3xx` din descrieri, comentarii și mesaje de comit — 17 în total,
+toate adevărate acum.
+
+Copiile: `descrieri/dupa-22aug-b/` (inclusiv `331-comentariu.md`).
 
 Ramura `n-330b` (redenumire + decupaj centrat, peste #330) există local, compilează singură, dar
 **nu e împinsă nicăieri** — ar fi al optulea PR și se decide separat.
