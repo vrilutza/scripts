@@ -1524,6 +1524,37 @@ trimite la celelalte șase, 6/6, la toate șapte**; rândul propriu marcat corec
 `cherry picked`; blocurile markdown închise la toate; **zero comentarii create azi** — #328 rămâne
 la 3, #331 la 1, restul la 0.
 
+**Verificarea patch-urilor, 22 august — o afirmație falsă în toate șapte.** Vik a cerut să verific
+patch-urile și comiturile citind, fără să modific. Luate **de pe GitHub**, aplicate pe master curat
+și compilate: toate șapte se aplică curat și compilează cu 0 avertismente, iar fiecare diff face
+exact ce spune mesajul lui.
+
+Dar aplicându-le **toate una peste alta**, prima șase intră și a șaptea pică pe `fthd_isp.c:1241`.
+Harta seriei, prezentă în toate șapte descrierile, spunea:
+
+> #334 carries the same `msleep` commit as #328. Whichever lands first, the other applies on top.
+
+**Fals.** Testat în ambele direcții, pe o clonă nouă, simulând exact butonul „Merge pull request":
+
+| | `git am` | `git merge` | `git rebase` |
+|---|---|---|---|
+| #334 peste #328 | eșuează | **CONFLICT** în `fthd_isp.c` | merge, păstrează 1 din 2 |
+| #328 peste #334 | eșuează | **CONFLICT** | merge, păstrează 2 din 3 |
+
+Merge doar cu `rebase`. Butonul de pe GitHub face merge, deci patjak ar fi primit exact conflictul
+pe care descrierea îi promitea că nu-l are. Cauza e simplă și inevitabilă: ambele ramuri schimbă
+aceeași linie, `mdelay(1000)` → `msleep(1000)` → `msleep(200)`.
+
+Corectat în toate șapte, spunând ce se întâmplă de fapt și oferind rebazarea.
+
+**Și scriptul de cifre a prins o a doua greșeală, la regenerare.** Corectasem `163.69` → `184.52`
+direct în `329.md`, nu în `329-corp.md`; regenerarea a luat corpul vechi și a readus valoarea
+greșită. Reparată la sursă. Fără script ar fi ajuns pe GitHub a doua oară.
+
+**Verificat live după:** cele 7 descrieri identice cu fișierele; afirmația veche dispărută din toate
+7, cea nouă prezentă în toate 7; toate `true`/`clean`; comentariile neschimbate (#328 la 3, #331 la
+1, restul 0); cele trei scripturi trec — simboluri 7/7, citate 14/14, cifre 42/42.
+
 **Decizia despre decupajul centrat (`n-330b`): se ține gata, NU se trimite acum.** Luată de vik pe
 22 august, după ce am pus cifrele pe masă.
 
