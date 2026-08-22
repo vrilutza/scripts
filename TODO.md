@@ -1645,6 +1645,46 @@ Jetonul a rămas în keyring — push pe HTTPS prin `git-credential-forge`, nic�
 
 Raportul complet: `pipewire-5363/results/REBAZARE-22aug.md`.
 
+### 3.2s 🔵 22 august, seara — CI verde pe toate patru, și comitul non-fatal remăsurat
+
+**CI: toate patru verzi.** !2935 a picat prima dată, dar nu din cauza noastră — jobul
+`build_on_debian: [armhf]` a murit cu *„Job failed (system failure): container … does not exist in
+database"*, `step_script` a durat 2 secunde și n-a existat niciun `meson-logs` de încărcat.
+Containerul Docker a dispărut de sub runner. Repornit jobul, a trecut. `!2935 success`,
+`!2950 success`, `!2951 success`, `!2954 success`.
+
+**11.1 pregătit, nimic trimis.** Tabelul de pe `failctrl` era din 21 august, pe master-ul vechi. Un
+MR nou pleacă cu cifre de azi, deci l-am refăcut pe `f03a55d7f`.
+
+Comitul non-fatal se aplică **singur pe master**, fără cel din !2954: `133c5b933`, 1 fișier, +10/-10.
+
+Cele patru variante de plugin, reconstruite — toate cu md5 diferit de setul din 21 august, ceea ce e
+dovada că baza chiar s-a schimbat:
+
+| variantă | md5 21 aug | md5 22 aug |
+|---|---|---|
+| master | `61aafafce9a9` | `053a3ec68e65` |
+| cauza | `161c3867909f` | `1fd9fd7afa80` |
+| efect | `88b06ef903b8` | `0ea90e581cab` |
+| ambele | `b25de7404f9b` | `ce0d67028b69` |
+
+Tabelul cu șapte brațe se reproduce **rând cu rând** identic: rândul 3 (`cauza` singur, fail=1) dă
+tot `TARGET NOT FOUND`, deci comitul non-fatal are cauză proprie; rândul 5 e controlul negativ pe
+același dispozitiv; rândurile 6 și 7 repetă 1 și 2.
+
+**A doua capcană a bancului, din aceeași familie ca prima.** Prima construcție a variantelor a ieșit
+cu md5-uri **identice cu cele din 21 august** — imposibil dacă baza s-a mutat cu 11 comituri.
+`fa-variante2.py` face `git checkout <sha> -- v4l2-utils.c`, ceea ce **pune fișierul și în index**,
+iar următorul `git checkout --detach origin/master` eșuează tăcut cu *„Your local changes would be
+overwritten"*; scriptul rebuild-uiește apoi din arborele vechi. `git checkout -- .` nu repară,
+`git reset --hard` da. Notat în memorie lângă cealaltă.
+
+Mașina pusă la loc: `failctrl` descărcat, `uvcvideo` înapoi pe `/dev/video0`, niciun daemon rămas,
+`wt-ctrl` curat.
+
+Raport: `pipewire-5363/results/NONFATAL-22aug.md`. Descrierea MR-ului, gata de trimis când se
+decide: `results/descrieri/MR-nonfatal.md`. **Nu s-a trimis nimic.**
+
 ### 3.2l 🟢 `verifica-bancul.sh` — răspunsul la „e bancul ok?", măsurat
 
 Întrebarea a venit a 11-a oară, deci am făcut din ea un script: `~/pw-test/verifica-bancul.sh`,
