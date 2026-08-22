@@ -1585,6 +1585,52 @@ patch-uri, o copie care nu depinde de GitHub.
 Datele brute, uneltele și raportul: `pipewire-5363/fthd-masuratori/` (ignorat de git, ca tot
 bancul). Raportul: `rezultate/MASURATORI-CAMERA-22aug.md`.
 
+### 3.2r 🔵 22 august, seara — cele patru MR-uri rebazate, și două remăsurate
+
+Masterul PipeWire a avansat cu **11 comituri** pe 21 august (14:30–17:10), de la `adfb948ec` la
+`f03a55d7f`. Toate patru MR-urile noastre au trecut din `mergeable` în `need_rebase`. Printre cele
+11 e **!2955** (`31b556d6`, sangchul), care atinge `dequeue_buffer` — exact funcția modificată de
+!2935.
+
+**Rebazate local, fără un singur conflict:** `rb2935` → `83cdc11f5`, `rb2950` → `11756ee0f`,
+`rb2951` → `a39b6f20e`, `rb2954` → `f5589a4ed`, `rbnonfatal` → `43cf22e03`.
+
+**Cine e de fapt expus.** Intersectând fișierele atinse de cele 11 comituri cu ce atinge fiecare MR:
+!2935 și !2951 se suprapun pe `src/gst/gstpipewiresrc.c`; **!2950 și !2954 nu se suprapun deloc**.
+Deci doar două aveau ce verifica — și amândouă au fost verificate pe hardware, nu deduse.
+
+**!2935, `masoara.sh`, pool 16, două repetări:**
+
+| hold | 15 aug (`adfb948e`) | 22 aug (`f03a55d7`) |
+|---|---|---|
+| 1–15 | 64 / 64 | 64 64 / 64 64 |
+| **16** | **16** / **38** | **16 16** / **38 38** |
+| **20** | **16** / **37** | **16 16** / **37 37** |
+
+**!2951, `matrice.py A` / `rescale.py`:**
+
+| | cadre | pauze > 200 ms |
+|---|---|---|
+| 18 aug, stock | 92 | 3 — 716, 714, 712 ms |
+| 18 aug, + !2951 | **119** | **0** |
+| 22 aug, stock | 92 | 3 — 715, 714, 719 ms |
+| 22 aug, + !2951 | **119** | **0** |
+
+Identice cifră cu cifră la ambele. Rândurile de control din aceeași rulare (hold=1 → 78 cadre,
+hold=4 → 4 cadre) nu diferă între variante, deci !2951 nu atinge ce măsoară !2935.
+
+**Un defect al bancului, prins de propria lui gardă.** Prima rulare a lui `masoara.sh` s-a oprit
+singură: *„incarcat md5=493fd8dfa1d3, asteptam f85878faff8e"*. `493fd8dfa1d3` e plugin-ul GStreamer
+**de sistem**, nu al nostru. Cauza: `gst-plugin-scanner` crapă cu o aserțiune în driverul Intel
+VA-API (`i965_drv_video.c:4653`) și, când crapă la momentul nepotrivit, plugin-ul nostru nu ajunge
+în registru. Verificat că e intermitent — 8 rulări cu registru proaspăt au dat **8/8 corect** — și
+că niciun pachet GStreamer sau VA-API nu s-a schimbat de la ultima rulare. Reluată după ștergerea
+registrelor, a trecut. Fără gardă, prima rulare ar fi comparat plugin-ul de sistem cu el însuși și
+ar fi „dovedit" că patch-ul nu schimbă nimic.
+
+**Nimic împins.** Cele patru rebazări există doar local, pe Lenovo. Raportul complet:
+`pipewire-5363/results/REBAZARE-22aug.md`.
+
 ### 3.2l 🟢 `verifica-bancul.sh` — răspunsul la „e bancul ok?", măsurat
 
 Întrebarea a venit a 11-a oară, deci am făcut din ea un script: `~/pw-test/verifica-bancul.sh`,
