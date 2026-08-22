@@ -1940,7 +1940,26 @@ caps-urile pe care le vede orice aplicație care întreabă ce poate camera.
 **Nemăsurat:** dacă 1.6.8 din distribuție e afectat la fel; cazul `mgb4` e din citirea codului, nu
 din rulare (nu am placa); al doilea critical n-a fost investigat.
 
-**Nu s-a raportat nimic.** Raport: `pipewire-5363/results/DEFECT-FRACTII-22aug.md`.
+**Trimis ca !2966**, `gst: clamp a fraction that does not fit a GstFraction` — `877416f36`, un
+comit, 1 fișier, +55/-5, `mergeable`.
+
+**Unde trebuia trimis, verificat înainte:** fișierul e `src/gst/gstpipewireformat.c` din depozitul
+**PipeWire**, livrat ca `gstreamer1.0-pipewire`. Kernelul e în regulă — `struct v4l2_fract` chiar are
+câmpuri `__u32`, deci `0xFFFFFFFF` e o valoare legală; `GstFraction` e `gint` prin proiectare și nu
+se schimbă. PipeWire e cel care convertește perechea fără să verifice, deci acolo stă reparația.
+
+**Și, verificând, am găsit ceva despre propriul nostru !2965.** Ajutorul pe care îl introduce,
+`set_pref_fraction_range()`, pasează `min->num, min->denom, max->num, max->denom` — toate `uint32` —
+direct către `gst_caps_set_simple(GST_TYPE_FRACTION_RANGE, ...)`. **Duce defectul mai departe**, la
+fel. Cele două se și ciocnesc textual, în ambele direcții (testat). Deci !2966 trebuie luat primul,
+iar !2965 rebazat peste el. Scris în descrierile **amândurora** — la !2965 prin editarea descrierii,
+fără postare nouă (`note=0` și după).
+
+Descrierea lui !2966 spune deschis și ce **nu** face: transmisia nu e afectată, iar sub
+`fatal-criticals` nu salvează aplicația, pentru că imediat în spate e alt critical. Și că lucrurile
+despre `mgb4` vin din citirea driverului, nu din rularea lui.
+
+Raport: `pipewire-5363/results/DEFECT-FRACTII-22aug.md`. Patch și probe: `patches/fractii/`.
 
 **Prima reacție din afară:** rmader a dat 👍 pe **!2950 și !2964** la 16:45–16:46, adică la douăzeci
 de minute după restructurare și după nota postată. Are deja 👍 și pe !2954 din 19 august.
