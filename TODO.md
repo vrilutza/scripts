@@ -1710,6 +1710,54 @@ Argumentul a intrat în descriere; MR-ul nu mai stă pe un driver de laborator.
 Raport: `pipewire-5363/results/NONFATAL-22aug.md`. Descrierea: `results/descrieri/MR-nonfatal.md`,
 verificat că e identică cu cea live.
 
+### 3.2t ⚠️ 22 august, seara — B generalizat, măsurat, și infirmat de propria măsurătoare
+
+**Mecanismul propus ține.** În loc de „structura fixă pusă în față" (ce face patch-ul de azi, și ce
+nu se poate generaliza), o **listă cu preferatul primul**: `width = { 1296, [320,1296] }`. Testat pe
+caps pure: fixarea fără preferință dă 1296x736, un consumator cu preferință proprie primește ce
+cere, iar costul e **1 structură** față de **4 la două proprietăți** și 16 la patru. Pe fracții,
+lista `{30/1,[1/1,30/1]}` fixează la 30/1 iar intervalul singur la **1/1** — confirmă ce i-am scris
+lui pobrn, defectul nu e specific dimensiunii.
+
+**Patch-ul generalizat, scris și compilat:** `gstpipewireformat.c`, +56/-9 peste `f03a55d7f`, două
+ajutoare comune folosite în toate cele trei locuri (`handle_int_prop`, `handle_rect_prop`,
+`handle_fraction_prop`), fără special-cazare pe `SPA_FORMAT_VIDEO_size`.
+
+**Și apoi măsurătoarea l-a infirmat.** `vivid` intrarea 1 (stepwise 16x16–16384x8640, `CROP_BOUNDS`
+720x576), bază cu !2954 fără de care vivid nu e utilizabil, client `pipewiresrc → appsink`:
+
+| daemon | client | dimensiune |
+|---|---|---|
+| fără C | fără B | 16x16 |
+| fără C | **B nou** | 16x16 |
+| **cu C** | fără B | **720x576** |
+| **cu C** | B vechi | **720x576** |
+| **cu C** | **B nou** | **720x576** |
+| fără C, repetare | fără B | 16x16 |
+
+**B nu schimbă nimic.** Nici vechiul, nici noul. C singur face toată treaba.
+
+**Cauza, din cod:** `gst_pipewire_src_negotiate()` **nu fixează niciodată** — trimite caps-urile ca
+filtru cu `gst_caps_to_format_all()` și **serverul** alege, luând `values[0]`, exact valoarea pe care
+o schimbă C. Fixarea pe care B e proiectat s-o influențeze nu are loc pe acest drum.
+
+**Ce înseamnă.** Mesajul comitului `11756ee0` spune *„Two changes, both needed … Verified separately:
+with only the first change the application still got the smallest size"*. **Nu se reproduce.** Ori
+observația originală venea din pipeline-ul lui Snapshot (`capsfilter + parsebin + multiqueue`), ori
+era greșită. Nu s-a stabilit care — e următorul lucru de verificat, cu `masoara-snapshot.sh`, care
+cere sesiune grafică.
+
+**Nemăsurat:** `framerate` pe hardware — nici vivid intrarea 1, nici camera UVC nu anunță intervale
+de cadre, doar valori discrete. Generalizarea la fracții e dovedită doar la nivel de caps.
+
+**Consecința, dacă se confirmă:** !2950 rămâne cu **C singur**, jumătatea de caps dispare, MR-ul se
+micșorează și discuția cu pobrn se îngustează la exact ce a spus el — politica. Dar nu se trimite
+nimic până nu se lămurește, altfel am repeta a doua oară o afirmație pe care măsurătoarea n-o
+susține.
+
+Raport: `pipewire-5363/results/B-GENERALIZAT-22aug.md`. Patch-ul și uneltele:
+`pipewire-5363/patches/B-generalizat/`.
+
 ### 3.2l 🟢 `verifica-bancul.sh` — răspunsul la „e bancul ok?", măsurat
 
 Întrebarea a venit a 11-a oară, deci am făcut din ea un script: `~/pw-test/verifica-bancul.sh`,
