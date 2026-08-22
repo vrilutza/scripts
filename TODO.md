@@ -1285,6 +1285,28 @@ Verificat după: numărul de comentarii **nu a crescut** la niciunul (#331 răm�
 s-au editat descrierile, nu s-au adăugat postări. Toate șapte `mergeable=true`, `clean`, pe
 `364b1c66`. Descrierile dinainte și de după: `fthd-masuratori/descrieri/{inainte,dupa}-22aug/`.
 
+**Verificare live, imediat după — au ieșit patru lucruri pe care prima trecere le ratase:**
+
+1. **`(cherry picked from commit …)`** pe toate cele 6 comituri rescrise. `cherry-pick -x` le pusese;
+   trimit către SHA-uri care există doar în fork-ul nostru, deci zgomot pur upstream. Scoase.
+2. **Mesajul comitului `framesizes` din #331** zicea încă *„Depends on … (#329)"* și *„should not go
+   in ahead of 'isp: crop a centred window' (#330)"* — ambele false după mutare. Rescrise fără
+   numere de PR, care oricum se pot schimba.
+3. **Titlul lui #331** zicea `(merge after #330)`. #330 nu mai conține decupajul, deci motivul
+   ordonării dispăruse din el. Titlul curățat, iar în descriere argumentul e acum legat de
+   comportament, nu de un număr de PR, cu tabelul de corelații în el.
+4. **Comitul de 200 ms din #334 n-avea `Signed-off-by`** — defect vechi, de la deschiderea PR-ului,
+   nu de azi. Adăugat.
+
+Bonus: #330 a putut fi pus **exact pe comitul original `27132649`** (părintele lui era deja master),
+deci acolo nu s-a rescris nimic. Verificat înainte de a împinge că arborele fiecărei ramuri e
+**identic** cu ce era live — s-au schimbat doar mesajele.
+
+După corectură, verificat live: toate șapte `mergeable=true`, `clean`, pe `364b1c66`; `Signed-off-by`
+pe 12 din 12 comituri; zero trailere `cherry picked from`; zero referințe încrucișate moarte;
+descrierile live identice cu fișierele locale. Numărul de comentarii tot neschimbat (#328 la 3,
+#331 la 1, restul 0).
+
 Ramura `n-330b` (redenumire + decupaj centrat, peste #330) există local, compilează singură, dar
 **nu e împinsă nicăieri** — ar fi al optulea PR și se decide separat.
 
