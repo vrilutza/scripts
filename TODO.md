@@ -1750,10 +1750,41 @@ cere sesiune grafică.
 **Nemăsurat:** `framerate` pe hardware — nici vivid intrarea 1, nici camera UVC nu anunță intervale
 de cadre, doar valori discrete. Generalizarea la fracții e dovedită doar la nivel de caps.
 
-**Consecința, dacă se confirmă:** !2950 rămâne cu **C singur**, jumătatea de caps dispare, MR-ul se
-micșorează și discuția cu pobrn se îngustează la exact ce a spus el — politica. Dar nu se trimite
-nimic până nu se lămurește, altfel am repeta a doua oară o afirmație pe care măsurătoarea n-o
-susține.
+**Lămurit în aceeași seară — B contează, dar în altă parte.** `gst_caps_from_format()` are **trei**
+apelanți, nu unul: pe drumul de negociere (unde nu contează, tocmai s-a arătat) și de două ori în
+`gstpipewiredeviceprovider.c` — **caps-urile pe care le vede o aplicație care enumeră camerele**.
+
+Măsurat cu `devcaps.py`, daemon cu C, variante intercalate (`bnou` primul și ultimul):
+
+| variantă | structuri | dacă aplicația le fixează |
+|---|---|---|
+| fără B | 82 | **16x16** |
+| B vechi (din !2950) | **164** | 720x576 |
+| **B nou (listă)** | **82** | **720x576** |
+
+Trei lucruri deodată: B repară un defect real; varianta veche îl repară **dublând** numărul de
+structuri (82 → 164, adică 82 × 16 la patru proprietăți); varianta nouă îl repară **fără nicio
+creștere**.
+
+Verificat și pe pipeline-ul **real** al lui GNOME Snapshot (`capsfilter + parsebin + multiqueue`),
+două repetări: cu C → 720x576 indiferent de B; fără C → 16x16 indiferent de B. Deci pentru
+negociere C singur ajunge, iar B repară enumerarea.
+
+**Concluzia:** cele două jumătăți repară **simptome diferite**, cu cauze diferite, și niciuna n-o
+acoperă pe cealaltă:
+
+| | ce repară |
+|---|---|
+| **C** | clientul care nu cere nimic primește cel mai mic cadru |
+| **B** | aplicația care enumeră camerele vede doar intervale |
+
+Spargerea lui !2950 nu mai e doar igienă — e corectă pe fond.
+
+**Ce trebuie rescris în mesajul comitului `11756ee0`:** propoziția *„the caps conversion keeps that
+default as a fixed structure in front of the range so fixation lands on it"* descrie mecanismul care
+**nu** funcționează la negociere, iar *„Verified separately: with only the first change the
+application still got the smallest size"* e **falsă** așa cum e scrisă. Ambele se înlocuiesc cu
+simptomul real: enumerarea dispozitivelor.
 
 Raport: `pipewire-5363/results/B-GENERALIZAT-22aug.md`. Patch-ul și uneltele:
 `pipewire-5363/patches/B-generalizat/`.
