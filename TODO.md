@@ -1959,6 +1959,40 @@ Descrierea lui !2966 spune deschis și ce **nu** face: transmisia nu e afectată
 `fatal-criticals` nu salvează aplicația, pentru că imediat în spate e alt critical. Și că lucrurile
 despre `mgb4` vin din citirea driverului, nu din rularea lui.
 
+**Și apoi vik a spus stop, pe bună dreptate: „deja simt ca ne invartim… hotaraste tu, fixezi cauza
+nu efectul?"** Avea dreptate. Spusesem în aceeași descriere și că se ciocnesc textual, și că unul
+trebuie rebazat pe celălalt — adică descrisesem o problemă fără s-o rezolv.
+
+**Decizia: le-am unit.** !2965 și !2966 nu sunt cauză și efect — sunt **două defecte ale aceleiași
+funcții**, conversia unei alegeri SPA în caps GStreamer. Unul pierde valoarea preferată, celălalt
+trunchiază o valoare care nu încape. Rescriu aceleași linii, iar ajutorul din !2965 poartă defectul
+lui !2966. Separate se blochează reciproc.
+
+Greșeala mea a fost că am aplicat „sparge lucrurile" ca obicei, nu ca judecată. Regula pe care o
+urmasem toată ziua — separă reparațiile de deciziile de politică — nu se aplica aici: amândouă sunt
+reparații, în aceeași funcție.
+
+**!2965 rescris**, două comituri în ordinea care funcționează: limitarea întâi, valoarea preferată
+peste ea, cu ajutorul folosind conversia limitată. `acea30afa`, 1 fișier, +111/-11, fiecare comit
+compilează separat cu 0 avertismente. Titlu nou: *„gst: two defects in the conversion from a SPA
+choice to GstCaps"*. **!2966 închis**, cu o notă care spune de ce.
+
+Măsurat, structura `[0]` a caps-urilor, integral:
+
+```
+master        facetimehd    width=(int)[ 320, 1296 ]      framerate=(fraction)30/1
+              v4l2loopback  width=(int)[ 2, 8192 ]        <- niciun framerate
+cu amandoua   facetimehd    width=(int){ 1296, [ 320, 1296 ] }
+              v4l2loopback  width=(int){ 8192, [ 2, 8192 ] },
+                            framerate=(fraction){ 25/1, [ 1/2147483647, 1000/1 ] }
+```
+
+77 de CRITICAL-uri → **0**, structuri neschimbate, iar valoarea preferată apare prima peste tot.
+
+**La a doua întrebare a lui vik — e nevoie de Lenovo?** Nu. MacBook-ul are tot: facetimehd, vivid,
+v4l2loopback, failctrl. Lenovo-ul adaugă doar o cameră UVC cu dimensiuni discrete, care e un control
+de neregresie, nu ceva ce lipsește pentru identificare.
+
 Raport: `pipewire-5363/results/DEFECT-FRACTII-22aug.md`. Patch și probe: `patches/fractii/`.
 
 **Prima reacție din afară:** rmader a dat 👍 pe **!2950 și !2964** la 16:45–16:46, adică la douăzeci
