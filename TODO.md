@@ -1358,8 +1358,32 @@ toate adevărate acum.
 
 Copiile: `descrieri/dupa-22aug-b/` (inclusiv `331-comentariu.md`).
 
-Ramura `n-330b` (redenumire + decupaj centrat, peste #330) există local, compilează singură, dar
-**nu e împinsă nicăieri** — ar fi al optulea PR și se decide separat.
+**Decizia despre decupajul centrat (`n-330b`): se ține gata, NU se trimite acum.** Luată de vik pe
+22 august, după ce am pus cifrele pe masă.
+
+Ce le-a decis:
+
+* depozitul lui patjak are **10 PR-uri deschise în total, dintre care 7 sunt ale noastre** (celelalte
+  trei: unul din 2018, unul din 2020, unul de la vicamo din 20 august);
+* ritmul lui de acceptare în 2026: **trei** — #320 în martie, #327 și #324 în iunie. Plus unul în
+  septembrie 2025 și unul în martie 2025. E un driver de hobby, un singur om, fără firmă în spate,
+  și e prietenos când răspunde (#328, 15 aug: *„sorry for not looking at this earlier"*);
+* decupajul centrat e cea mai mare cerere de **decizie** din tot lotul, nu de **greșeală** — și
+  categoria decizie e cea care stă blocată peste tot, pentru că cine aprobă își asumă regresia
+  altcuiva iar cine nu decide nu plătește nimic;
+* am scris chiar azi în #330 și #331 că niciunul n-ar trebui să intre înaintea unui fix de decupaj,
+  deci al optulea ar face un lanț de trei la un întreținător cu trei acceptări pe an;
+* așteptarea nu costă nimic: master-ul e nemișcat din 30 iunie.
+
+**Ce ar schimba decizia:** orice mișcare pe vreunul din cele șapte — o acceptare, sau chiar și numai
+un comentariu de la patjak. Atunci al optulea are unde să se așeze.
+
+**Salvat ca să nu se piardă:** ramura trăia doar în clona temporară din `/tmp`. Exportată în
+`fthd-masuratori/patches/n-330b/` (3 patch-uri, md5-uri în `patches/CITESTE.md`), verificat la export
+că se aplică curat pe master, dau +47/-20 și compilează cu 0 avertismente. Comitul 0001 e identic cu
+ce e deschis ca #330, deci ordinea nu creează conflict. Descrierea pregătită: `descrieri/330b.md`.
+Tot acolo, în `patches/pr-live/`, sunt exportate și cele 7 PR-uri deschise în starea de azi — 15
+patch-uri, o copie care nu depinde de GitHub.
 
 Datele brute, uneltele și raportul: `pipewire-5363/fthd-masuratori/` (ignorat de git, ca tot
 bancul). Raportul: `rezultate/MASURATORI-CAMERA-22aug.md`.
