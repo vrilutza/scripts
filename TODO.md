@@ -1468,6 +1468,34 @@ la **toate șapte** (inclusiv #328 și #330, neatinse azi la cod); mesajele iden
 descrierile identice cu `descrieri/scurte/`; `Signed-off-by` 12/12; zero trailere `cherry picked`;
 **zero comentarii create azi** pe oricare.
 
+**A șasea trecere — de data asta enumerat mecanic, nu citit.** Trecerile 1–5 au fost citiri, iar o
+citire găsește ce observi. Aici am enumerat categoriile de afirmații verificabile și le-am verificat
+pe fiecare cu un script, inclusiv trei pe care nu le atinsesem niciodată:
+
+* **fiecare simbol din driver citat** în descrieri, comentarii și mesaje de comit (`fthd_*`,
+  `iommu_*`, `FTHD_*`, `CISP_*`), căutat în surse — **niciunul lipsă**, la toate șapte;
+* **fiecare linie de cod citată**, căutată literal în surse după normalizarea spațiilor — 14 linii,
+  **toate prezente**;
+* **afirmațiile externe**: `!2950` și `!2951` încă deschise și cu titlurile pe care le descriem;
+  `v4l2-compliance 1.32.0` confirmat local; blocurile markdown toate închise;
+* **definiția lui `ALIGN`** citită din headerele instalate:
+  `ALIGN(x,a)` → `__ALIGN_KERNEL_MASK(x, a-1)` → `((x) + (a-1)) & ~(a-1)`. Afirmația din #331 e
+  exactă;
+* **afirmații repetate în mai multe PR-uri** (1296x736, MacBookPro14,1, versiuni de kernel,
+  `FTHD_BUFFERS`, 4095) — fără contradicții;
+* niciun PR în stare `draft`, toate pe `master@364b1c66`.
+
+**Un singur lucru găsit, și e exact genul pe care doar un script îl prinde.** #333 spunea că adresa
+dată firmware-ului de `fthd_buffer_prepare()` este `(obj->offset << 12)`. În funcția aia variabila
+nu se numește `obj` — expresia reală, la `fthd_v4l2.c:219`, este `(ctx->plane[0]->offset << 12)`.
+`obj` e numele local din `iommu_allocate_sgtable()`, altă funcție. Cine dădea grep nu găsea nimic.
+Corectat în descriere și în mesajul de comit, plus adăugat numărul de linie.
+
+**Stare finală, verificată live după corectură:** toate șapte `true`/`clean`, `draft=false`, pe
+`master@364b1c66`; diff-urile live identice cu cele locale la **toate șapte**; cele 7 mesaje de comit
+identice cu `mesaje/`; cele 6 descrieri identice cu `descrieri/scurte/`; `Signed-off-by` 12/12; zero
+trailere `cherry picked`; zero comentarii create azi; zero apariții rămase de `obj->offset`.
+
 **Decizia despre decupajul centrat (`n-330b`): se ține gata, NU se trimite acum.** Luată de vik pe
 22 august, după ce am pus cifrele pe masă.
 
