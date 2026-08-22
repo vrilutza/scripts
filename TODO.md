@@ -1881,10 +1881,32 @@ implicit=25/1 min=1/4294967295 max=1000/1` — exact forma căutată. **Dar GStr
 identice în ambele brațe**, deci nu e cauzat de !2965: numitorul `4294967295` nu încape în `gint`.
 `framerate` dispare din caps la ambele variante.
 
-**Defect nou, găsit pe drum, pe master:** pluginul v4l2 pasează mai departe o gamă de fracții pe care
-GStreamer o refuză, iar `framerate` se pierde tăcut din caps-urile dispozitivului. Se reproduce cu un
-`v4l2loopback` nemodificat din pachetul distribuției. Nu are legătură cu niciunul din cele șapte,
-**nu s-a raportat nimic** — doar notat.
+**Defect nou, găsit pe drum, pe master — investigat separat.** Pluginul v4l2 pasează o gamă de
+fracții pe care GStreamer o refuză, iar `framerate` se pierde tăcut din caps-urile dispozitivului.
+
+*Mecanismul, izolat:* fracțiile SPA au numărător și numitor `uint32`;
+`gst_caps_set_simple(..., GST_TYPE_FRACTION_RANGE, ...)` le colectează ca `gint`. `4294967295` devine
+**-1**, semnul se inversează, `gst_util_fraction_compare(1, -1, 1000, 1)` întoarce `1` în loc de `-1`,
+GStreamer conchide *„range start is not smaller than end"* și aruncă gama cu un CRITICAL. 77 de
+avertismente, câte unul pe structură. Locul: `handle_fraction_prop()`, cod din **2017**
+(`7a66af71c`); partea din pluginul v4l2 care inversează intervalul e din 2024 (`669f53946`).
+
+*Și nu e doar `v4l2loopback`.* Căutat în `drivers/media` din `linux-source-7.1`:
+**`pci/mgb4/mgb4_vin.c`** — Digiteq Automotive MGB4, driver de **captură din kernel** — declară
+`ival->stepwise.max.numerator = 0xFFFFFFFF`, exact aceeași valoare. Și acolo intervalul nici măcar
+nu e absurd: `0xFFFFFFFF / 125000000` = **34,4 s** între cadre, adică „cel mai lent cadru admis";
+numitorul e cel care nu încape, nu valoarea. Restul driverelor cu interval continuu declară valori
+mici și nu sunt afectate.
+
+*Unde ar sta reparația:* în `handle_fraction_prop()`, adică în stratul de conversie — pod-ul e corect
+și consumatorii din afara GStreamer n-au nicio problemă. Simpla simplificare a fracției ar repara
+`mgb4` (`gcd = 5`, deci `25000000/858993459`, care încape) dar **nu** și `v4l2loopback`, unde
+`1/4294967295` e ireductibilă. Trebuie o limitare, nu doar o reducere.
+
+*Nestabilit:* impactul practic (dacă un client chiar poate transmite de la o astfel de sursă),
+dacă versiunea din distribuție e afectată la fel, și dacă vreo cameră UVC reală ajunge acolo.
+
+**Nu s-a raportat nimic.** Raport: `pipewire-5363/results/DEFECT-FRACTII-22aug.md`.
 
 **Prima reacție din afară:** rmader a dat 👍 pe **!2950 și !2964** la 16:45–16:46, adică la douăzeci
 de minute după restructurare și după nota postată. Are deja 👍 și pe !2954 din 19 august.
