@@ -1906,6 +1906,40 @@ mici și nu sunt afectate.
 *Nestabilit:* impactul practic (dacă un client chiar poate transmite de la o astfel de sursă),
 dacă versiunea din distribuție e afectată la fel, și dacă vreo cameră UVC reală ajunge acolo.
 
+**A doua trecere prin analiză, cerută de vik**, a confirmat tot — dar prin măsurare, nu deducție:
+tipul `uint32_t`, liniile exacte, că `handle_fraction_prop` e singurul loc care construiește gama,
+și că respingerea se produce **și pentru `mgb4`**, rulat cu cifrele lui. **O corectură la mine:**
+prima dată scrisesem că valoarea lui `mgb4` e „absurdă". Nu e — 34,4 s între cadre e un „cel mai
+lent cadru admis" rezonabil; numitorul e cel care nu încape, nu valoarea.
+
+**Dovada directă**, structura `[0]` a caps-urilor pe master: `width=[2,8192], height=[1,8192],
+colorimetry=...` — **niciun `framerate`**, față de facetimehd care în aceeași rulare are
+`framerate=(fraction)30/1`.
+
+**Patch scris și măsurat** (`patches/fractii/`, 49 de inserări): reduce fracția întâi — exact, și
+suficient pentru `mgb4` — și scalează doar dacă tot nu încape, cazul lui `v4l2loopback`.
+
+| | `range start is not smaller` | `dma_drm` | `framerate` în caps |
+|---|---|---|---|
+| master | **77** | 15 | **absent** |
+| cu patch | **0** | 15 | `[ 1/2147483647, 1000/1 ]` |
+| master, repetare | **77** | 15 | absent |
+
+Prima versiune scotea `[ 0/1, ... ]`, dar `0/1` înseamnă „framerate variabil" în GStreamer, deci a
+doua ridică numărătorul la 1.
+
+**Impactul, măsurat — și mai mic decât părea.** Transmisia **nu** e afectată: 120 de cadre pe
+master, 120 cu patch-ul, caps identice — negocierea nu trece prin caps-urile dispozitivului. Sub
+`G_DEBUG=fatal-criticals` aplicația moare (cod 134) și pe master abortul e chiar la defectul nostru,
+primul critical din drum — dar **patch-ul n-o salvează**: dispare acela și abortează imediat pe
+`gst_video_dma_drm_format_from_gst_format`, un al doilea critical preexistent, fără legătură.
+
+Ce rămâne ca impact real: **77 de CRITICAL-uri la fiecare enumerare** și `framerate` lipsă din
+caps-urile pe care le vede orice aplicație care întreabă ce poate camera.
+
+**Nemăsurat:** dacă 1.6.8 din distribuție e afectat la fel; cazul `mgb4` e din citirea codului, nu
+din rulare (nu am placa); al doilea critical n-a fost investigat.
+
 **Nu s-a raportat nimic.** Raport: `pipewire-5363/results/DEFECT-FRACTII-22aug.md`.
 
 **Prima reacție din afară:** rmader a dat 👍 pe **!2950 și !2964** la 16:45–16:46, adică la douăzeci
