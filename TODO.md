@@ -1682,8 +1682,33 @@ overwritten"*; scriptul rebuild-uiește apoi din arborele vechi. `git checkout -
 Mașina pusă la loc: `failctrl` descărcat, `uvcvideo` înapoi pe `/dev/video0`, niciun daemon rămas,
 `wt-ctrl` curat.
 
-Raport: `pipewire-5363/results/NONFATAL-22aug.md`. Descrierea MR-ului, gata de trimis când se
-decide: `results/descrieri/MR-nonfatal.md`. **Nu s-a trimis nimic.**
+**Trimis ca !2963**, cu acordul lui vik: `spa: v4l2: keep reading the other controls when one
+cannot be read`, un comit `133c5b933`, `mergeable`, fără conflicte, pe ramura din fork
+`v4l2-nonfatal-control-read`.
+
+**Înainte de a-l deschide am închis golul din argument.** Îl măsurasem doar pe `failctrl`, un driver
+scris de mine, iar `vivid` nu poate produce cazul — deci întrebarea corectă era: se întâmplă pe o
+cameră reală? Citit `uvc_query_ctrl()` din `drivers/media/usb/uvc/uvc_video.c`: traduce codul de
+eroare al camerei în errno, iar **opt din cele nouă coduri din specificația UVC nimeresc drumul
+fatal**:
+
+| eroare UVC | errno | fatal azi |
+|---|---|---|
+| 1 Not ready | `-EBUSY` | da |
+| 2 Wrong state | `-EACCES` | **nu** — singura scutită |
+| 3 Power | `-EREMOTE` | da |
+| 4 Out of range | `-ERANGE` | da |
+| 5/6/7 Invalid unit/control/request | `-EIO` | da |
+| 8 Invalid value in range | `-EINVAL` | da |
+| STALL, timeout, deconectare | `-EPIPE`, `-ETIMEDOUT`, `-ENODEV` | da |
+
+Comentariul din kernel la 5/6/7: *„firmware-ul nu a implementat corect controlul, sau a fost o
+eroare hardware"* — adică exact `-EIO`, errno-ul pe care îl întoarce `failctrl`. Deci o cameră USB
+obișnuită care răspunde „nu sunt gata" la un singur control face să dispară **tot nodul** din graf.
+Argumentul a intrat în descriere; MR-ul nu mai stă pe un driver de laborator.
+
+Raport: `pipewire-5363/results/NONFATAL-22aug.md`. Descrierea: `results/descrieri/MR-nonfatal.md`,
+verificat că e identică cu cea live.
 
 ### 3.2l 🟢 `verifica-bancul.sh` — răspunsul la „e bancul ok?", măsurat
 
