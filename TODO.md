@@ -1863,8 +1863,31 @@ patch-ul **205 cadre, 0 pauze**, sursa rămânând `640x480` tot timpul.
 **Concluzia: toate șapte compilează și toate șapte fac exact ce spun**, fiecare cu observabilul lui
 și cu control negativ unde există. Niciunul nu are efect în afara a ce declară.
 
-**Nemăsurat aici:** calea fracțiilor din !2965 (niciun dispozitiv nu anunță interval de cadre) și
-brațul cu I420 din !2935.
+**Cele două goluri, reluate cu `v4l2loopback` instalat.**
+
+*Brațul cu I420 din !2935 — închis.* `v4l2loopback` cu `exclusive_caps=0`, alimentat de
+`videotestsrc` cu I420, consumat de `pipewiresrc → x264enc(rc-lookahead=40) → fakesink`: **0 cadre
+codate pe master, 0 cu patch-ul, 0 la repetarea pe master**. Patch-ul nu schimbă nimic acolo, exact
+cum spune descrierea. Și motivul invocat se verifică direct: cu `GST_DEBUG=pipewiresrc:5`,
+loopback-ul negociază **3 buffere**, iar pragul e `n_buffers > PRODUCER_HEADROOM` cu
+`PRODUCER_HEADROOM = 3` — condiția e falsă, calea de copiere nu se activează. (În descriere scrie
+„2 frames, then dead", aici ies 0; setări diferite de encoder, afirmația verificată nu depinde de
+număr.)
+
+*Calea fracțiilor din !2965 — rămâne deschisă, dar știm de ce.* `v4l2loopback` fără producător chiar
+anunță `Continuous 0.001s - 4294967295.000s`, iar pluginul construiește `framerate: Range
+implicit=25/1 min=1/4294967295 max=1000/1` — exact forma căutată. **Dar GStreamer respinge gama
+întreagă** cu `range start is not smaller than end for GstFractionRange`, **77 de avertismente
+identice în ambele brațe**, deci nu e cauzat de !2965: numitorul `4294967295` nu încape în `gint`.
+`framerate` dispare din caps la ambele variante.
+
+**Defect nou, găsit pe drum, pe master:** pluginul v4l2 pasează mai departe o gamă de fracții pe care
+GStreamer o refuză, iar `framerate` se pierde tăcut din caps-urile dispozitivului. Se reproduce cu un
+`v4l2loopback` nemodificat din pachetul distribuției. Nu are legătură cu niciunul din cele șapte,
+**nu s-a raportat nimic** — doar notat.
+
+**Prima reacție din afară:** rmader a dat 👍 pe **!2950 și !2964** la 16:45–16:46, adică la douăzeci
+de minute după restructurare și după nota postată. Are deja 👍 și pe !2954 din 19 august.
 
 Raport: `pipewire-5363/results/VERIFICARE-MACBOOK-22aug.md`.
 
