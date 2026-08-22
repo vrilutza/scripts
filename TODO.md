@@ -1190,6 +1190,89 @@ Artefacte: `pipewire-5363/failctrl/failctrl.c`, probele în `pipewire-5363/scrip
 (`fa-variante2.py`, `proba986b.py`, `probauvc.py`, `probafail.py`), raportul complet în
 `pipewire-5363/results/PLAN-UPSTREAM-20aug.md` secțiunea 10. Comitul 2 **nu s-a trimis**.
 
+### 3.2q 🔵 22 august — cele șapte PR-uri de facetimehd, măsurate pe camera reală
+
+**De unde a pornit.** Modulul instalat prin DKMS se numește `facetimehd-0.7.0.1`, iar upstream
+are tag-ul `0.7.0.3`. Întrebarea firească: am trimis patch-uri peste cod vechi, și poate unele
+buguri au fost reparate între timp?
+
+**Nu.** Numele e o etichetă, nu codul. Comparat octet cu octet, `/usr/src/facetimehd-0.7.0.1/`
+are 13 din 17 fișiere identice cu tag-ul `0.7.0.3` și doar 11 cu `0.7.0.1`; `fthd_drv.c` și
+`fthd_drv.h` sunt identice bit cu bit cu `0.7.0.3`. Cele 4 fișiere care diferă de `0.7.0.3`
+diferă **pentru că sunt patch-urile noastre în ele** (#328…#333, nu și #334). Șirul `0.7.0.1`
+vine dintr-o singură linie din `dkms.conf`; modulul compilat nu are câmp `version:` deloc,
+pentru că driverul upstream nu apelează niciodată `MODULE_VERSION()`.
+
+Iar `0.7.0.3` = `364b1c66` = HEAD-ul de pe master. Verificat prin API: **toate cele șapte PR-uri
+au baza `364b1c6`**. Nimic nu s-a trimis peste cod vechi.
+
+Între `0.7.0.1` și `0.7.0.3` sunt 6 comituri. Singurul care ne atinge zona e `98b55fd3` (Thomas
+Shirley, citește rezoluția reală a senzorului). Nu repară nimic din ce reparăm noi — dimpotrivă,
+patch-urile noastre **se sprijină pe** câmpurile `sensor_width`/`sensor_height` introduse de el.
+
+**Ce s-a măsurat.** Trei module compilate din același depozit peste `364b1c66`, fiecare cu un
+marcaj `MODULE_VERSION` adăugat după copierea surselor (singura linie adăugată, nu atinge cod
+executat), verificabil din `/sys/module/facetimehd/version`. Rulătorul refuză să măsoare dacă
+marcajul nu e cel cerut. Ordinea intercalată: master → tot → 328 → master.
+
+| observabil | `v-master` (0.7.0.3 curat) | `v-tot` (cu patch-uri) |
+|---|---|---|
+| `S_FMT` cu lățime impară | **acceptă impare**: 321→321, 323→329, 641→641 | toate → multiplu de 8 |
+| contradicție cu `ENUM_FRAMEINTERVALS` | 4 cazuri | 0 |
+| `ENUM_FRAMESIZES` | `Discrete 1296x736` | `Stepwise 320x240–1296x736, pas 8/1` |
+| control pus înainte de `STREAMON` | **pierdut** (A=90.77 ≈ implicit D=91.06) | **păstrat** (A=16.04 ≈ C=15.78) |
+| cerere de 640x360 | **colțul stânga-sus** (corel. 0.931) | câmpul întreg micșorat (corel. 0.944) |
+| `REQBUFS` cu `USERPTR` | acceptat | `EINVAL` |
+| octeți distruși în fața bufferului | **până la 3999 din 4000** | nu se ajunge acolo |
+| `WARN_ON` în jurnal | 8 pe rulare, fără efect | 0 |
+| CPU de sistem ars la `STREAMON` | **991 ms** | 1 ms |
+| durata `STREAMON` | 1077 ms | 289 ms |
+
+Reproductibil: a doua rulare pe master, intercalată, dă aceleași concluzii.
+
+**Cel mai important rezultat.** Scrierea din fața bufferului (#333) e acum măsurată direct, nu
+dedusă din cod. Buffer `USERPTR` așezat intenționat la un decalaj cunoscut după marginea unei
+pagini, santinelă `0xA5` în fața lui, în propria alocare a procesului:
+
+| decalaj | santinelă | **distruși** | primul | ultimul | după capătul bufferului |
+|---:|---:|---:|---:|---:|---:|
+| 100 | 100 | **100** | 0 | 99 | 0 |
+| 1000 | 1000 | **1000** | 0 | 999 | 0 |
+| 2048 | 2048 | **2048** | 0 | 2047 | 0 |
+| 4000 | 4000 | **3999** | 0 | 3999 | 0 |
+
+Camera scrie de la marginea paginii, adică exact `offset` octeți în fața bufferului primit.
+Ambele `WARN_ON` existente (`fthd_buffer.c:76` și `:78`) trag — și driverul continuă oricum.
+
+**#328c izolat de #334.** Varianta `v-328` are `mdelay`→`msleep` dar nu și scurtarea: peretele
+rămâne 1092 ms, dar CPU-ul de sistem scade de la 991 ms la **1 ms**. Deci `msleep` nu scurtează
+nimic, doar dă secunda înapoi sistemului; #334 e cel care scurtează.
+
+**Ce NU s-a putut măsura:** #332 (cere un firmware care nu răspunde — injecția ar măsura
+injecția, nu defectul), #328a și #328b (nu au observabil azi, `FTHD_BUFFERS` *este* 4),
+#330a separat de #330c.
+
+**Restructurarea propusă**, pregătită local și verificată (fiecare ramură compilează singură,
+0 avertismente):
+
+| PR | acum | după |
+|---|---|---|
+| #329 | controale + `ALIGN` | doar controalele (1 comit) |
+| #331 | doar `framesizes` | `ALIGN` + `framesizes` — același contract |
+| #330 | y1 + redenumire + decupaj centrat | doar `cmd.y1` (**1 linie**) |
+| nou | — | redenumire + decupaj centrat, peste #330 |
+| #334 | 4 comituri (trage și #328) | 2 comituri: `msleep` + 200 ms |
+| #333 | neschimbat | descriere rescrisă cu tabelul santinelei |
+
+**Ce mi-am schimbat.** Spusesem că scoaterea lui `VB2_USERPTR` din #333 e „retragerea unei
+capabilități anunțate" și că ar trebui discutată separat. Măsurătoarea o infirmă: modul nu
+funcționează deloc pe hardware-ul ăsta — fiecare decalaj testat a distrus memorie. Nu e
+retragerea unei capabilități, e încetarea unei reclame pe care hardware-ul nu o poate onora.
+Cele două comituri rămân împreună.
+
+Datele brute, uneltele și raportul: `pipewire-5363/fthd-masuratori/` (ignorat de git, ca tot
+bancul). Raportul: `rezultate/MASURATORI-CAMERA-22aug.md`.
+
 ### 3.2l 🟢 `verifica-bancul.sh` — răspunsul la „e bancul ok?", măsurat
 
 Întrebarea a venit a 11-a oară, deci am făcut din ea un script: `~/pw-test/verifica-bancul.sh`,
