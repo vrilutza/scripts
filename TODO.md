@@ -1496,6 +1496,34 @@ Corectat în descriere și în mesajul de comit, plus adăugat numărul de linie
 identice cu `mesaje/`; cele 6 descrieri identice cu `descrieri/scurte/`; `Signed-off-by` 12/12; zero
 trailere `cherry picked`; zero comentarii create azi; zero apariții rămase de `obj->offset`.
 
+**Rescriere completă, nu peticire.** După șase treceri de corecturi incrementale, vik a cerut pe
+bună dreptate să nu mai peticesc: rescrise **toate șapte descrierile de la zero**, ca un set coerent,
+cu aceeași hartă a seriei în fiecare — tabel cu cele șapte, rândul propriu marcat `(this one)`, și
+cele două note de ordonare (`msleep` comun între #328 și #334; comitul 2 din #331 în așteptare), plus
+mențiunea patch-ului cu decupajul care nu e trimis.
+
+**#328 inclus de data asta**, cu acordul explicit al lui vik. Conversația cu patjak rămâne intactă —
+se editează doar corpul. Am corectat și afirmația de deschidere: zicea *„None of them changes
+behaviour at the current values"*, dar comitul `msleep` schimbă exact ceva măsurabil. Acum spune
+*„two change nothing at the current values; the third stops burning a CPU"*, cu tabelul.
+
+**Scriptul de confruntare a cifrelor a prins încă una, înainte de trimitere.** În tabelul lui #329,
+rândul `210` avea în coloana „run 2" valoarea **163.69** — care e de la `v-tot`, nu de la master
+run 2. Corectă: **184.52**. Exact genul de greșeală pe care șase citiri n-au prins-o și un script o
+prinde din prima.
+
+**Uneltele de verificare sunt acum în repo**, ca să nu depindă de atenția mea:
+`unelte/verifica-simboluri.py` (fiecare simbol din driver citat există în surse),
+`unelte/verifica-citate-cod.py` (fiecare linie de cod citată există literal),
+`unelte/verifica-cifre.py` (fiecare cifră publicată se potrivește cu `rezultate/*.json`).
+
+**Verificat live după rescriere:** cele 7 descrieri identice cu `descrieri/final/`; **fiecare PR
+trimite la celelalte șase, 6/6, la toate șapte**; rândul propriu marcat corect la toate; toate
+`true`/`clean`, `draft=false`, pe `master@364b1c66`; diff-urile identice cu cele locale la toate
+șapte; cele 7 mesaje de comit identice cu `mesaje/`; `Signed-off-by` 12/12; zero trailere
+`cherry picked`; blocurile markdown închise la toate; **zero comentarii create azi** — #328 rămâne
+la 3, #331 la 1, restul la 0.
+
 **Decizia despre decupajul centrat (`n-330b`): se ține gata, NU se trimite acum.** Luată de vik pe
 22 august, după ce am pus cifrele pe masă.
 
