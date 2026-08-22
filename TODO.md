@@ -1628,8 +1628,22 @@ că niciun pachet GStreamer sau VA-API nu s-a schimbat de la ultima rulare. Relu
 registrelor, a trecut. Fără gardă, prima rulare ar fi comparat plugin-ul de sistem cu el însuși și
 ar fi „dovedit" că patch-ul nu schimbă nimic.
 
-**Nimic împins.** Cele patru rebazări există doar local, pe Lenovo. Raportul complet:
-`pipewire-5363/results/REBAZARE-22aug.md`.
+**Împinse**, cu acordul lui vik — exact ramurile măsurate, aduse de pe Lenovo prin ssh, nu
+reconstruite pe MacBook. Verificat înainte, pentru fiecare, că diff-ul rebazat e **identic octet cu
+octet** cu ce era în MR și că stă exact pe `f03a55d`:
+
+| MR | vechi → nou | diff |
+|---|---|---|
+| !2935 | `6fe4eaca2` → `83cdc11f5` | neschimbat |
+| !2950 | `14619fffa` → `11756ee0f` | neschimbat |
+| !2951 | `1da2d9604` → `a39b6f20e` | neschimbat |
+| !2954 | `23f742e59` → `f5589a4ed` | neschimbat |
+
+Jetonul a rămas în keyring — push pe HTTPS prin `git-credential-forge`, nicăieri într-un fișier sau
+într-o linie de comandă. După push: `has_conflicts=false` la toate patru, CI pornit, comentariile
+**neschimbate** ca număr, 👍-ul lui rmader păstrat pe !2954.
+
+Raportul complet: `pipewire-5363/results/REBAZARE-22aug.md`.
 
 ### 3.2l 🟢 `verifica-bancul.sh` — răspunsul la „e bancul ok?", măsurat
 
