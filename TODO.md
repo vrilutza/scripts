@@ -1813,6 +1813,61 @@ revine pobrn la fir.
 Raport: `pipewire-5363/results/B-GENERALIZAT-22aug.md`. Patch-ul și uneltele:
 `pipewire-5363/patches/B-generalizat/`.
 
+### 3.2u 🟢 22 august — cele șapte MR-uri verificate pe MacBookPro14,1, de la zero
+
+Patch-urile luate **direct din capetele MR-urilor de pe server**, nu din copii locale. PipeWire
+master `f03a55d7f` și WirePlumber master `8cf44a43`, clonate proaspăt. Banc propriu pe socketul
+`pw-verif`; sesiunea reală neatinsă.
+
+**Trei dispozitive, fiecare pentru altceva:** facetimehd (`/dev/video0`, stepwise 320x240–1296x736
+pas 8/1, `VIDIOC_G_SELECTION` **eșuează**), vivid (`/dev/video1`, 4 intrări, singurul driver cu
+control-tablou), failctrl (`/dev/video5`, construit pentru kernelul de aici, injecția verificată).
+
+**Compilare** cu ALSA, libcamera, v4l2 și GStreamer pornite — 1208 ținte, master în 3m06. Toate
+șapte separat: **0 avertismente**. Toate șapte împreună: 4 fișiere, +166/-28, niciun conflict,
+**0 avertismente**.
+
+**!2950 și !2964 — ortogonale.** Alegerea de dimensiune din `EnumFormat`:
+
+| | implicit | pas |
+|---|---|---|
+| master | 320x240 | **1296x736** |
+| doar !2950 | **1296x736** | 1296x736 |
+| doar !2964 | 320x240 | **8x1** |
+| ambele | **1296x736** | **8x1** |
+
+**!2965** — `GstDeviceMonitor` pe camera reală, cu !2950 prezent: fixarea trece de la **320x240** la
+**1296x736**, cu **4 structuri în ambele cazuri**. Al doilea dispozitiv pe care se confirmă.
+
+**!2954 și !2963 — cauza și efectul, separate pe hardware.** Pe master, vivid și failctrl **nu apar
+deloc în graf**:
+
+| | facetimehd | vivid | failctrl |
+|---|---|---|---|
+| master | 8 | absent | absent |
+| doar !2954 | 8 | **55** | **absent** |
+| doar !2963 | 8 | **56** | **6** |
+| !2954 + !2963 | 8 | **55** | **6** |
+
+!2954 singur nu ajută failctrl — rândul 3 din tabelul de pe 21 august, reprodus pe alt calculator.
+Iar diferența de exact o proprietate pe vivid e chiar `String "S32 2 Element Array"`: cu !2963
+singur e expus ca scalar fals, cu !2954 e corect absent.
+
+**!2935** — `repro.py` pe camera reală, pool de 4, două repetări: la hold 1 și 3 identice (85), la
+hold 4/5/6 master dă **exact 4 cadre** apoi tace, iar cu patch-ul 71/72/74 — ~84% din debitul liber.
+*„Capture stops at exactly the pool size every time"*, confirmat literal.
+
+**!2951** — `rescale.py`, trei redimensionări: master 90–91 cadre cu **3 pauze de ~1,3 s**, cu
+patch-ul **205 cadre, 0 pauze**, sursa rămânând `640x480` tot timpul.
+
+**Concluzia: toate șapte compilează și toate șapte fac exact ce spun**, fiecare cu observabilul lui
+și cu control negativ unde există. Niciunul nu are efect în afara a ce declară.
+
+**Nemăsurat aici:** calea fracțiilor din !2965 (niciun dispozitiv nu anunță interval de cadre) și
+brațul cu I420 din !2935.
+
+Raport: `pipewire-5363/results/VERIFICARE-MACBOOK-22aug.md`.
+
 ### 3.2l 🟢 `verifica-bancul.sh` — răspunsul la „e bancul ok?", măsurat
 
 Întrebarea a venit a 11-a oară, deci am făcut din ea un script: `~/pw-test/verifica-bancul.sh`,
