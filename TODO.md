@@ -1780,11 +1780,35 @@ acoperă pe cealaltă:
 
 Spargerea lui !2950 nu mai e doar igienă — e corectă pe fond.
 
+**Verificat și pe audio, și NU se confirmă.** ALSA chiar pune o valoare cu sens în `values[0]` al
+unui `Range` — `pw-cli enum-params` pe nodul audio arată `Range: 48000, 44100, 192000`, adică rata
+preferată a plăcii urmată de limite. Dacă acel `values[0]` ar ajunge în caps, B ar repara un defect
+audio de sine stătător. Măsurat pe toate trei variantele, intercalat: **nicio diferență**, toate dau
+`rate → 1`. Cauza: caps-urile dispozitivelor audio vin din **șablonul elementului**
+(`audio/x-alaw, rate=[1, 384000]`), nu din `EnumFormat`-ul nodului. Deci domeniul dovedit al lui B
+rămâne doar furnizorul de dispozitive **video**. Bine că am verificat înainte să scriu altceva în MR.
+
 **Ce trebuie rescris în mesajul comitului `11756ee0`:** propoziția *„the caps conversion keeps that
 default as a fixed structure in front of the range so fixation lands on it"* descrie mecanismul care
 **nu** funcționează la negociere, iar *„Verified separately: with only the first change the
 application still got the smallest size"* e **falsă** așa cum e scrisă. Ambele se înlocuiesc cu
 simptomul real: enumerarea dispozitivelor.
+
+**Cele trei texte, scrise și gata** (`results/descrieri/`):
+
+* `MR-A-step.md` — 129 de cuvinte. Valoarea greșită, diff-ul, ce descria de fapt pasul de 1296x736,
+  și că nimic n-o impune azi.
+* `MR-B-caps.md` — 471. Spune **explicit** că nu e vorba de negociere, ci de
+  `gstpipewiredeviceprovider.c`, cu cifrele 82/16x16 vs 82/720x576 și cu 164 pentru varianta veche.
+  Explică de ce lista în loc de structura duplicată, și declară două lucruri nemăsurate: calea
+  fracțiilor (niciun dispozitiv de aici nu anunță interval de cadre) și că **B singur nu schimbă
+  nimic pentru o sursă v4l2 azi**, pentru că acolo `values[0]` e chiar minimul.
+* `NOTA-C-2950.md` — 284. Un comentariu nou, scurt, care spune ce a plecat din MR și pune **o
+  singură întrebare** în loc să repete argumentul: e cel mai mic cadru un implicit pe care l-ar
+  apăra până există o regulă centrală, iar dacă nu, ce ar pune în loc între timp.
+
+**Nimic trimis.** Toate trei presupun `--force-with-lease` pe !2950, deci rămâne condiția: după ce
+revine pobrn la fir.
 
 Raport: `pipewire-5363/results/B-GENERALIZAT-22aug.md`. Patch-ul și uneltele:
 `pipewire-5363/patches/B-generalizat/`.
