@@ -1433,6 +1433,41 @@ identice cu `descrieri/scurte/`; `Signed-off-by` pe 12 din 12; zero trailere `ch
 Cele 11 referințe încrucișate rămase, verificate una câte una — inclusiv cele două către #52 și #329
 din #331, care sunt intenționate.
 
+**A cincea trecere, 22 august — citit integral, live.** Nicio activitate nouă de la patjak: ultimul
+lui comentariu e din 19 august (pe tichetul #178), iar pe #328 din 17 august. Promisiunea *„I'll
+have a look during next week"* e din **15 august**. Tot ce s-a întâmplat azi pe cele șapte suntem
+noi. Zero review-uri, pe oricare.
+
+Patru lucruri găsite citind textul integral:
+
+1. **Titlul lui #331 cerea exact ce descrierea zicea să nu ia.** Era *„make the advertised frame
+   sizes match what the driver accepts"* — adică fix comitul 2, pus în așteptare. Schimbat în
+   *„fix ALIGN(pix->width, 7); second commit re-does 545cb18 and should wait"*.
+2. **#329 trimitea la ceva care nu mai exista:** *„a second interleaved run are in the commit
+   message"* — tăiat la scurtare. Cifrele puse direct în descriere.
+3. **#333 la fel:** *„v4l2-compliance numbers … are in the commit messages"* — tăiate. Puse înapoi
+   compact în descriere: 6132 → 0 scrieri în afara bufferului, testele USERPTR de la `OK` la `FAIL`
+   la `not supported`.
+4. **Tabelul din #334 amesteca valori dintr-o repetare cu medii.** Publicase `1077 / 991`,
+   `1092 / 1`, `289 / 1`. Mediile reale peste cinci repetări sunt `1077 / 990`, `1102 / 1`,
+   `291 / 1`. Toate cele publicate erau în interval, dar nu erau medii și nu spuneam că sunt valori
+   individuale. Rescris cu media plus min–max explicit.
+
+Verificate și cinci SHA-uri citate în mesajele de comit — `6bbe3712`, `230e57ae`, `f3067f2`,
+`98b55fd`, `545cb18` — toate există și fac exact ce spunem: `6bbe3712` (28 nov 2015) chiar adaugă
+`if (interval->width & 7`, `230e57ae` (30 nov 2015) chiar adaugă `ALIGN(pix->width, 7)`, deci
+„două zile apart" e corect, iar `f3067f2` chiar introduce `#define FTHD_BUFFERS 4`.
+
+**Verificarea care lipsea din trecerile anterioare:** fiecare cifră publicată, confrontată cu
+`rezultate/*.json`. După corectura de la punctul 4, toate se potrivesc — cele 6 valori de luma din
+#329, cei patru octeți-santinelă din #333, cele 18 valori de cronometrare din #334, dimensiunile din
+#331.
+
+**Stare finală:** toate șapte `true`/`clean` pe `364b1c66`; diff-urile live identice cu cele locale
+la **toate șapte** (inclusiv #328 și #330, neatinse azi la cod); mesajele identice cu `mesaje/`;
+descrierile identice cu `descrieri/scurte/`; `Signed-off-by` 12/12; zero trailere `cherry picked`;
+**zero comentarii create azi** pe oricare.
+
 **Decizia despre decupajul centrat (`n-330b`): se ține gata, NU se trimite acum.** Luată de vik pe
 22 august, după ce am pus cifrele pe masă.
 
