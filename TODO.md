@@ -1389,8 +1389,49 @@ e în mesajele de comit și în raportul de măsurători. Verificat live după: 
 fișierele locale la toate șase, comentariile **neschimbate ca număr**, toate șapte `mergeable`,
 `clean`, pe `364b1c66`.
 
-**Rămâne deschis:** mesajele de comit sunt tot lungi (mediana 259 față de 14 a depozitului). De
-decis dacă trec și ele prin foarfecă — ar însemna încă șase `--force-with-lease`.
+**Runda a patra: mesajele de comit — și o descoperire care schimbă #331.**
+
+Măsurat corect de data asta, doar comiturile reale de cod ale depozitului (fără merge, fără
+`dkms.conf`): **mediana 21 de cuvinte, maximul 134**. Ale noastre: mediana 259, maximul 610.
+Rescrise la 139–225. Comitul `msleep` din #334 lăsat **neatins**, ca să rămână identic cu cel din
+#328 — altfel nu mai sunt același patch (verificat: md5 identic al mesajului).
+
+**Descoperirea.** Căutând stilul depozitului am dat peste `545cb18` (22 mai 2020):
+
+> *Revert to discrete frame sizes and frame intervals. Skype and other applications don't support
+> stepwise frame sizes and frame intervals … It seems they will never fix this so instead we reduce
+> our functionality to just support the discrete type.*
+
+**patjak a făcut exact ce propune #331 și a revenit deliberat asupra ei**, cu valori identice:
+`step_width = 8`, `step_height = 1`. Cronologia:
+
+```
+2015-11-28  4758d7a  stepwise introdus
+2016-01-24  #52 deschis: „Low resolution with Skype"
+2020-05-22  545cb18  patjak REVINE la discrete
+2026-06-28  patjak inchide #52
+2026-07-30  noi deschidem #331 -- citand #52 ca argument PENTRU
+```
+
+Iar #52 și #36 sunt din era stepwise: **nu ne susțin, sunt parte din motivul revenirii**. Doar #243
+(2021) și #323 (2026) sunt de după revenire și chiar ne susțin. Descrierea noastră cita toate patru.
+
+Și mai important: măsurătoarea noastră de pe #331, făcută pe 15 august, spune că problema din 2020
+**nu a dispărut, s-a mutat** — pe un PipeWire lansat, o gamă stepwise face GNOME Snapshot să
+negocieze 320x240 în loc de 1296x736 și să pornească în ~4100 ms în loc de ~1500. Aceeași clasă de
+defect ca Skype, altă aplicație. Descoperisem asta independent, fără să știm de `545cb18`.
+
+**#331 rescris pornind de la asta:** comitul 1 (`ALIGN`) e o greșeală curată, se poate lua oricând;
+comitul 2 (enumerarea) **scrie acum explicit că nu ar trebui luat acum**, cu scuze pentru citarea
+greșită a lui #52 și cu oferta de a le despărți în două PR-uri. Descrierea a crescut de la 248 la
+350 de cuvinte — singura care a crescut, și își merită lungimea.
+
+**Autoverificare live după tot:** toate șapte `true`/`clean` pe `364b1c66`; diff-urile live identice
+linie cu linie cu cele locale; mesajele de comit identice cu fișierele din `mesaje/`; descrierile
+identice cu `descrieri/scurte/`; `Signed-off-by` pe 12 din 12; zero trailere `cherry picked from`;
+**zero comentarii create pe 22 august** pe oricare din cele șapte; #328 neatins, cap tot `849cbf79`.
+Cele 11 referințe încrucișate rămase, verificate una câte una — inclusiv cele două către #52 și #329
+din #331, care sunt intenționate.
 
 **Decizia despre decupajul centrat (`n-330b`): se ține gata, NU se trimite acum.** Luată de vik pe
 22 august, după ce am pus cifrele pe masă.
