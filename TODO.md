@@ -2000,6 +2000,40 @@ de minute după restructurare și după nota postată. Are deja 👍 și pe !295
 
 Raport: `pipewire-5363/results/VERIFICARE-MACBOOK-22aug.md`.
 
+### 3.2v 🟢 22 august, noaptea — autoreview la toate cele șapte MR-uri, luate live
+
+Cerut de vik: „le iei direct LIVE unde le vad toti si pe urma te apuci sa testezi toate". Patch-urile
+aduse **din capetele MR-urilor de pe server**, nu din copii locale.
+
+**O confuzie de-a mea, lămurită:** scrisesem „toate șapte | 8 comituri" și se citea ca opt PR-uri.
+Sunt **7 MR-uri și 8 comituri**, pentru că !2965 are două. !2966 e închis.
+
+**Patru dispozitive**, fiecare pentru altceva: facetimehd (camera reală), `v4l2loopback` (singura
+sursă cu interval de cadre), `vivid` (singurul driver cu control-tablou), `failctrl` (scris pentru
+controlul volatil care eșuează).
+
+**Compilare:** toate șapte separat, 0 avertismente. Toate opt comiturile împreună: 4 fișiere,
++221/-30, niciun conflict, 0 avertismente.
+
+**Fac ce spun — toate șapte:**
+
+* **!2950 / !2964** ortogonale: implicit `320x240 → 1296x736` doar cu primul, pas
+  `1296x736 → 8x1` doar cu al doilea, ambele cu amândouă.
+* **!2965**: 77 criticals → 0, framerate revine în caps, valoarea preferată apare prima. **Și
+  confirmă avertismentul din propria descriere** — singur nu schimbă dimensiunea facetimehd, fiindcă
+  pe master `values[0]` chiar e minimul.
+* **!2954 / !2963**: pe master vivid și failctrl **nu apar deloc** în graf. !2954 singur aduce vivid
+  (55 prop.) dar **nu** failctrl; !2963 singur le aduce pe amândouă (56 / 6); împreună 55 / 6. Cele
+  două proprietăți diferență e chiar `String "S32 2 Element Array"`.
+* **!2935**: hold 1 și 3 identice (85), la hold 4 și 5 master dă **exact 4 cadre** apoi tace, cu
+  patch-ul 71 și 73.
+* **!2951**: 90 de cadre cu **3 pauze de ~1,3 s** → 205 cadre, **0 pauze**, sursa rămânând 640x480.
+
+**Nemăsurat:** calea fracțiilor cu o preferință venită de la driver (nu există aici); cazul `mgb4`
+din !2965 (din citirea codului, n-am placa); brațul I420 din !2935 (verificat separat mai devreme).
+
+Raport: `pipewire-5363/results/AUTOREVIEW-7MR-22aug.md`.
+
 ### 3.2l 🟢 `verifica-bancul.sh` — răspunsul la „e bancul ok?", măsurat
 
 Întrebarea a venit a 11-a oară, deci am făcut din ea un script: `~/pw-test/verifica-bancul.sh`,
