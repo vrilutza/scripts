@@ -1270,6 +1270,24 @@ funcționează deloc pe hardware-ul ăsta — fiecare decalaj testat a distrus m
 retragerea unei capabilități, e încetarea unei reclame pe care hardware-ul nu o poate onora.
 Cele două comituri rămân împreună.
 
+**Aplicat pe 22 august, cu acordul explicit al lui vik pentru punctele 1 și 2** (punctul 3, PR-ul
+nou pentru decupajul centrat, a rămas nedecis):
+
+| PR | acțiune | rezultat |
+|---|---|---|
+| #329 | `--force-with-lease` + titlu + descriere | 1 comit, 2 fișiere, +11/-6, `clean` |
+| #330 | `--force-with-lease` + titlu + descriere | 1 comit, **1 fișier, +1/-1** |
+| #331 | `--force-with-lease` + titlu + descriere | 2 comituri, 1 fișier, +8/-4 |
+| #334 | `--force-with-lease` + descriere | 2 comituri (a scăpat de #328) |
+| #333 | doar descrierea | neatins codul; tabelul santinelei adăugat |
+
+Verificat după: numărul de comentarii **nu a crescut** la niciunul (#331 rămâne la 1, restul 0) —
+s-au editat descrierile, nu s-au adăugat postări. Toate șapte `mergeable=true`, `clean`, pe
+`364b1c66`. Descrierile dinainte și de după: `fthd-masuratori/descrieri/{inainte,dupa}-22aug/`.
+
+Ramura `n-330b` (redenumire + decupaj centrat, peste #330) există local, compilează singură, dar
+**nu e împinsă nicăieri** — ar fi al optulea PR și se decide separat.
+
 Datele brute, uneltele și raportul: `pipewire-5363/fthd-masuratori/` (ignorat de git, ca tot
 bancul). Raportul: `rezultate/MASURATORI-CAMERA-22aug.md`.
 
