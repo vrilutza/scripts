@@ -1358,6 +1358,40 @@ toate adevărate acum.
 
 Copiile: `descrieri/dupa-22aug-b/` (inclusiv `331-comentariu.md`).
 
+**Runda a treia, 22 august: descrierile scurtate.** Pornit de la o observație a lui vik — vicamo a
+deschis #335 pe 20 august și descrierea lui e scurtă. Verificat, și avea dreptate: proza din #335 e
+de **două propoziții**, restul celor 104 linii e o ieșire `v4l2-compliance` lipită.
+
+Două măsurători care au decis:
+
+* **stilul depozitului**: mesajele de comit ale lui patjak au **mediana 14 cuvinte**, media 30,
+  maximul 134 pe ultimele 30 de comituri. Ale noastre: mediana **259**, maximul **610**;
+* **firul de pe #328**: patjak scrisese pe 15 august *„sorry for not looking at this earlier …
+  I'll have a look during next week"*. Săptămâna trecuse.
+
+Descrierile lungi nu conving, ridică prețul lui „mă uit puțin".
+
+| PR | înainte | după |
+|---|---:|---:|
+| #329 | 379 cuv. | **128** |
+| #330 | 235 | **89** |
+| #331 | 901 | **248** |
+| #332 | 448 | **140** |
+| #333 | 1152 | **247** |
+| #334 | 958 | **196** |
+| comentariul de pe #331 | 405 | **278** (editat, nu dublat) |
+
+**#328 lăsat neatins**, la cererea lui vik — e singurul unde a comentat patjak, iar firul de acolo
+are valoare: acolo a dat linkul către trimiterea în linux-media.
+
+Substanța n-a fost aruncată: în descriere au rămas mecanismul defectului și cifra decisivă, restul
+e în mesajele de comit și în raportul de măsurători. Verificat live după: descrierile identice cu
+fișierele locale la toate șase, comentariile **neschimbate ca număr**, toate șapte `mergeable`,
+`clean`, pe `364b1c66`.
+
+**Rămâne deschis:** mesajele de comit sunt tot lungi (mediana 259 față de 14 a depozitului). De
+decis dacă trec și ele prin foarfecă — ar însemna încă șase `--force-with-lease`.
+
 **Decizia despre decupajul centrat (`n-330b`): se ține gata, NU se trimite acum.** Luată de vik pe
 22 august, după ce am pus cifrele pe masă.
 
