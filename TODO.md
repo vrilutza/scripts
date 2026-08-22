@@ -1307,6 +1307,39 @@ pe 12 din 12 comituri; zero trailere `cherry picked from`; zero referințe încr
 descrierile live identice cu fișierele locale. Numărul de comentarii tot neschimbat (#328 la 3,
 #331 la 1, restul 0).
 
+**A doua trecere de verificare, tot pe 22 august.** Prima verificare live se uitase doar la PR-urile
+pe care le atinsesem. A doua le-a luat pe toate șapte, plus comentariile, identitățile de autor,
+diff-urile de pe GitHub față de cele locale, și fiecare referință încrucișată din fiecare descriere.
+
+Ce e **confirmat corect**:
+
+* capul fiecărui PR = ramura din fork, la toate șapte;
+* diff-ul de pe GitHub identic, linie cu linie, cu cel local, la toate patru cele rescrise;
+* `Signed-off-by` pe 12 din 12 comituri, zero trailere `cherry picked from`;
+* autor și comiter `Viorel Cernateanu <vrilutza@gmail.com>` peste tot, niciun `Co-Authored-By`;
+* **zero comentarii create pe 22 august** — niciun fișier de comentarii nu conține data de azi;
+* master-ul lui patjak tot la `364b1c66`, din 30 iunie; toate șapte `mergeable=true`, `clean`.
+
+Ce **nu** e corect, și e vina restructurării de azi — trei descrieri **din PR-uri pe care nu le-am
+atins** au rămas cu text fals:
+
+1. **#328** își descria seria: *„#329 (control values discarded …, **and `ALIGN(width, 7)` aligning
+   nothing**)"* — `ALIGN` e la #331 acum; și *„#330 (the camera returns the top left corner …)"* —
+   #330 e acum doar `cmd.y1`. Ambele false. Zicea și „the first of five", când sunt șapte.
+2. **#332**: *„measured … with the whole series … this patch together with #328, #329, #330 and
+   #331"* — reuniunea acelor patru nu mai conține rescrierea decupajului, care era instalată la
+   momentul măsurătorii. Devenită inexactă.
+3. **#333**: *„the measurements above were taken with those five applied"* — aceeași problemă. Și e
+   păcat, pentru că măsurătoarea santinelei a fost făcută pe **master curat**, ceea ce e mai tare
+   decât spune textul.
+
+Un al patrulea, mai mic: comentariul nostru de pe #331 din 15 august zice *„the numbers below are
+for this commit alone"*. Când l-am scris, #331 avea un singur comit; acum are două, deci „this
+commit" a devenit ambiguu.
+
+Corecturile sunt pregătite în `descrieri/dupa-22aug-b/` — **doar descrieri, niciun cod** — și
+așteaptă acordul lui vik, pentru că #328 și #332 nu erau în lista aprobată.
+
 Ramura `n-330b` (redenumire + decupaj centrat, peste #330) există local, compilează singură, dar
 **nu e împinsă nicăieri** — ar fi al optulea PR și se decide separat.
 
