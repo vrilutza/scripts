@@ -870,6 +870,45 @@ acum cifrele alea doar în #334, singurul care le mai afirmă; #334 le conține 
 Efectul practic: **harta seriei nu mai are nicio excepție de ordine.** Rămâne o singură rezervă, cea
 de conținut — comitul 2 al lui #331, care nu trebuie luat încă.
 
+### Verificare independentă, clonă nouă — 23 august
+
+Cerută de vik: descărcat tot de pe GitHub într-o clonă **proaspătă**, fără nimic local, și compilat.
+
+| Ce | Rezultat |
+|---|---|
+| clonă nouă + cele 7 capete aduse din `pull/N/head` | toate pe `364b1c6`, comituri 2/1/1/2/1/2/2 |
+| compilare master (reper) | 0 avertismente, modul 3 969 528 |
+| compilare fiecare PR singur | **7/7 la 0 avertismente, 0 erori** |
+| compilare toate șapte împreună | `3 files changed, 62 insertions(+), 22 deletions(-)`, 0 avertismente |
+| `W=1` (avertismente suplimentare) | masterul are **2 ale lui** (`format-truncation` în `fthd_isp.c:663`, `unused-but-set` în `fthd_drv.c:134`); niciunul din cele 7 patch-uri nu adaugă sau scoate vreunul — **NOI=0 peste tot** |
+| matricea 7×7 | 42 de perechi, **0 conflicte**; trei ordini diferite → același rezultat |
+| `modinfo` | `license GPL`, alias `pci:v000014E4d00001570`, `vermagic 7.1.8+deb14.1-amd64` — corect |
+
+**`checkpatch.pl`** (extras din `linux-source-7.1`, kernelul n-are `scripts/checkpatch.pl` în headers):
+1 ERROR și câteva WARNING. Verificate **linie cu linie**, toate trei sunt **stilul existent al lui
+patjak**, pe care patch-urile noastre îl păstrează:
+
+* `#333` ERROR `space required before '('` → linia `for(i = 0; ...` e **a lui**; noi doar i-am adăugat
+  ` {`. `for(` fără spațiu apare peste tot în fișier;
+* `#332` `suspect code indent` → indentarea amestecată tab+4 spații e **a lui**, o păstrăm identic;
+* `#334` `Block comments use a trailing */` → fișierele lui au **6** comentarii în exact stilul ăsta,
+  unul chiar lângă linia noastră (`fthd_isp.c:1151`).
+
+Concluzia: a le „repara" ar însemna diff zgomotos care amestecă preocupări. Pentru copia din kernel
+problema se rezolvă singură — patch-ul 3/5 al lui `jackflusche` reformatează chiar liniile astea.
+
+**Un defect real, cosmetic, găsit așa:** mesajul comitului 1 din **#333** are **o linie de 104
+caractere** — un rând care n-a fost împachetat la o editare, între vecini de 78 și 76. Iar `patjak`
+nu depășește niciodată 75 de caractere: **0 linii peste 75** în ultimele 40 de comituri ale lui, în
+timp ce ale noastre stau la 76–80. Nesemnalat și nereparat — cere rescrierea mesajului și force-push.
+
+**Trei „NU" la proba de fond au fost grep-urile mele, nu codul.** Verificate una câte una:
+`v4l2_ctrl_handler_setup()` **există**, dar în `fthd_v4l2.c:275`, imediat după `fthd_start_channel()`
+— exact ce spune #329. `ctx->vb = NULL` rămas la `fthd_v4l2.c:108` e în `fthd_buffer_cleanup()`, adică
+**locul corect**, și e chiar funcția despre care #332 spune că nu mai găsea intrarea — deci confirmă
+raționamentul, nu-l infirmă. `VB2_USERPTR` apare doar în comentariul nostru explicativ; `io_modes` e
+`VB2_MMAP | VB2_DMABUF | VB2_READ`.
+
 **A doua noutate: trimiterea în kernel.** `lore` e în spatele unui anti-bot (`t.mbox.gz` întoarce
 tot pagina de verificare), dar **API-ul patchwork de la linuxtv răspunde**, deci de acolo:
 
