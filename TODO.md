@@ -738,15 +738,32 @@ Trecere prin tot ce e deschis, la cerere. **Zero mișcare** peste tot unde aște
 |---|---|---|
 | facetimehd `#328`…`#334` | toate `OPEN`, zero review-uri, zero comentarii noi | ultimul comentariu străin: `patjak`, **17 aug** |
 | facetimehd master | `364b1c6` | **30 iunie** |
-| pipewire `!2935 !2950 !2951 !2954 !2963 !2964 !2965` | toate `opened`, `mergeable`, CI **verde** pe toate șapte, zero conflicte | ultima notă străină: `pobrn` pe !2950, **15 aug** |
+| pipewire `!2935 !2950 !2951 !2954 !2963 !2964 !2965` | toate `opened`, `mergeable`, CI **verde** pe toate șapte, zero conflicte, zero reviewer/assignee | ultima notă străină: `pobrn` pe !2950, **15 aug** |
 | 👍-uri | `rmader` pe !2950, !2954, !2964 — **aceleași trei**, niciunul nou | 22 aug 16:45 |
+| **aprobări** | **`pobrn` a aprobat !2954 și !2964** — găsit abia la a doua trecere | 22 aug 17:34 / 17:45 |
 | pipewire master / wireplumber master | `f03a55d7` / `8cf44a43` — neschimbate față de verificarea de ieri | 21 / 20 aug |
 | `pipewire#5431` (fostul `wireplumber#986`) | deschis, 5 note | `pobrn`, **18 aug** |
 | `pipewire#5363` | deschis, 3 note | 15 aug |
 | `snapshot#367` / `!464` | deschise | 10 / 8 aug |
-| notificări GitHub | **zero** | — |
+| notificări GitHub, todo-uri GitLab | **zero** amândouă | — |
+| comentarii inline de review pe cele 7 PR | **zero** (verificat separat de comentariile de pe fir) | — |
+| `patjak/facetimehd` branch `development` | `45f6e62b5`, divergent, **ultimul comit oct. 2024** | 2024 |
+| release `0.7.0.3` | publicat **19 aug**, dar pe `364b1c66` — **același cod din 30 iunie**, doar eticheta | 19 aug |
 
-**Singura noutate: trimiterea în kernel.** `lore` e în spatele unui anti-bot (`t.mbox.gz` întoarce
+**A doua trecere a găsit ce prima ratase: două aprobări.** `pobrn` a apăsat *Approve* pe **!2954**
+(22 aug 17:45) și pe **!2964** (17:34). Nu apar nici ca 👍, nici ca notă, deci nici `upvotes`, nici
+`user_notes_count` nu se mișcă — singurul loc unde se văd e nota de sistem sau
+`/merge_requests/:id/approvals`. Le luasem drept propria noastră activitate, fiindcă sunt exact
+`updated_at`-ul acelor două MR-uri.
+
+Ce înseamnă și ce nu: `pobrn` e **Developer** în proiect, nu Owner (aceia sunt `wtaymans`, `gkiagia`,
+`arun`, `whot`, `julian`; plus `tom.wagner` Maintainer), iar proiectul are `approvals_required: None`
+— deci aprobarea **nu declanșează** niciun merge, e un semnal de la cineva care a citit codul. Dar e
+primul semnal de genul ăsta pe MR-urile astea, și vine chiar de la omul care a pus întrebările pe
+!2950 și a propus forma comitului din !2954. Cele două aprobate sunt și cele două cu 👍 de la
+`rmader`, deci fiecare are acum două semnale independente.
+
+**A doua noutate: trimiterea în kernel.** `lore` e în spatele unui anti-bot (`t.mbox.gz` întoarce
 tot pagina de verificare), dar **API-ul patchwork de la linuxtv răspunde**, deci de acolo:
 
 `Jack Flusche`, seria *„Add driver for Broadcom FacetimeHD camera"* (5 patch-uri, `drivers/media/pci/facetimehd/`,
