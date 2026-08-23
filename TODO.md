@@ -909,6 +909,53 @@ timp ce ale noastre stau la 76–80. Nesemnalat și nereparat — cere rescriere
 raționamentul, nu-l infirmă. `VB2_USERPTR` apare doar în comentariul nostru explicativ; `io_modes` e
 `VB2_MMAP | VB2_DMABUF | VB2_READ`.
 
+### Remăsurare pe unirea reală, și #333 corectat — 23 august
+
+**Remăsurat pe cod exact ce e online**, fiindcă `v-tot` din 22 august avea **13 comituri**, iar cele
+șapte de azi au **11** — atunci #330 încă purta rescrierea decupajului. Trei module noi, marcaj
+`MODULE_VERSION`, rulătorul refuză să măsoare dacă `/sys/module/facetimehd/version` nu e cel cerut.
+Varianta de control nu mai e `v-328` (comitul a plecat la #334), ci **`v-334a`** = master + doar
+primul comit al lui #334.
+
+	v-master  49f1f4558de7   (identic cu 22 aug — masterul n-a mișcat)
+	v-334a    ce23e5d15f19
+	v-tot     94dc225f3cde   (11 comituri; pe 22 aug era 497657d98098, cu 13)
+
+| defect | master | v-334a | v-tot |
+|---|---|---|---|
+| `STREAMON` | 1078,8 ms | 1111,1 ms | **290,5 ms** |
+| CPU de sistem ars | 986,1 ms | **0,8 ms** | 1,0 ms |
+| control pus înainte de `STREAMON` (media Y) | A=55,64 ≈ D=55,56 → **pierdut** | — | A=1,08 ≈ C=0,88 → **păstrat** |
+| lățimi impare acceptate de `S_FMT` | **12** | — | **0** |
+| contradicție cu `ENUM_FRAMEINTERVALS` | **4** | — | **0** |
+| `ENUM_FRAMESIZES` | `Discrete 1296x736` | — | `Stepwise 320x240–1296x736 pas 8/1` |
+| `REQBUFS` cu `USERPTR` | ok, count=4 | ok | **EINVAL (22)** |
+| octeți distruși în fața bufferului | 100/1000/2048/**4000** | idem | **nu se ajunge** |
+| `WARN` în jurnalul de kernel | **8** | 8 | **0** |
+
+`v-334a` e dovada că cele două comituri ale lui #334 fac lucruri diferite: singur, **nu scurtează
+nimic** (1111 ms) dar dă înapoi 986 ms de CPU.
+
+**Și confirmarea că măsurăm chiar ce e trimis:** decupajul câștigă colțul pe **amândouă**
+(0,844 master / 0,768 v-tot) — corect, patch-ul de decupaj nu e în niciun PR. Pe 22 august, cu 13
+comituri, acolo câștiga cadrul întreg.
+
+**#333 corectat, cu acordul lui vik.** Două lucruri, ambele în mesaje, **zero cod**:
+
+* linia de **104 caractere** din comitul 1 — reîmpachetată;
+* cifra **3999**: azi s-au numărat **4000** de octeți la offset 4000. Nu e o greșeală de atunci —
+  contorul numără octeții care diferă de umplutura `0xA5`, iar pe 22 august camera a scris
+  întâmplător un octet egal cu ea. Textul spune acum că tot spațiul e suprascris și că **numărul e o
+  limită inferioară**, cu explicația de ce o rulare a numărat 3999.
+
+Reîmpachetate ambele mesaje la **≤75 de caractere**, cât ține `patjak` (0 linii peste 75 în ultimele
+40 de comituri ale lui). Verificat: `patch-id` **identic pe fiecare comit** — s-au schimbat doar
+mesajele; compilare 0 avertismente; `checkpatch` **0 warnings** pe ambele patch-uri (rămâne doar
+ERROR-ul de pe linia `for(` a lui patjak); `mergeable/clean`; matricea cu #333 nou — **6/6 curat**,
+toate șapte împreună `62 insertions(+), 22 deletions(-)`; comentarii **0**, nicio postare.
+
+Celelalte șase mesaje rămân la 76–80 de caractere. Nesincronizat cu stilul lui, dar nu e greșeală.
+
 **A doua noutate: trimiterea în kernel.** `lore` e în spatele unui anti-bot (`t.mbox.gz` întoarce
 tot pagina de verificare), dar **API-ul patchwork de la linuxtv răspunde**, deci de acolo:
 
