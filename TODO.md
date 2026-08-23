@@ -763,6 +763,25 @@ primul semnal de genul ăsta pe MR-urile astea, și vine chiar de la omul care a
 !2950 și a propus forma comitului din !2954. Cele două aprobate sunt și cele două cu 👍 de la
 `rmader`, deci fiecare are acum două semnale independente.
 
+**A treia trecere a găsit mai mult decât aprobările: un triaj complet.** `pobrn` a pus **etichete pe
+toate cele șapte** MR-uri, iar pe cele patru noi le-a luat la rând aseară, în douăsprezece minute:
+
+	17:33:02  !2964  + v4l2
+	17:34:51  !2964  aprobat
+	17:35:10  !2965  + gstreamer
+	17:35:15  !2963  + v4l2
+	17:35:20  !2954  + v4l2
+	17:45:47  !2954  aprobat
+
+Adică s-a uitat la **toate patru**, le-a clasificat pe toate patru, și a aprobat **două** — !2964 și
+!2954. Pe !2963 și !2965 **nu** a apăsat aprobare, deși le-a etichetat. Nu e tăcere: e o alegere.
+(!2963 e chiar comitul pentru care el propusese altă formă în `pipewire#5431`.)
+
+**Și un lucru de decis: pe !2950 sunt două fire nerezolvate**, amândouă întrebările lui `pobrn` din
+15 aug. Le-am răspuns în fir, dar niciunul nu e marcat rezolvat — deci în coada oricui triază, !2950
+apare cu „2 unresolved threads", exact semnul care ține un MR nedeschis. Ca autori **putem** să le
+rezolvăm noi; nu s-a făcut nimic fără cerere.
+
 **A doua noutate: trimiterea în kernel.** `lore` e în spatele unui anti-bot (`t.mbox.gz` întoarce
 tot pagina de verificare), dar **API-ul patchwork de la linuxtv răspunde**, deci de acolo:
 
