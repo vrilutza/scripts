@@ -782,6 +782,19 @@ Adică s-a uitat la **toate patru**, le-a clasificat pe toate patru, și a aprob
 apare cu „2 unresolved threads", exact semnul care ține un MR nedeschis. Ca autori **putem** să le
 rezolvăm noi; nu s-a făcut nimic fără cerere.
 
+**Postat pe firul 1 al lui !2950 — prin editare, nu prin postare nouă.** Verificat înainte: nota
+separată din 22 aug *spunea deja* „Now !2965, generalised rather than special-cased to size, as you
+suggested", deci un comentariu nou ar fi fost o dublură. Ce lipsea în **fir** era altceva: răspunsul
+meu din 15 aug descria fixarea ca și cum `pipewiresrc` ar fixa, ceea ce măsurătoarea de pe 22 aug
+infirmase (`gst_pipewire_src_negotiate()` nu fixează niciodată, trimite caps-urile ca filtru și
+serverul alege) — și întrebarea cu care îl lăsasem („extinzi aici sau faci follow-up?") rămăsese
+formal fără răspuns în locul unde o pusese el.
+
+Editată **nota 3617142** (a mea, din 15 aug), adăugat un paragraf marcat *(Edited 23 August)* cu
+ambele: corectarea mecanismului și faptul că am ales prima variantă, în !2965. Verificat după:
+`user_notes_count` **6 → 6**, firul tot cu **3** note, `updated_at` al notei 23 aug 13:50. Zero
+postări adăugate.
+
 **A doua noutate: trimiterea în kernel.** `lore` e în spatele unui anti-bot (`t.mbox.gz` întoarce
 tot pagina de verificare), dar **API-ul patchwork de la linuxtv răspunde**, deci de acolo:
 
