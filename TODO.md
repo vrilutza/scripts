@@ -80,7 +80,7 @@ reținut înainte de a-i spune cuiva că „are deja" vreuna dintre reparații.
 | [wireplumber #986](https://gitlab.freedesktop.org/pipewire/wireplumber/-/work_items/986) | un nod de cameră `vivid` nu primește niciodată session item, deci clientul pică cu `target not found` | 🔵 **trimis 17 aug**, **primul răspuns de întreținător** în aceeași zi: `julian` a cerut testare cu !876. Testat — presupunerea lui (activare eșuată) e **falsă**; **cauza reală e în PipeWire**: `spa_v4l2_enum_controls()` înregistrează un control cu payload, `VIDIOC_G_CTRL` dă EINVAL și toată enumerarea `Props` cade. Patch de 7 linii, A/B alternat, plus trei probe de infirmare, toate trecute. ✅ **Răspuns postat 18 aug** (nota `3619570`) și **descrierea corectată în patru locuri** — rândul `1.0.5 → works` retras, secțiunea „Where I stopped" înlocuită cu „Cause". Verificat după: comentarii 1 → 2. Defectul e în **PipeWire**, se reproduce de la **1.3.81** încolo ([3.2h](#32h--17-august-seara--986-cauza-găsită-și-în-alt-loc-decât-credeau-toți)–[3.2m](#32m--18-august--postat-si-o-corectie-proprie-105-nu-arata-defectul)). Patch încă **local**, MR abia după ce răspunde |
 | [pipewire #5363](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/5363) | raportul de bază | 🔵 deschis, fără răspuns de mentenanț din 11 iulie; !2935 îl **închide automat la merge** (`Closes #5363`, verificat prin API) |
 | [snapshot #367](https://gitlab.gnome.org/GNOME/snapshot/-/work_items/367) | viewfinder înghețat pe primul cadru | 🔵 deschis, **1 upvote** — altcineva a confirmat bug-ul (8 aug). Mentenantul a propus [!464](https://gitlab.gnome.org/GNOME/snapshot/-/merge_requests/464) (`min-buffers=8`); infirmat cu măsurători pe 10 aug — pe camera asta dă **0 cadre**, nu e un fix. !464 e încă deschis, nemerged |
-| [facetimehd #328…#334](https://github.com/patjak/facetimehd/pulls) | șapte PR-uri de driver (vezi [secțiunea 3.3](#33--driver--șapte-pr-uri-la-patjakfacetimehd)) | 🟡 toate deschise, zero review-uri — dar **`patjak` a răspuns pe 15 aug**, primul semn de la întreținător: nu primise notificări, se uită peste ele. **Toate verificate prin măsurătoare pe 17 aug**, master curat față de master+PR ([3.3a](#33a--17-august--fiecare-patch-verificat-prin-măsurătoare)); doar #332 rămâne netestabil. Menționează că cineva ar fi trimis driverul în kernelul upstream; **n-am putut confirma** (lore și patchwork blochează accesul automat, iar căutările dau doar Apple ISP pentru M-series, alt hardware) — întrebat direct pe #328 |
+| [facetimehd #328…#334](https://github.com/patjak/facetimehd/pulls) | șapte PR-uri de driver (vezi [secțiunea 3.3](#33--driver--șapte-pr-uri-la-patjakfacetimehd)) | 🟡 toate deschise, zero review-uri — dar **`patjak` a răspuns pe 15 aug**, primul semn de la întreținător: nu primise notificări, se uită peste ele. **Toate verificate prin măsurătoare pe 17 aug**, master curat față de master+PR ([3.3a](#33a--17-august--fiecare-patch-verificat-prin-măsurătoare)); doar #332 rămâne netestabil. Menționează că cineva ar fi trimis driverul în kernelul upstream — **confirmat pe 23 aug** prin API-ul patchwork de la linuxtv: seria lui `Jack Flusche`, 5 patch-uri în `drivers/media/pci/facetimehd/`, trimisă 13 aug și **retrimisă identic** pe 20 aug, stare `new`, **zero comentarii**. Cară **șase din șapte** defecte ale noastre ([3.3d](#33d--23-august--verificare-live-nimic-nou-nicăieri-în-afară-de-un-resend-în-linux-media)) |
 | [snd_hda_macbookpro #187](https://github.com/davidjo/snd_hda_macbookpro/issues/187) | `install.cirrus.driver.sh` pică pe Debian (`.tar.xz`) și pe kerneluri `-rc` (404 la kernel.org) | 🔵 deschis, 7 comentarii |
 | [snd_hda_macbookpro #189](https://github.com/davidjo/snd_hda_macbookpro/pull/189) | fix: folosește sursa de kernel instalată local | 🔵 deschis, 1 comentariu |
 
@@ -729,6 +729,53 @@ găsi defectul: variabilă neinițializată sub `set -u`, funcție care returna 
 a lui `insmod`, și `fs.protected_regular=2` care împiedică root-ul să scrie fișiere din `/tmp` lăsate
 de o rulare anterioară ca utilizator. `bash -n` nu execută nimic, iar o rulare ca utilizator nu poate
 găsi o problemă care apare doar sub root.
+
+### 3.3d 🔵 23 august — verificare live: nimic nou nicăieri, în afară de un RESEND în `linux-media`
+
+Trecere prin tot ce e deschis, la cerere. **Zero mișcare** peste tot unde așteptam:
+
+| Loc | Stare la 23 aug | Ultima mișcare |
+|---|---|---|
+| facetimehd `#328`…`#334` | toate `OPEN`, zero review-uri, zero comentarii noi | ultimul comentariu străin: `patjak`, **17 aug** |
+| facetimehd master | `364b1c6` | **30 iunie** |
+| pipewire `!2935 !2950 !2951 !2954 !2963 !2964 !2965` | toate `opened`, `mergeable`, CI **verde** pe toate șapte, zero conflicte | ultima notă străină: `pobrn` pe !2950, **15 aug** |
+| 👍-uri | `rmader` pe !2950, !2954, !2964 — **aceleași trei**, niciunul nou | 22 aug 16:45 |
+| pipewire master / wireplumber master | `f03a55d7` / `8cf44a43` — neschimbate față de verificarea de ieri | 21 / 20 aug |
+| `pipewire#5431` (fostul `wireplumber#986`) | deschis, 5 note | `pobrn`, **18 aug** |
+| `pipewire#5363` | deschis, 3 note | 15 aug |
+| `snapshot#367` / `!464` | deschise | 10 / 8 aug |
+| notificări GitHub | **zero** | — |
+
+**Singura noutate: trimiterea în kernel.** `lore` e în spatele unui anti-bot (`t.mbox.gz` întoarce
+tot pagina de verificare), dar **API-ul patchwork de la linuxtv răspunde**, deci de acolo:
+
+`Jack Flusche`, seria *„Add driver for Broadcom FacetimeHD camera"* (5 patch-uri, `drivers/media/pci/facetimehd/`,
+6063 de linii), trimisă **13 aug** și **retrimisă identic pe 20 aug**. Verificat: toate cele cinci
+părți sunt **byte-identice** între cele două trimiteri. Starea în patchwork e `new` la toate cinci,
+delegat `None`, **zero comentarii** — deci nimeni din linux-media nu s-a uitat încă, nici măcar cu un
+`Reviewed-by` sau o obiecție de stil. Retrimiterea identică e semnul obișnuit de „n-a răspuns nimeni".
+
+**Ce înseamnă pentru cele șapte PR-uri ale noastre.** Copia trimisă upstream e din masterul lui
+`patjak`, deci **cară aceleași defecte**. Verificat linie cu linie în diff-ul seriei, nu presupus:
+
+| PR-ul nostru | În seria trimisă în kernel |
+|---|---|
+| #328 `break` lipsă după `AUTO_WHITE_BALANCE` | **reparat deja** — patch-ul 3/5 adaugă exact `break;` (l. 1530 din diff) |
+| #328 `*nbuffers = 4` hardcodat | **prezent**, `fthd_v4l2.c`; 3/5 doar reindentează antetul funcției |
+| #328/#334 `mdelay(1000)` „Needed to settle AE" | **prezent**, neatins de 3/5 |
+| #329 `brightness_set(…, 0x80)` + `contrast_set(…, 0x80)` la `start_channel` | **prezente** amândouă |
+| #330 `cmd.y2 = y2;` scris de două ori, `cmd.y1` niciodată | **prezent**, identic |
+| #331 `ALIGN(pix->width, 7)` | **prezent**, neatins |
+| #332 `vb2_buffer_done(…, VB2_BUF_STATE_DONE)` + `ctx->vb = NULL` | **prezente**; 3/5 doar le reindentează |
+| #333 `WARN_ON(sg->offset)` / `WARN_ON(dma_addr & 0xfff)` + `VB2_USERPTR` în `io_modes` | **prezente** toate trei |
+
+Adică **șase din șapte** defecte măsurate de noi pe cameră ar intra în kernel așa cum sunt, dacă seria
+se acceptă în forma asta. Al șaptelea — `break`-ul — l-a prins și el, independent, într-un patch de
+formatare.
+
+**Nu s-a trimis nimic nicăieri astăzi.** Asta e doar constatarea; ce facem cu ea (rebazat pe seria
+lui, așteptat să vedem dacă media o acceptă, sau lăsat la `patjak`) e o decizie separată — și
+`patjak` însuși spunea pe #328 că nu e sigur dacă locul e `media` sau `staging`.
 
 ### 3.3c 🔵 Auditul de declarare pe cele trei MR-uri PipeWire
 
