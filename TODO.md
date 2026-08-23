@@ -1707,8 +1707,14 @@ Ce le-a decis:
 * decupajul centrat e cea mai mare cerere de **decizie** din tot lotul, nu de **greșeală** — și
   categoria decizie e cea care stă blocată peste tot, pentru că cine aprobă își asumă regresia
   altcuiva iar cine nu decide nu plătește nimic;
-* am scris chiar azi în #330 și #331 că niciunul n-ar trebui să intre înaintea unui fix de decupaj,
-  deci al optulea ar face un lanț de trei la un întreținător cu trei acceptări pe an;
+* ~~am scris chiar azi în #330 și #331 că niciunul n-ar trebui să intre înaintea unui fix de
+  decupaj, deci al optulea ar face un lanț de trei la un întreținător cu trei acceptări pe an;~~
+  **Greșit, verificat pe 23 august:** avertismentul ăsta exista în ciornele `inainte-scurtare/`
+  (#331 se deschidea cu *„this should not go in ahead of a fix for the channel-start crop"*), dar a
+  fost **tăiat la runda de scurtare** din 22 august, cu 45 de minute înainte de decizie. Live nu-l
+  mai are niciunul din cele șapte: #330 spune doar că vine primul, *„ahead of the crop rewrite that
+  needs it"*, iar #331 nu mai pomenește ordinea deloc. Deci argumentul „lanț de trei" **nu stă**;
+  celelalte patru motive stau;
 * așteptarea nu costă nimic: master-ul e nemișcat din 30 iunie.
 
 **Ce ar schimba decizia:** orice mișcare pe vreunul din cele șapte — o acceptare, sau chiar și numai
