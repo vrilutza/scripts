@@ -936,6 +936,12 @@ primul comit al lui #334.
 `v-334a` e dovada că cele două comituri ale lui #334 fac lucruri diferite: singur, **nu scurtează
 nimic** (1111 ms) dar dă înapoi 986 ms de CPU.
 
+**Repetarea de control ține.** Master r1 vs r2: `STREAMON` 1078,8 → 1077,3 (0,14% derivă), primul
+cadru identic la zecime, 12 = 12 lățimi impare, 4 = 4 contradicții, 8 = 8 `WARN`, santinela identică
+(100/1000/2048/**4000** în ambele). Deriva e cu două ordine de mărime sub efectele măsurate — deci
+diferențele sunt ale patch-urilor, nu ale zilei. A doua rulare pe master confirmă și corectarea din
+#333: **4000, nu 3999**. Raport complet: `fthd-masuratori/rezultate/REMASURARE-23aug.md`.
+
 **Și confirmarea că măsurăm chiar ce e trimis:** decupajul câștigă colțul pe **amândouă**
 (0,844 master / 0,768 v-tot) — corect, patch-ul de decupaj nu e în niciun PR. Pe 22 august, cu 13
 comituri, acolo câștiga cadrul întreg.
