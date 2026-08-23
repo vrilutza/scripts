@@ -795,6 +795,49 @@ ambele: corectarea mecanismului și faptul că am ales prima variantă, în !296
 `user_notes_count` **6 → 6**, firul tot cu **3** note, `updated_at` al notei 23 aug 13:50. Zero
 postări adăugate.
 
+**Aceeași verificare amănunțită și pe cele șapte PR-uri de facetimehd.** Nu doar contoare, ci tot ce
+are GitHub echivalent cu ce am găsit pe GitLab:
+
+| Verificat | Rezultat |
+|---|---|
+| review-uri, recenzenți ceruți, `reviewDecision` | **zero** pe toate șapte |
+| fire de review nerezolvate (GraphQL `reviewThreads`) | **zero** — spre deosebire de !2950, unde sunt două |
+| comentarii inline pe diff | **zero** |
+| etichete, asignați, milestone, blocare | **niciuna**, pe niciunul |
+| reacții (corp de PR și fiecare comentariu) | **zero**, inclusiv pe cele două ale lui `patjak` |
+| cross-referințe | **toate ale noastre** — nimeni din afară n-a legat vreun PR de nimic |
+| CI | depozitul **nu are niciun workflow** (`total_count: 0`), deci `status=pending` nu înseamnă „picat", ci „nu există CI" |
+| `mergeable` / `mergeable_state` | `true` / `clean` pe toate șapte |
+| baza | toate pe `364b1c663` = masterul curent, niciunul în urmă |
+
+**Afirmațiile publice, reverificate prin execuție, nu prin citire:**
+
+* fiecare PR se îmbină singur în master: **7/7 OK**;
+* `#328` + `#334` **intră în conflict în ambele ordini**, în `fthd_isp.c` — exact cum scrie harta
+  seriei; linia e chiar cea citată: `mdelay(1000)` → `msleep(1000)` (#328) → `msleep(200)` (#334);
+* `545cb18` (22 mai 2020, *„Revert to discrete frame sizes and frame intervals"*) chiar scotea
+  `step_width = 8; step_height = 1;`, iar comitul 2 al lui #331 le pune **exact pe acelea** înapoi;
+* descrierile publicate sunt **identice** cu `descrieri/final/NNN.md` (diferă doar prin rândul gol
+  final adăugat de GitHub);
+* randarea pe pagină, luată cu `body_html`: tabelul hărții **se randează** pe toate șapte (1 tabel,
+  8 rânduri), toate referințele `#NNN` devin linkuri, zero titluri accidentale, zero markdown brut.
+  *(Prima citire, prin `POST /markdown`, raportase „0 tabele" — artefact al acelui endpoint, nu al
+  descrierii; `body_html` e sursa de adevăr.)*
+* cele trei scripturi de verificare, rulate din nou pe textul de acum: **0 citate de cod inexistente**,
+  **0 simboluri inexistente**, **42 de cifre confruntate cu datele brute, 0 nepotriviri**;
+* zero `Co-Authored-By`, zero `(cherry picked from …)`, `Signed-off-by` pe **fiecare** comit.
+
+**Un lucru găsit și reparat, în evidența noastră, nu upstream.** `patches/pr-live/` era **exportat la
+12:34**, iar rescrierea finală a mesajelor de comit s-a făcut la **13:19** — deci exportul local era
+cu o rundă în urmă: la 5 din 7 mesajele diferă, cel publicat fiind cel **scurt** (#333: 385 de
+cuvinte publicat față de 945 în exportul vechi). Codul era identic peste tot (`patch-id` identic
+7/7), deci nimic greșit sus; dar o comparație viitoare „publicat == testat" ar fi dat fals alarmă,
+exact capcana notată pentru worktree-ul `fthd-crop`. Reexportat din capetele live; acum **7/7 cod
+identic și mesaje identice**.
+
+Și patch-ul ținut deoparte e în continuare valid: `n-330b` se aplică curat pe master **și** peste
+#330, `2 files changed, 47 insertions(+), 20 deletions(-)` — cifra din `CITESTE.md`, neschimbată.
+
 **A doua noutate: trimiterea în kernel.** `lore` e în spatele unui anti-bot (`t.mbox.gz` întoarce
 tot pagina de verificare), dar **API-ul patchwork de la linuxtv răspunde**, deci de acolo:
 
