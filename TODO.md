@@ -962,6 +962,60 @@ toate șapte împreună `62 insertions(+), 22 deletions(-)`; comentarii **0**, n
 
 Celelalte șase mesaje rămân la 76–80 de caractere. Nesincronizat cu stilul lui, dar nu e greșeală.
 
+### Runda a doua de măsurători, și cifrele publicate refăcute — 23 august, seara
+
+**Lanțul de verificare, dus până la capăt.** Trei clone complet noi, una după fiecare schimbare:
+
+* SHA-urile din API == clonă nouă: **7/7**;
+* patch-urile locale aplicate pe master → **arborele** rezultat == arborele PR-ului: **7/7**
+  (mai tare decât `patch-id`);
+* **modulele pe care le-a încărcat vik == module reconstruite din clona nouă, bit cu bit**, toate
+  trei, iar `ko_md5` din fiecare rezultat se potrivește. Asta e dovada că s-a măsurat exact codul
+  trimis, nu altceva.
+
+**A doua rundă completă pe cameră** (18:35–18:38), cu repetare de control. Fiecare PR își face
+treaba:
+
+| PR | promite | măsurat | verdict |
+|---|---|---|---|
+| #328 | două curățenii latente | nimic observabil | *nemăsurabil, scris ca atare* |
+| #329 | controlul dinainte de `STREAMON` se pierde | A=37,38 ≈ D=37,46 → pierdut; cu patch A=0,02 ≈ C=0,01 | **confirmat** |
+| #330 | `cmd.y1`, latent | nimic observabil | *latent, scris ca atare* |
+| #331 c1 | `ALIGN(w,7)` lasă impare | 12 → 0 (321→321 vs 321→328) | **confirmat** |
+| #331 c1 | contradicție `ENUM_FRAMEINTERVALS` | 4 → 0 | **confirmat** |
+| #331 c2 | gama reală | `Discrete` → `Stepwise 320x240–1296x736 pas 8/1` | **confirmat** |
+| #332 | scurgere la timeout de firmware | cere firmware care nu răspunde | *netestabil, scris ca atare* |
+| #333 | scrie în fața bufferului nealiniat | 100/1000/2048/4000 octeți + 8 `WARN` → `EINVAL`, 0 `WARN` | **confirmat** |
+| #334 c1 | dă CPU-ul înapoi fără să scurteze | 1097 ms / **0,7 ms** vs 1078 ms / 986 ms | **confirmat** |
+| #334 c2 | 1000 → 200 ms | **288 ms** | **confirmat** |
+
+**O problemă creată de mine, reparată.** Rulările de azi au scris în `v-master.json` și `v-tot.json`
+— aceleași nume ca pe 22 august — și le-au **suprascris**. S-au pierdut datele brute din 22 august
+pentru `v-tot`. Acum fiecare fișier poartă data, iar `ruleaza.py` **refuză** să suprascrie un
+rezultat.
+
+**Cifrele publicate, refăcute pe codul trimis.** Textul de până acum cita rularea de 22 august,
+făcută pe un `v-tot` cu 13 comituri — adică nu pe ce e în PR-uri. Cu acordul lui vik:
+
+* **#329**, mesajul comitului și tabelul din descriere — înlocuite cu măsurătoarea de azi, iar
+  descrierea are acum și **coloana cu patch-ul**, nu doar cele două rulări pe master;
+* **#334**, mesajul comitului 1 — tabel pe două coloane (`1078 ms / 986 ms` față de
+  `1097 ms / 1 ms`) în loc de o singură linie; tabelul din descriere refăcut, cu `v-334a` în locul
+  lui `v-328`, care nu mai corespunde niciunui PR;
+* ambele mesaje ale lui #334 și cel al lui #329 reîmpachetate la **≤75 de caractere**.
+
+Verificat după, din a treia clonă: **codul identic** la amândouă (doar mesajele s-au schimbat),
+compilare 0 avertismente, `checkpatch` 0 ERROR (rămâne un WARNING de stil pe comentariul bloc, care
+respectă stilul lui patjak), matrice 7×7 **0 conflicte**, toate șapte împreună `62 insertions(+),
+22 deletions(-)`, descrieri live == fișiere locale **7/7**, comentarii neschimbate. Modulele de banc
+reconstruite din clona a treia: **identice bit cu bit**.
+
+`verifica-cifre.py` a fost repointat pe rulările de azi și schimbat să compare **mediana**, cum sunt
+publicate cifrele (înainte compara media, ceea ce dădea 289 unde textul spune 288): **30/30**.
+
+**Rămân la 76–80 de caractere** mesajele lui #328, #330, #331 și #332. Nesincronizat cu stilul lui
+patjak (0 linii peste 75 la el), dar nu e greșeală și nu s-a atins.
+
 **A doua noutate: trimiterea în kernel.** `lore` e în spatele unui anti-bot (`t.mbox.gz` întoarce
 tot pagina de verificare), dar **API-ul patchwork de la linuxtv răspunde**, deci de acolo:
 
