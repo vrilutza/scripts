@@ -838,6 +838,38 @@ identic și mesaje identice**.
 Și patch-ul ținut deoparte e în continuare valid: `n-330b` se aplică curat pe master **și** peste
 #330, `2 files changed, 47 insertions(+), 20 deletions(-)` — cifra din `CITESTE.md`, neschimbată.
 
+### Duplicatul scos din #328 — 23 august
+
+Găsit la analiza ordinii: comitul `isp: sleep instead of spinning for a second while AE settles`
+exista în **amândouă** PR-urile, #328 și #334, cu **același `patch-id` `ea9a0ad56562`**. Aceeași
+modificare, două SHA-uri. De asta se ciocneau — nu fiindcă una ar depinde de cealaltă.
+
+Matricea completă 7×7, îmbinare efectivă în ambele sensuri, arăta o singură coliziune: #328↔#334.
+Toate celelalte 20 de perechi, în orice ordine, curat.
+
+**Făcut, cu acordul lui vik:** comitul scos din #328, rămâne doar în #334. Ramura
+`cleanup-buffer-count-and-sleep` force-push-uită cu `--force-with-lease` (849cbf7 → 6a1b5f2).
+
+| După | Verificat live |
+|---|---|
+| #328 | 2 comituri, `+3/-3`, un fișier, titlu nou: *„Two small cleanups: missing break and a hardcoded buffer count"* |
+| conflictul | **dispărut în ambele sensuri**; linia finală rămâne `msleep(200)` |
+| toate șapte împreună | zero conflicte în **ambele ordini**, rezultat identic: `3 files changed, 62 insertions(+), 22 deletions(-)` |
+| compilare | #328 singur: 0 avertismente. Toate șapte împreună: 0 avertismente |
+| descrieri | toate 7 actualizate — rândul din hartă, excepția scoasă (`two exceptions` → `one exception`), plus nota din #328 care spune de ce s-a micșorat |
+| verificare text | `change the same line` 0/7, `two exceptions` 0/7, `one exception` 7/7, `two small cleanups` 7/7; publicat == fișier local 7/7 |
+| randare | tabel prezent pe toate 7, 8 rânduri, zero markdown brut |
+| scripturi | citate 7/7, simboluri 7/7, cifre **30/30** |
+| comentarii | neschimbate: #328 la 3, #331 la 1, restul 0; zero recenzii, zero inline — **nicio postare adăugată** |
+
+`verifica-cifre.py` a semnalat 9 nepotriviri la prima rulare: cerea ca #328 să conțină în continuare
+tabelul de timpi al comitului `msleep`. Corect — tabelul a plecat odată cu comitul. Scriptul verifică
+acum cifrele alea doar în #334, singurul care le mai afirmă; #334 le conține pe toate șapte
+(1077/988/990/991/1088/1102/1119), iar #328 nu mai afirmă niciun timp.
+
+Efectul practic: **harta seriei nu mai are nicio excepție de ordine.** Rămâne o singură rezervă, cea
+de conținut — comitul 2 al lui #331, care nu trebuie luat încă.
+
 **A doua noutate: trimiterea în kernel.** `lore` e în spatele unui anti-bot (`t.mbox.gz` întoarce
 tot pagina de verificare), dar **API-ul patchwork de la linuxtv răspunde**, deci de acolo:
 
