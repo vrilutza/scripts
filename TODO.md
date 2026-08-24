@@ -1321,6 +1321,128 @@ Formulat ca al doilea punct de date, nu ca „e același bug": raportul original
 screencast, al nostru e o cameră V4L2, iar dacă e aceeași cale sau doar aceeași aserțiune nu am de
 unde să știu.
 
+### 3.3h 🔵 24 august, a doua trecere — nu testele mele, ci ale lor
+
+Prima trecere folosea probe scrise de mine. A doua a citit `.gitlab-ci.yml` din **pipewire** și din
+**wireplumber** și a rulat joburile lor, pe amândouă variantele.
+
+**Prima descoperire a fost o scăpare a mea din prima trecere.** PipeWire are două opțiuni cu nume
+aproape identic: `tests` (construiește suita) și `test` (**pluginul SPA de test**). Eu pusesem doar
+`-Dtests=enabled`; `test` era `disabled`. CI-ul WirePlumber îl cere explicit, cu comentariul lor în
+clar: *„Fedora also ships that, but without the test plugins that we need"*. Deci suita WirePlumber
+din prima trecere rulase fără pluginul pe care ei îl consideră necesar.
+
+**Verificările statice — trec toate trei**, pe arborele cu PR-urile: `spellcheck`, `doccheck`
+(50 de pagini de modul, 0 fără `\subpage`), `shellcheck` (0 observații). Plus
+`check_missing_headers`, rulat pe un `meson install --destdir` fără recompilare: **0** pe amândouă.
+
+**Matricea de build+test — cinci configurații CI × două variante:**
+
+| job CI | curat | cu-pr |
+|---|---|---|
+| `build_with_no_commandline_options` | 53 Ok, 0 Fail | 53 Ok, 0 Fail |
+| `build_all` (`auto_features=enabled`) | 53 Ok, 0 Fail | 53 Ok, 0 Fail |
+| `build_release` (`NDEBUG`) | 53 Ok, 0 Fail | 53 Ok, 0 Fail |
+| `build_with_asan_ubsan` | 47 Ok, **6 Fail** | 47 Ok, **6 Fail** |
+| `valgrind` | 47 Ok, **6 Fail** | 47 Ok, **6 Fail** |
+
+Comparate pe **conținut**, nu pe numere: aceleași nume de teste, aceleași verdicte, aceleași mulțimi
+de avertismente — **zero avertismente noi** în oricare configurație. La `build_release` sunt 55 de
+avertismente pe fiecare, aproape toate `unused-variable`, fiindcă `NDEBUG` elimină `assert` — exact
+ce urmărește jobul; mulțimile sunt identice.
+
+Notă onestă despre `build_all`: pe mașina asta ajunge **aceeași configurație** ca implicitul (1169 vs
+1172 de ținte), fiindcă instalasem dependențele înainte de ambele, iar opțiunile `auto` se activează
+singure când dependența există. Nu adaugă mare lucru aici.
+
+**Trei abateri de la CI-ul upstream, toate din același motiv:** ei rulează pe Fedora 44, noi pe
+Ubuntu 24.04.
+
+* `-Dlibcamera=disabled` la patru joburi care lasă opțiunea pe `auto` — libcamera 0.2.x din Ubuntu
+  n-are `ControlTypeUnsigned16`, `vendor()`, `enumerators()`, `ControlList::MergePolicy`. Pachetul de
+  dezvoltare **este** instalat, deci `auto` îl alege și build-ul cade. Prima rulare a matricei a
+  murit exact aici, ca și jobul WirePlumber.
+* `-Donnxruntime=disabled` la `build_all` — nu există în Ubuntu 24.04.
+* 17 pachete de dezvoltare instalate ca `auto_features=enabled` să configureze.
+
+#### Cele 6 teste care pică sub ASan și valgrind
+
+Aceleași șase pe amândouă instrumentele și pe amândouă variantele:
+`pw-test-protocol-native`, `pw-test-endpoint`, `pw-test-stream`, `pw-test-security-context`,
+`pw-test-filter`, `test-context` — adică exact cele care construiesc un `pw_context` complet.
+
+**Ce raportează ASan: numai scurgeri.** 7 × `LeakSanitizer: detected memory leaks`, **zero** alte
+erori AddressSanitizer, **zero** erori UBSan. Din ~200 de cadre identificabile, **194** trec prin:
+
+	pw_context_new (context.c:571) -> pw_context_parse_conf_section (conf.c:1439)
+	  -> pw_conf_section_for_each (conf.c:1145) -> parse_modules (conf.c:817)
+	    -> load_module (conf.c:606) -> pw_context_load_module (impl-module.c:251)
+
+ASan nu poate merge mai sus: modulul e `dlopen`-uit, cadrele apar ca `<unknown module>`. Valgrind cu
+`--keep-debuginfo=yes` le rezolvă și numește vinovatul:
+
+	pipewire__module_init (module-rt.c:1209) -> rtkit_get_bus (module-rt.c:935)
+	  -> init_dbus_for_name (module-rt.c:912) -> spa_dbus_connection_get (dbus.h:94)
+	    -> impl_connection_get (dbus.c:339) -> libdbus
+
+Pe `test-context`: **18 din 18** înregistrări „definitely lost" pe drumul ăsta, 3.120 octeți în 44 de
+blocuri, `suppressed: 0`. `module-rt` deschide o conexiune D-Bus pentru RTKit la crearea contextului
+și ce alocă libdbus nu se eliberează.
+
+**Control:** cu bus-ul de sesiune scos și cel de sistem trimis spre un socket inexistent, scade la
+1.182 octeți / 9 înregistrări — dar tot pe același drum. Un bus accesibil mărește scurgerea, nu o
+declanșează.
+
+**De ce e verde upstream pe exact același comit** (pipeline `1732686` pe `69187d4cdf`, 64/64 success):
+
+* **valgrind — dovedit.** Jobul lor **nu construiește** `libpipewire-module-rt`. În jurnalul lor:
+  `No module "libpipewire-module-rt" was found` și `skipping unavailable module`. Jobul n-are
+  `meson compile`, iar `meson test` construiește doar dependențele testelor — **234 de ținte** față
+  de 1173 la noi. Drumul care pierde memorie nu se execută acolo. Artefactul lor confirmă:
+  `definitely lost: 0 bytes in 0 blocks`, `suppressed: 0`.
+* **ASan — nedeterminat.** Acolo explicația nu ține: jobul lor rulează `meson compile` complet,
+  `module-rt.c.o` chiar se compilează (`[519/1171]`), modulul apare în configurația încărcată în
+  jurnalul lor de test, nimic nu spune că a fost sărit, și totuși zero ieșire LeakSanitizer. **Nu am
+  determinat de ce.** Ar lămuri-o o reluare cu `detect_leaks=0` și una fără D-Bus accesibil.
+
+#### WirePlumber, așa cum îl compilează ei
+
+PipeWire compilat cu **opțiunile lor** (inclusiv `-Dtest=enabled`, `-Dv4l2=disabled`) și **instalat
+într-un prefix**, apoi WirePlumber contra lui — nu contra celui de sistem. Verificat că s-a legat de
+`libpipewire 1.7.0` din prefixul nostru, nu de `1.0.5` al distribuției.
+
+	wireplumber contra pipewire-curat   55 Ok, 0 Fail
+	wireplumber contra pipewire-pr      55 Ok, 0 Fail
+
+#### Peste granițele de subsistem, cu uneltele lor
+
+* **`pipewire-v4l2`** — shim-ul `LD_PRELOAD` care arată nodurile PipeWire ca `/dev/video*`, rulat prin
+  wrapper-ul lor în modul `PW_UNINSTALLED=1`. Camera și `vivid` apar corect prin el, identic pe
+  ambele variante. **Dar nu discriminează pentru !2950:** shim-ul raportează un set fix de formate
+  (`MJPG`, dimensiuni discrete) în loc de `EnumFormat`-ul nodului, deci diferența de dimensiune
+  implicită nu se vede prin el. Rămâne verificare de neregresie, nu probă țintită.
+* **`pipewire-alsa`** — un client ALSA obișnuit prin pluginul PCM al PipeWire, într-un sink nul creat
+  în daemonul privat, ca să nu se atingă placa de sunet reală. `speaker-test -c2 -t sine -l1` trece
+  pe ambele: două canale, o perioadă completă, **11,073 s** pe curat și **11,066 s** pe cu-pr.
+* `pw-dump` (43 de obiecte), `pw-cli info`, `pw-top -b -n1` — toate identice pe ambele.
+
+#### Ce n-am reprodus, și de ce
+
+`container_*` și `build_on_{ubuntu,debian,fedora,alpine}` (construiesc imagini de container),
+`build_on_fedora_html_docs` + `pages` (documentație), `build_with_coverity` (cere jeton Coverity),
+`bluez_tests` (cere KVM și un kernel pregătit; mașina n-are controller Bluetooth oricum),
+`build_with_custom_options` (11 opțiuni × 2 valori = 22 de build-uri),
+`build_meson_prerelease` / `build_meson_exact_release` (instalează versiuni anume de meson prin pip;
+amândouă sunt `allow_failure: true` la ei).
+
+#### Două defecte în bancul meu, găsite tot aici
+
+Matricea a rulat fără `--print-errorlogs` și ștergea directorul de build, deci prima dată știam **că**
+pică cele șase, nu **de ce** — a trebuit recompilat. Iar scriptul de reluare copia
+`meson-logs/testlog.txt`, dar pentru un setup cu nume meson scrie `testlog-valgrind.txt`, așa că
+jurnalul de valgrind s-a pierdut a doua oară. Diagnosticul a venit până la urmă din rulări manuale
+directe, nu din banc.
+
 ### 3.3c 🔵 Auditul de declarare pe cele trei MR-uri PipeWire
 
 Întrebarea care l-a declanșat: dacă !2950 se sprijinea nedeclarat pe un driver modificat local, are
