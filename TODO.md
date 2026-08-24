@@ -62,9 +62,10 @@ de kernel. Stă în [secțiunea 7](#7--rezolvate-arhivă-tehnică) fiindcă acol
 Toate raportate de aici. Ține-le într-un singur loc: patru s-au și rezolvat, iar despre restul e ușor
 să uiți că există. Stare verificată prin API pe **16 august 2026**.
 
-⚠️ **Niciunul dintre cele trei patch-uri acceptate nu e într-o versiune lansată.** Verificat cu
-`git merge-base --is-ancestor` pe ramura `1.6`: !2933, !2934 și !2941 sunt toate doar în master. De
-reținut înainte de a-i spune cuiva că „are deja" vreuna dintre reparații.
+⚠️ **Niciunul dintre patch-urile acceptate nu e într-o versiune lansată.** Verificat cu
+`git merge-base --is-ancestor` pe ramura `1.6`: !2933, !2934 și !2941 sunt toate doar în master, iar
+!2954, !2964 și !2965 au intrat abia pe **24 august**. De reținut înainte de a-i spune cuiva că „are
+deja" vreuna dintre reparații.
 
 | Unde | Ce | Stare |
 |---|---|---|
@@ -75,12 +76,15 @@ reținut înainte de a-i spune cuiva că „are deja" vreuna dintre reparații.
 | [pipewire !2935](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2935) | copiere când pool-ul se golește | 🔵 gata de review din 15 aug, acum `6fe4eaca2`, CI verde. Descriere rescrisă 16 aug; pe **17 aug** mesajul de commit corectat — citatul lui `wtaymans` era greșit (`starting` în loc de `stating`), referința `#5190` scoasă ca nesusținută, corp 63 → 43 rânduri. Codul neatins |
 | [pipewire !2950](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2950) | o sursă cu interval de dimensiuni era deschisă la **cea mai mică**; plus pasul raportat greșit | 🔵 **cod schimbat pe 16 aug**: `908a66c05` → `14619fffa`, default-ul vine acum din `CROP_BOUNDS` (nativ), nu din maxim. CI verde. `pobrn` a pus două întrebări; la a doua **avea dreptate**, iar răspunsul meu a fost editat ca s-o spună |
 | [pipewire !2951](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951) | `pipewiresrc` repornea fluxul la renegocieri care nu cereau nimic | 🔵 trimis 15 aug, acum `1da2d9604`. Descriere rescrisă 16 aug; pe **17 aug** mesajul de commit corectat — spunea că defectul cere „*any source that advertises a range*", ceea ce infirmasem deja: intervalele pot veni din aval. Codul neatins. **Zero comentarii de la cineva din afară** |
-| [pipewire !2954](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2954) | enumerarea `SPA_PARAM_Props` cădea din cauza unui singur control | 🔵 trimis 19 aug cu **două** comituri; **decuplat pe 21 aug** la unul singur, `23f742e59` (forma lui `pobrn`, cu `Suggested-by:`). Al doilea comit — citirea non-fatală — a plecat pe ramura locală `v4l2-nonfatal-read`, fiindcă era **nemăsurat**. Între timp a fost măsurat pe un driver scris anume ([secțiunea 3.2p](#32p--21-august--2954-decuplat-și-comitul-al-doilea-măsurat-pe-un-driver-scris-anume)) și s-a dovedit că are cauză proprie. `mergeable`, CI verde, 👍 de la `rmader`, zero comentarii |
+| [pipewire !2954](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2954) | enumerarea `SPA_PARAM_Props` cădea din cauza unui singur control | ✅ **acceptat în master** `6734d69c8` (24 aug, `wtaymans`), rebazat, diff și mesaj identice cu ce trimisesem, autor păstrat. Trimis 19 aug cu **două** comituri; **decuplat pe 21 aug** la unul singur, `23f742e59` (forma lui `pobrn`, cu `Suggested-by:`). Al doilea comit — citirea non-fatală — a plecat în !2963, fiindcă era **nemăsurat**; între timp a fost măsurat pe un driver scris anume ([secțiunea 3.2p](#32p--21-august--2954-decuplat-și-comitul-al-doilea-măsurat-pe-un-driver-scris-anume)). 👍 de la `rmader`, aprobat de `pobrn` |
+| [pipewire !2964](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2964) | pasul unui interval de dimensiuni era raportat ca maxim | ✅ **acceptat în master** `cefb4e926` (24 aug), **fast-forward**, sha neschimbat. 👍 de la `rmader`, aprobat de `pobrn`. Desprins din !2950 pe 22 aug, fiindcă măsurătoarea a arătat că e alt defect |
+| [pipewire !2965](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2965) | două defecte la conversia unui `SPA_CHOICE` în `GstCaps`: valoarea preferată era pierdută, iar o fracție care nu încape într-un `GstFraction` era scrisă greșit | ✅ **acceptat în master** `acea30afa` + `c4309f0eb` (24 aug), **fast-forward**. Intrat **fără** aprobare de la `pobrn` — dovadă că aprobarea lui e semnal de recenzie, nu poartă de merge. A înghițit !2966, închis ca dublură |
+| [pipewire !2963](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2963) | un singur control necitibil oprea actualizarea tuturor celorlalte | 🔵 deschis, al doilea comit desprins din !2954, măsurat pe un driver scris anume. Etichetat de `pobrn` pe 22 aug dar **neaprobat** — e chiar forma pentru care el propusese altceva pe `#5431`. Nu e redundant după merge-ul lui !2954: acela atinge `spa_v4l2_enum_controls()`, ăsta `spa_v4l2_update_controls()` |
 | [facetimehd #334](https://github.com/patjak/facetimehd/pull/334) | AE se așează în 200 ms, nu într-o secundă, la fiecare STREAMON | 🔵 trimis 15 aug, peste [#328](https://github.com/patjak/facetimehd/pull/328) |
 | [wireplumber #986](https://gitlab.freedesktop.org/pipewire/wireplumber/-/work_items/986) | un nod de cameră `vivid` nu primește niciodată session item, deci clientul pică cu `target not found` | 🔵 **trimis 17 aug**, **primul răspuns de întreținător** în aceeași zi: `julian` a cerut testare cu !876. Testat — presupunerea lui (activare eșuată) e **falsă**; **cauza reală e în PipeWire**: `spa_v4l2_enum_controls()` înregistrează un control cu payload, `VIDIOC_G_CTRL` dă EINVAL și toată enumerarea `Props` cade. Patch de 7 linii, A/B alternat, plus trei probe de infirmare, toate trecute. ✅ **Răspuns postat 18 aug** (nota `3619570`) și **descrierea corectată în patru locuri** — rândul `1.0.5 → works` retras, secțiunea „Where I stopped" înlocuită cu „Cause". Verificat după: comentarii 1 → 2. Defectul e în **PipeWire**, se reproduce de la **1.3.81** încolo ([3.2h](#32h--17-august-seara--986-cauza-găsită-și-în-alt-loc-decât-credeau-toți)–[3.2m](#32m--18-august--postat-si-o-corectie-proprie-105-nu-arata-defectul)). Patch încă **local**, MR abia după ce răspunde |
 | [pipewire #5363](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/5363) | raportul de bază | 🔵 deschis, fără răspuns de mentenanț din 11 iulie; !2935 îl **închide automat la merge** (`Closes #5363`, verificat prin API) |
 | [snapshot #367](https://gitlab.gnome.org/GNOME/snapshot/-/work_items/367) | viewfinder înghețat pe primul cadru | 🔵 deschis, **1 upvote** — altcineva a confirmat bug-ul (8 aug). Mentenantul a propus [!464](https://gitlab.gnome.org/GNOME/snapshot/-/merge_requests/464) (`min-buffers=8`); infirmat cu măsurători pe 10 aug — pe camera asta dă **0 cadre**, nu e un fix. !464 e încă deschis, nemerged |
-| [facetimehd #328…#334](https://github.com/patjak/facetimehd/pulls) | șapte PR-uri de driver (vezi [secțiunea 3.3](#33--driver--șapte-pr-uri-la-patjakfacetimehd)) | 🟡 toate deschise, zero review-uri — dar **`patjak` a răspuns pe 15 aug**, primul semn de la întreținător: nu primise notificări, se uită peste ele. **Toate verificate prin măsurătoare pe 17 aug**, master curat față de master+PR ([3.3a](#33a--17-august--fiecare-patch-verificat-prin-măsurătoare)); doar #332 rămâne netestabil. Menționează că cineva ar fi trimis driverul în kernelul upstream — **confirmat pe 23 aug** prin API-ul patchwork de la linuxtv: seria lui `Jack Flusche`, 5 patch-uri în `drivers/media/pci/facetimehd/`, trimisă 13 aug și **retrimisă identic** pe 20 aug, stare `new`, **zero comentarii**. Cară **șase din șapte** defecte ale noastre ([3.3d](#33d--23-august--verificare-live-nimic-nou-nicăieri-în-afară-de-un-resend-în-linux-media)) |
+| [facetimehd #328…#334](https://github.com/patjak/facetimehd/pulls) | șapte PR-uri de driver (vezi [secțiunea 3.3](#33--driver--șapte-pr-uri-la-patjakfacetimehd)) | 🟡 toate deschise, zero review-uri — dar **`patjak` a răspuns pe 15 aug**, primul semn de la întreținător: nu primise notificări, se uită peste ele. **Toate verificate prin măsurătoare pe 17 aug**, master curat față de master+PR ([3.3a](#33a--17-august--fiecare-patch-verificat-prin-măsurătoare)); doar #332 rămâne netestabil. Menționează că cineva ar fi trimis driverul în kernelul upstream — **confirmat pe 23 aug** prin API-ul patchwork de la linuxtv: seria lui `Jack Flusche`, 5 patch-uri în `drivers/media/pci/facetimehd/`, trimisă 13 aug și **retrimisă identic** pe 20 aug, stare `new`, **zero comentarii**. Cară **șase din șapte** defecte ale noastre ([3.3d](#33d--23-august--verificare-live-nimic-nou-nicăieri-în-afară-de-un-resend-în-linux-media)). Pe **24 aug** au apărut doi vecini în depozit, `#335` și `#337`, amândoi în `fthd_v4l2.c` — testate toate 14 perechi, **zero conflicte** ([3.3e](#33e--24-august--wtaymans-a-integrat-trei-mr-uri-patru-comituri-de-ale-noastre-în-pipewiremaster)) |
 | [snd_hda_macbookpro #187](https://github.com/davidjo/snd_hda_macbookpro/issues/187) | `install.cirrus.driver.sh` pică pe Debian (`.tar.xz`) și pe kerneluri `-rc` (404 la kernel.org) | 🔵 deschis, 7 comentarii |
 | [snd_hda_macbookpro #189](https://github.com/davidjo/snd_hda_macbookpro/pull/189) | fix: folosește sursa de kernel instalată local | 🔵 deschis, 1 comentariu |
 
@@ -373,7 +377,7 @@ retras: trata simptomul, iar ca patch upstream ar fi fost respins pe bună drept
 
 `FTHD_BUFFERS` e azi **4**, valoarea upstream *(verificat 8 aug: `fthd_drv.h:30`)*.
 
-### 3.2 🔵 PipeWire — trei patch-uri acceptate, trei în review
+### 3.2 🔵 PipeWire — șase patch-uri acceptate, patru în review
 
 Vezi tabloul complet din [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou). Pe scurt:
 
@@ -382,9 +386,13 @@ Vezi tabloul complet din [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou)
 | **!2933** | `module-client-node` nu verifica flag-ul `READ` la enumerarea parametrilor | ✅ **în master** (`c81badc1b`), luat în ziua în care a fost trimis |
 | **!2941** | ordinea încuietorilor în `buffer_recycle()` + repararea scurgerii `buf_to_release` | ✅ **în master** (`30ff8da17`), luat neatins, fast-forward |
 | **!2934** | gardă de depășire în `spa_v4l2_use_buffers()` | ✅ **în master** (`7a8e49384`, 14 aug), rebazat la merge, autor păstrat |
+| **!2954** | enumerarea `Props` cădea din cauza unui singur control | ✅ **în master** (`6734d69c8`, 24 aug), rebazat la merge, conținut neatins |
+| **!2964** | pasul unui interval de dimensiuni raportat ca maxim | ✅ **în master** (`cefb4e926`, 24 aug), fast-forward |
+| **!2965** | valoarea preferată pierdută la conversia `SPA_CHOICE` → `GstCaps`, plus o fracție scrisă greșit | ✅ **în master** (`acea30afa` + `c4309f0eb`, 24 aug), fast-forward |
 | !2935 | copierea când pool-ul se golește | 🔵 **gata de review** (15 aug), `9a118621e` pe `adfb948ec`, CI verde |
 | !2950 | dimensiunea implicită a unei surse cu interval | 🔵 `14619fffa` — **cod schimbat pe 16 aug**, vezi [3.2d](#32d--16-august--campania-de-validare-și-un-patch-de-al-nostru-infirmat) |
 | !2951 | repornirea fluxului la renegocieri inutile | 🔵 `c72c54f15`, CI verde, **zero comentarii din afară** |
+| !2963 | un control necitibil oprea actualizarea celorlalte | 🔵 desprins din !2954, etichetat de `pobrn` dar neaprobat |
 
 !2933 a fost acceptat în aceeași zi, !2941 la ~2 ore după ce a fost pus. Asta răspunde la întrebarea
 veche „de ce nu ne răspunde nimeni": **răspund**, dacă patch-ul e mic, izolat și măsurat. !2934 a
@@ -1046,6 +1054,71 @@ formatare.
 **Nu s-a trimis nimic nicăieri astăzi.** Asta e doar constatarea; ce facem cu ea (rebazat pe seria
 lui, așteptat să vedem dacă media o acceptă, sau lăsat la `patjak`) e o decizie separată — și
 `patjak` însuși spunea pe #328 că nu e sigur dacă locul e `media` sau `staging`.
+
+### 3.3e 🔵 24 august — `wtaymans` a integrat trei MR-uri; patru comituri de-ale noastre în `pipewire/master`
+
+Prima mișcare de la un **Owner** pe MR-urile astea. Nu aprobare, nu comentariu — merge direct.
+
+| Ora (UTC) | MR | Ce s-a întâmplat | Comit în master |
+|---|---|---|---|
+| 12:58 | **!2965** | integrat, **fast-forward** — sha neschimbat | `c4309f0eb` *clamp a fraction that does not fit a GstFraction* + `acea30afa` *keep the value a source prefers when converting a choice to caps* |
+| 13:02 | **!2964** | integrat, **fast-forward** — sha neschimbat | `cefb4e926` *report the step of a stepwise frame size, not the maximum* |
+| 13:04 | **!2954** | integrat, **rebazat** `f5589a4e` → `6734d69c` | `6734d69c8` *do not expose compound controls as props* |
+
+**Rebazarea lui !2954 n-a schimbat nimic în conținut** — verificat, nu presupus: `md5` peste diff-ul
+întors de API pentru ambele sha-uri = `59c702f5f5b1b41576ab53cc63125fed`, identic; `md5` peste mesaj
+= `8c36efd03b209c399ee06915bb16ace7`, identic; singura diferență e părintele (`f03a55d7f` →
+`cefb4e926`). Autorul rămâne **Viorel Cernate** pe toate patru comiturile. Zero comituri de merge —
+proiectul merge liniar.
+
+**Un lucru care contrazice ipoteza de ieri:** !2965 **nu** fusese aprobat de `pobrn` (el aprobase doar
+!2954 și !2964) și totuși a intrat primul. Deci aprobarea lui e semnal de recenzie, nu poartă de
+merge — exact cum scria și `approvals_required: None`. Nu trebuie citită ca o condiție.
+
+**Ce a rămas deschis: !2935, !2950, !2951, !2963.** Toate patru arată acum
+`detailed_merge_status: need_rebase` — nu e conflict, e doar că master-ul a avansat sub ele
+(`f03a55d7` → `69187d4cd`) și proiectul cere istorie liniară. Testat local, nu dedus: fiecare dintre
+cele patru se aplică **curat** prin `cherry-pick` pe `69187d4cd`.
+
+**!2963 nu a devenit redundant prin merge-ul lui !2954**, deși amândouă sunt în `v4l2-utils.c`:
+!2954 atinge `spa_v4l2_enum_controls()`, !2963 atinge `spa_v4l2_update_controls()` — funcții
+diferite. Aplicat pe master-ul de azi: 10+/10−, iar `res` rămâne folosit de `spa_v4l2_open()`, deci
+nici avertisment de variabilă nefolosită.
+
+**Restul: zero.** 👍-urile lui `rmader` tot cele trei din 22 aug, niciunul nou. Pe !2950 cele două
+fire ale lui `pobrn` sunt **tot nerezolvate** și n-a răspuns la nota editată pe 23 aug. `#5431` fără
+notă nouă din 18 aug, `#5363` din 15 aug. Zero reviewer sau assignee pe vreunul din cele patru
+rămase.
+
+**facetimehd: nicio mișcare pe ale noastre, dar doi vecini noi în depozit.**
+
+| Loc | Stare la 24 aug |
+|---|---|
+| `#328`…`#334` | toate `OPEN`, `mergeable: clean`, zero review-uri, zero comentarii inline, zero comentarii noi pe fir |
+| master | `364b1c6`, **30 iunie**, neschimbat |
+| `patjak` | ultimul comentariu **17 aug**, neatins |
+| serie `linux-media` | RESEND-ul din 20 aug, toate cele 5 patch-uri `state: new`, **zero comentarii** (verificat pe `/api/patches/<id>/comments/`, nu doar starea) |
+
+Cei doi vecini ating amândoi `fthd_v4l2.c`, adică fișierul din 5 din cele 7 PR-uri ale noastre:
+
+* **#335** (`vicamo`, 20 aug) — pune `#if LINUX_VERSION_CODE < KERNEL_VERSION(4,2,0)` în jurul
+  completării descrierii de format, fiindcă `strncpy` dispare din kernel în 7.2. Atinge doar
+  `fthd_v4l2_ioctl_enum_fmt_vid_cap()`, funcție pe care **niciunul** din PR-urile noastre n-o atinge.
+* **#337** (`3within1`, 24 aug 13:18) — refuză suspend-ul cât camera e deschisă: `int users` devine
+  `atomic_t`, `open`/`release` proprii, `kfree(dev_priv)` și `pci_set_drvdata(NULL)` la teardown,
+  eroarea de probe propagată din resume. Niciunul din cele șapte diff-uri ale noastre nu pomenește
+  `users` (`grep -c` = 0 pe toate șapte). În practică nu ne schimbă nimic oricum — suspend-ul e
+  won't-fix permanent pe mașina asta.
+
+Testate toate **14 perechi** local (`merge` pe worktree, nu judecată din ochi): **zero conflicte**.
+
+**Verificarea proprie, iar: cele 11 comituri ale noastre, live vs local.** `patch-id` per comit,
+nu pe diff-ul cumulat — **11 din 11 identice**. Prima comparație pe care am făcut-o a raportat patru
+PR-uri „diferite"; era artefactul meu, comparam un `patch-id` cumulat cu câte unul per fișier de
+patch. Diferență reală a existat totuși, în altă parte: exportul local `patches/pr-live/` pentru
+**#329** și **#334** era cel **dinaintea** re-măsurării — purta tabelele vechi (`90.77` la #329,
+`1.092 s` la #334), nu cifrele publicate pe 23 aug. Live era corect, local era vechi. Reexportat;
+acum toate șapte sunt identice cu live, ignorând linia de semnătură a lui `git`.
 
 ### 3.3c 🔵 Auditul de declarare pe cele trei MR-uri PipeWire
 
