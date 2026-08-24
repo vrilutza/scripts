@@ -1120,6 +1120,62 @@ patch. Diferență reală a existat totuși, în altă parte: exportul local `pa
 `1.092 s` la #334), nu cifrele publicate pe 23 aug. Live era corect, local era vechi. Reexportat;
 acum toate șapte sunt identice cu live, ignorând linia de semnătură a lui `git`.
 
+### 3.3f 🔵 24 august — curățenie: ce a intrat upstream nu mai stă local, și bancul mutat pe master-ul de azi
+
+Odată ce !2954, !2964 și !2965 au intrat în master, copiile locale nu mai puteau decât să inducă în
+eroare: încarci un `.so` construit dintr-un patch care e deja în master și crezi că măsori efectul
+lui. S-a șters tot ce era acceptat, pe amândouă mașinile.
+
+**Verificat înainte de ștergere, nu presupus din nume.** Testul folosit: patch-ul se aplică
+**invers** curat pe `origin/master`? Dacă da, conținutul lui e deja acolo. Pentru cele două unde
+contextul se dusese prea departe (`B-generalizat`, `limitare-fractii`), verificarea a fost alta:
+helper-ul pe care îl introduc — `set_pref_int_range`, respectiv `fraction_to_gst` — e prezent în
+`src/gst/gstpipewireformat.c` pe master.
+
+| ce s-a șters (MacBook, `pipewire-5363/patches/`) | MR | unde e acum |
+|---|---|---|
+| `caps-any/` | !2933 | `c81badc1b` |
+| `p1-redus/`, `revizuit-5aug/trimise/mr2934/` | !2934 | `7a8e49384` |
+| `pe-master/0001-…`, `revizuit-5aug/trimise/mr2941/` | !2941 | `30ff8da17` |
+| `5431/0001-…-compound-controls-as-props.patch` | !2954 | `6734d69c8` |
+| `B-generalizat/B-generalizat.patch` | !2965 | `acea30afa` |
+| `fractii/limitare-fractii.patch` | !2965 | `c4309f0eb` |
+
+Uneltele de măsurătoare din `B-generalizat/` și `fractii/` au rămas — alea sunt bancul, nu patch-ul.
+
+**Un singur fișier șters n-a fost recuperabil din upstream** și merită spus: 
+`p1-v4l2-use-granted-buffer-count.patch`, ciorna lui P1 din 29 iulie, în forma dinaintea reviewului
+lui `pobrn`. Forma finală e în master (`7a8e49384`), iar povestea e în `retrase/CITESTE.md`, dar
+octeții exacți ai ciornei nu mai există nicăieri. Directorul `patches/` **nu e sub git** — e în
+`.gitignore` la `pipewire-5363/` — deci ștergerea de acolo e definitivă.
+
+**Au plecat și copiile vechi ale MR-urilor care sunt încă deschise.** Erau trei surse de adevăr
+pentru același comit (`pe-master/0002-…`, `p4b-…-copy-when-starving.patch`,
+`revizuit-5aug/trimise/mr2935/`), toate exporturi mai vechi. Acum e una singură:
+`patches/deschise/`, exportată din capetele live, cu md5-urile de referință în `CITESTE.md`:
+
+	!2935  83cdc11f5  b56296842a95d9313174b02d688bb5ba   2 fișiere, +52/−2
+	!2950  cfd72f706  4de35f7391a3ea8843dd4f47d9290246   1 fișier,  +36/−3
+	!2951  a39b6f20e  906314dcd11f8287d208315b0d8971d1   1 fișier,  +5/−1
+	!2963  133c5b933  bc924d485f89a35f4e464847b0f129f0   1 fișier,  +10/−10
+
+**Pe Lenovo, în `~/pw-test`:** 25 de ramuri șterse și 8 worktree-uri cu tot cu build-urile lor.
+Rămăseseră ramuri pentru fiecare variantă măsurată vreodată — `v-A`, `v-B`, `v-C`, `t-doar-pas`,
+`t-fara-pas`, `rb2954`, `v4l2-payload`, `tmp-efect` — plus combinații (`toate`, `ambele`) construite
+peste un master de acum două săptămâni. Au plecat și **139 MB de `.so`-uri de variantă**
+(`so/`, `so-asan/`, `gst-var/`, `gst-asan/`, `spa-ctrl/`, `spa-nomap/`), construite între 15 și 22
+august: toate reproductibile, niciuna pe master-ul de azi. Au rămas `dump-props/` și `confd/`, care
+sunt date, nu binare.
+
+Ce a rămas pe Lenovo: `master` pe `69187d4cd` și exact patru ramuri, `mr2935 mr2950 mr2951 mr2963`,
+fiecare fixată pe capul live al MR-ului.
+
+**Bancul de pe MacBook e acum pe clone proaspete.** `git clone` nou pentru amândouă, în ziua
+verificării: `pw` pe `69187d4cd`, `wp` pe `5019de2a`. Vechile clone au rămas alături ca `pw.vechi` și
+`wp.vechi` până se confirmă că nu lipsește nimic din ele. Adăugat `verif-mr/actualizeaza.sh`, care
+aduce amândouă proiectele la ultimul master și reîmprospătează cele patru `refs/mr/*` dintr-o
+comandă — ca „bancul e vechi" să nu mai fie o stare în care poți ajunge fără să vrei.
+
 ### 3.3c 🔵 Auditul de declarare pe cele trei MR-uri PipeWire
 
 Întrebarea care l-a declanșat: dacă !2950 se sprijinea nedeclarat pe un driver modificat local, are
@@ -1385,7 +1441,8 @@ Măsurători complete: `results/MATRICE-18aug.md`. **Nimic nu s-a trimis**: patc
 două comituri: `23f742e59` *do not expose compound controls as props* (forma lui `pobrn`, cu
 `Suggested-by:`) și `c940697ce` *keep reading the other controls when one cannot be read*.
 Patch-uri exportate în `pipewire-5363/patches/5431/`, descrierea MR-ului în
-`results/MR-5431-DESCRIERE.md`.
+`results/MR-5431-DESCRIERE.md`. *(Directorul a dispărut pe 24 august: primul comit e în master ca
+`6734d69c8`, al doilea a devenit !2963 și stă acum în `patches/deschise/2963/`.)*
 
 **Trimis pe 19 august ca [!2954](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2954)**
 — ramura `v4l2-compound-controls` pe fork, țintă `master`, `mergeable`, fără conflicte, `+15 -11`
@@ -2206,8 +2263,9 @@ simptomul real: enumerarea dispozitivelor.
 **Nimic trimis.** Toate trei presupun `--force-with-lease` pe !2950, deci rămâne condiția: după ce
 revine pobrn la fir.
 
-Raport: `pipewire-5363/results/B-GENERALIZAT-22aug.md`. Patch-ul și uneltele:
-`pipewire-5363/patches/B-generalizat/`.
+Raport: `pipewire-5363/results/B-GENERALIZAT-22aug.md`. Uneltele:
+`pipewire-5363/patches/B-generalizat/` — patch-ul însuși a fost șters pe 24 august, e în master ca
+`acea30afa`.
 
 ### 3.2u 🟢 22 august — cele șapte MR-uri verificate pe MacBookPro14,1, de la zero
 
