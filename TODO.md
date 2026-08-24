@@ -79,7 +79,7 @@ deja" vreuna dintre reparații.
 | [pipewire !2954](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2954) | enumerarea `SPA_PARAM_Props` cădea din cauza unui singur control | ✅ **acceptat în master** `6734d69c8` (24 aug, `wtaymans`), rebazat, diff și mesaj identice cu ce trimisesem, autor păstrat. Trimis 19 aug cu **două** comituri; **decuplat pe 21 aug** la unul singur, `23f742e59` (forma lui `pobrn`, cu `Suggested-by:`). Al doilea comit — citirea non-fatală — a plecat în !2963, fiindcă era **nemăsurat**; între timp a fost măsurat pe un driver scris anume ([secțiunea 3.2p](#32p--21-august--2954-decuplat-și-comitul-al-doilea-măsurat-pe-un-driver-scris-anume)). 👍 de la `rmader`, aprobat de `pobrn` |
 | [pipewire !2964](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2964) | pasul unui interval de dimensiuni era raportat ca maxim | ✅ **acceptat în master** `cefb4e926` (24 aug), **fast-forward**, sha neschimbat. 👍 de la `rmader`, aprobat de `pobrn`. Desprins din !2950 pe 22 aug, fiindcă măsurătoarea a arătat că e alt defect |
 | [pipewire !2965](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2965) | două defecte la conversia unui `SPA_CHOICE` în `GstCaps`: valoarea preferată era pierdută, iar o fracție care nu încape într-un `GstFraction` era scrisă greșit | ✅ **acceptat în master** `acea30afa` + `c4309f0eb` (24 aug), **fast-forward**. Intrat **fără** aprobare de la `pobrn` — dovadă că aprobarea lui e semnal de recenzie, nu poartă de merge. A înghițit !2966, închis ca dublură |
-| [pipewire !2963](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2963) | un singur control necitibil oprea actualizarea tuturor celorlalte | 🔵 deschis, al doilea comit desprins din !2954, măsurat pe un driver scris anume. Etichetat de `pobrn` pe 22 aug dar **neaprobat** — e chiar forma pentru care el propusese altceva pe `#5431`. Nu e redundant după merge-ul lui !2954: acela atinge `spa_v4l2_enum_controls()`, ăsta `spa_v4l2_update_controls()` |
+| [pipewire !2963](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2963) | un singur control necitibil oprea actualizarea tuturor celorlalte | 🔵 deschis, al doilea comit desprins din !2954, măsurat pe un driver scris anume. Etichetat de `pobrn` pe 22 aug dar **neaprobat** — e chiar forma pentru care el propusese altceva pe `#5431`. Nu e redundant după merge-ul lui !2954: acela atinge `spa_v4l2_enum_controls()`, ăsta `spa_v4l2_update_controls()`. **Retestat 24 aug pe master-ul de azi**: fără el, camera de test **nu apare deloc** în graf ([3.3g](#33g--24-august--cap-coadă-pe-lenovo-suitele-upstream-apoi-fiecare-mr-pe-hardware)) |
 | [facetimehd #334](https://github.com/patjak/facetimehd/pull/334) | AE se așează în 200 ms, nu într-o secundă, la fiecare STREAMON | 🔵 trimis 15 aug, peste [#328](https://github.com/patjak/facetimehd/pull/328) |
 | [wireplumber #986](https://gitlab.freedesktop.org/pipewire/wireplumber/-/work_items/986) | un nod de cameră `vivid` nu primește niciodată session item, deci clientul pică cu `target not found` | 🔵 **trimis 17 aug**, **primul răspuns de întreținător** în aceeași zi: `julian` a cerut testare cu !876. Testat — presupunerea lui (activare eșuată) e **falsă**; **cauza reală e în PipeWire**: `spa_v4l2_enum_controls()` înregistrează un control cu payload, `VIDIOC_G_CTRL` dă EINVAL și toată enumerarea `Props` cade. Patch de 7 linii, A/B alternat, plus trei probe de infirmare, toate trecute. ✅ **Răspuns postat 18 aug** (nota `3619570`) și **descrierea corectată în patru locuri** — rândul `1.0.5 → works` retras, secțiunea „Where I stopped" înlocuită cu „Cause". Verificat după: comentarii 1 → 2. Defectul e în **PipeWire**, se reproduce de la **1.3.81** încolo ([3.2h](#32h--17-august-seara--986-cauza-găsită-și-în-alt-loc-decât-credeau-toți)–[3.2m](#32m--18-august--postat-si-o-corectie-proprie-105-nu-arata-defectul)). Patch încă **local**, MR abia după ce răspunde |
 | [pipewire #5363](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/5363) | raportul de bază | 🔵 deschis, fără răspuns de mentenanț din 11 iulie; !2935 îl **închide automat la merge** (`Closes #5363`, verificat prin API) |
@@ -1171,10 +1171,144 @@ Ce a rămas pe Lenovo: `master` pe `69187d4cd` și exact patru ramuri, `mr2935 m
 fiecare fixată pe capul live al MR-ului.
 
 **Bancul de pe MacBook e acum pe clone proaspete.** `git clone` nou pentru amândouă, în ziua
-verificării: `pw` pe `69187d4cd`, `wp` pe `5019de2a`. Vechile clone au rămas alături ca `pw.vechi` și
-`wp.vechi` până se confirmă că nu lipsește nimic din ele. Adăugat `verif-mr/actualizeaza.sh`, care
+verificării: `pw` pe `69187d4cd`, `wp` pe `5019de2a`. Vechile clone au fost verificate întâi —
+aveau exact aceleași patru ramuri și niciun comit propriu nepublicat — și abia apoi șterse. Adăugat `verif-mr/actualizeaza.sh`, care
 aduce amândouă proiectele la ultimul master și reîmprospătează cele patru `refs/mr/*` dintr-o
 comandă — ca „bancul e vechi" să nu mai fie o stare în care poți ajunge fără să vrei.
+
+### 3.3g 🔵 24 august — cap-coadă pe Lenovo: suitele upstream, apoi fiecare MR pe hardware
+
+Bancul reconstruit de la zero pe `pipewire 69187d4cd` + `wireplumber 5019de2a`, două variante
+compilate identic (`-Dtests=enabled`, restul opțiunilor la fel):
+
+* **`wt-curat`** — master gol
+* **`wt-pr`** — master + cele patru MR-uri deschise, `cherry-pick`, cu `patch-id` verificat comit cu
+  comit față de capetele live: **4 din 4 identice**
+
+WirePlumber a fost recompilat **contra arborelui nostru** de pipewire (`libpipewire 1.7.0`), nu
+contra celui de sistem — pe Lenovo ăla e `1.0.5`, adică altceva decât ce testăm. Pe MacBook nici nu
+există `libspa-0.2` de sistem, deci acolo era obligatoriu oricum.
+
+**1. Compilarea: zero avertismente noi.** Trei avertismente pe fiecare variantă, aceleași trei
+(`plugin_sofa.c` `res` posibil neinițializat, `websocket.c` `asprintf` ×2) — toate în cod pe care
+nu-l atingem. Diferența dintre listele de avertismente e **goală**.
+
+**2. Suitele upstream — toate trec.**
+
+| suita | rezultat |
+|---|---|
+| pipewire, `wt-curat` | **52 Ok**, 0 Fail, 0 Skipped, 0 Timeout |
+| pipewire, `wt-pr` | **52 Ok**, 0 Fail, 0 Skipped, 0 Timeout |
+| wireplumber | **55 Ok**, 0 Fail, 0 Skipped, 0 Timeout |
+
+Verificat că nu e doar același *număr*: mulțimile de nume de teste sunt identice între variante
+(diferă doar ordinea, fiindcă rulează în paralel). Prima comparație pe care o făcusem raporta
+„identice" pe două fișiere **goale** — `sed`-ul picase și comparam nimic cu nimic. Refăcută.
+
+**3. Fiecare MR, pe hardware, alternat între variante.** Pluginul încărcat verificat de fiecare dată
+prin md5: `fc29834e0327` pentru `wt-curat`, `fbdf4684f218` pentru `wt-pr` — deci chiar se testează
+două binare diferite.
+
+**!2935 — consumatorul ține tot pool-ul.** Cadre livrate în 5 s, cameră UVC:
+
+	hold     1     2     4     6     8    12    16
+	curat   38    38     4     4     4     4     4
+	cu-pr   38    38    32    32    31    31    30
+
+Sub dimensiunea pool-ului (4) nu e nicio diferență. De la 4 în sus master-ul livrează **exact patru
+cadre și apoi tace definitiv**; cu patch-ul fluxul merge mai departe. Reprodus de două ori, în două
+rulări separate.
+
+**!2951 — reconfigure din mers.** `reconf3.py`, aval cu caps concrete, eveniment `reconfigure` la
+2 s și la 4 s:
+
+	curat   30 cadre | primul la 1614 ms | pauze >200 ms: 2  (1517 ms, 1513 ms)
+	cu-pr   54 cadre | primul la 1615 ms | pauze >200 ms: 0
+
+Cele două pauze de ~1,5 s sunt exact cele două reporniri de flux. Reprodus identic în a doua rulare
+(1618/1514 ms, respectiv 0).
+
+**Riscul lui !2951, testat separat:** scurtătura ar putea sări peste o renegociere *chiar* necesară.
+Probă: pornit la 640x480, cerut 1280x720 din mers.
+
+	cerere realizabila (1280x720 @ 10 fps)   curat: 1280x720, 31 cadre   cu-pr: 1280x720, 31 cadre
+	cerere imposibila  (1280x720 @ 30 fps)   curat:  640x480,  1 cadru   cu-pr:  640x480,  1 cadru
+
+Identic pe ambele. **Prima rulare a raportat „PROBLEMA" pe amândouă** și era proba mea de vină:
+`schimba-format.py` cere `1280x720@30` în YUY2, iar camera asta face 1280x720 doar la 10 fps. Cu o
+cerere realizabilă comutarea se face pe ambele — deci scurtătura **nu** sare peste renegocierea
+necesară.
+
+**!2950 — dimensiunea pe care sursa o produce nativ.** Pe `vivid`, singura sursă cu dimensiuni
+STEPWISE (16x16 – 16384x8640, pas 2). Prima intrare din `EnumFormat`:
+
+	intrare vivid   CROP_BOUNDS   curat        cu-pr
+	TV (1)          720x576       16x16    →   720x576
+	HDMI (3)        1280x720      16x16    →   1280x720
+
+`min` și `max` rămân neatinse în ambele cazuri (16x16 / 16384x8640), deci un consumator care *are* o
+preferință găsește în continuare tot intervalul. Și valoarea **urmărește dispozitivul**, nu e o
+constantă: se schimbă cu intrarea, exact odată cu `CROP_BOUNDS`.
+
+**!2963 — un control necitibil.** Pe `failctrl`, driverul scris anume, al cărui control VOLATILE
+`Gain` întoarce `-EIO` din `g_volatile_ctrl`. Rezultatul e mai tare decât „proprietăți lipsă":
+
+	wt-curat   nodul NU APARE DELOC in graf
+	wt-pr      nod prezent, 6 PropInfo, Props cu brightness/contrast/gain
+
+Nu dedus — scris în jurnalul WirePlumber:
+
+	Failed to activate V4L2 node v4l2_input._sys_devices_virtual_video4linux_video3:
+	Object activation aborted: enum params id:2 (Spa:Enum:ParamId:Props) failed
+
+Verificat și că nu e o chestiune de timp: cu 8 s în plus de așteptare, pe master apar patru obiecte
+`Video/Device` dar tot **două** noduri `Video/Source` — camera de test lipsește. Adică pe master-ul
+de azi, **cu !2954 deja înăuntru**, !2963 e diferența dintre o cameră care există și una care nu
+există deloc pentru aplicații.
+
+**4. Și un defect care nu e al nostru, găsit pe drum.**
+
+Blocul 2 din `neregresie.sh` dădea **0 cadre la orice rezoluție**, pe amândouă variantele. Nu e
+regresie — e un defect pe master curat, iar reproducătorul e de o linie:
+
+	gst-launch-1.0 pipewiresrc ! "video/x-raw,width=640,height=480" ! fakesink
+
+	** CRITICAL **: handle_format_change: assertion 'gst_caps_is_fixed (pwsrc->caps)' failed
+	ERROR: stream error: error use input buffers: -22 (Invalid argument)
+
+Matricea care izolează condiția:
+
+	video/x-raw                                   CRITICAL + -22
+	video/x-raw,width=640,height=480              CRITICAL + -22
+	video/x-raw,framerate=30/1                    CRITICAL + -22
+	video/x-raw,format=YUY2                       OK
+	video/x-raw,format=YUY2,width=640,height=480  OK
+	image/jpeg                                    OK
+	image/jpeg,width=640,height=480               OK
+
+Deci: **caps de video brut fără câmpul `format`**. Mecanismul, din `GST_DEBUG=pipewiresrc:6`:
+
+	peer caps      image/jpeg, width=640, height=480, framerate=30/1, colorimetry=2:4:5:1
+	possible caps  video/x-raw, width=640, height=480
+	CRITICAL: assertion 'gst_caps_is_fixed (pwsrc->caps)' failed
+
+Serverul răspunde cu **`image/jpeg`** deși filtrul cerea `video/x-raw`; în `handle_format_change`
+intersecția dintre `image/jpeg` și `video/x-raw` e **vidă**, `gst_caps_fixate()` pe caps vide dă tot
+vid, iar `g_return_if_fail (gst_caps_is_fixed (...))` cade, fiindcă „fix" înseamnă *exact o*
+structură, iar aici sunt zero.
+
+Filtrul e onorat **pe jumătate**: cu `width=99999,height=99999` eroarea e alta (`set output format:
+-22`), deci constrângerea de dimensiune ajunge la server; subtipul nu.
+
+Condiții: **nu se reproduce pe MacBook** (facetimehd oferă doar YUYV/YVYU, n-are ce alege greșit);
+apare pe camera UVC de pe Lenovo, care oferă și MJPG. Se reproduce și pe pipewire **1.0.5** de
+sistem, cu altă eroare și fără CRITICAL — deci vechi, nu regresie recentă.
+
+**E deja raportat upstream, și de mult:** [pipewire#4665](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/4665),
+deschis **23 aprilie 2025** de `mahkoh`, ultima activitate 25 august 2025, **zero note, zero
+upvotes**. Raportul de acolo n-are decât „Weylus sub Jay nu pornește" — niciun reproducător.
+Noi avem o linie de `gst-launch-1.0`, condiția exactă (caps brute fără `format`, pe o sursă care
+oferă și un format comprimat) și mecanismul. **Nu s-a postat nimic** — se decide separat.
 
 ### 3.3c 🔵 Auditul de declarare pe cele trei MR-uri PipeWire
 
