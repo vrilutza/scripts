@@ -1308,7 +1308,18 @@ sistem, cu altă eroare și fără CRITICAL — deci vechi, nu regresie recentă
 deschis **23 aprilie 2025** de `mahkoh`, ultima activitate 25 august 2025, **zero note, zero
 upvotes**. Raportul de acolo n-are decât „Weylus sub Jay nu pornește" — niciun reproducător.
 Noi avem o linie de `gst-launch-1.0`, condiția exactă (caps brute fără `format`, pe o sursă care
-oferă și un format comprimat) și mecanismul. **Nu s-a postat nimic** — se decide separat.
+oferă și un format comprimat) și mecanismul.
+
+**Postat pe 24 august**, la cerere — nota `3629375`, prima notă de pe tichet în 16 luni. Înainte de
+postare lanțul a fost verificat **empiric**, nu dedus din citirea codului: intersecția
+`image/jpeg` ∩ `video/x-raw` iese `EMPTY` cu `size=0`, `fixate()` o lasă `EMPTY`, iar `is_fixed()`
+pe caps vide întoarce `False` — deci `g_return_if_fail` cade fiindcă „fix" cere *exact o* structură,
+iar acolo sunt zero. Verificat după: note **0 → 1**, una singură, a noastră; tabelul și cele 7
+blocuri de cod se randează corect (verificat prin `/api/v4/markdown`, nu presupus).
+
+Formulat ca al doilea punct de date, nu ca „e același bug": raportul original e un caz de
+screencast, al nostru e o cameră V4L2, iar dacă e aceeași cale sau doar aceeași aserțiune nu am de
+unde să știu.
 
 ### 3.3c 🔵 Auditul de declarare pe cele trei MR-uri PipeWire
 
