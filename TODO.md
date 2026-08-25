@@ -92,7 +92,7 @@ deja" vreuna dintre reparații.
 
 | Unde | Ce | Ce am adus |
 |---|---|---|
-| [pipewire #4797](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/4797) | `buffer was not recycled` cu `x264enc`, două webcam-uri USB, pool ~16 | `@arun` descrie exact mecanismul și numește fix-ul ca nescris încă. **Reprodus pe 16 aug** cu un encoder adevărat, pe a doua mașină. **Raportorul a răspuns pe 18 aug** — spune că încearcă !2935 în vreo săptămână și revine cu rezultatul; ratat până pe 25 aug ([3.3i](#33i--25-august--trecere-peste-tot-unde-am-scris-nu-doar-peste-ce-am-trimis)) |
+| [pipewire #4797](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/4797) | `buffer was not recycled` cu `x264enc`, două webcam-uri USB, pool ~16 | `@arun` descrie exact mecanismul și numește fix-ul ca nescris încă. **Reprodus pe 16 aug** cu un encoder adevărat, pe a doua mașină. **Raportorul a răspuns pe 18 aug**: încearcă !2935 și revine cu rezultatul, deci nu cere nimic de la noi; ratat până pe 25 aug ([3.3i](#33i--25-august--trecere-peste-tot-unde-am-scris-nu-doar-peste-ce-am-trimis)) |
 | [pipewire #2489](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/2489) | deschis din 2022, același tip de pipeline | workaround-ul confirmat acolo e `always-copy=true` — adică fix ce automatizează !2935 |
 | [pipewire #4174](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/4174) | producătorul suprascrie un buffer pe care consumatorul încă îl ține | deschis din **august 2024**, un singur răspuns, argumentat exclusiv din citit cod. **Comentat pe 16 aug** (nota `3617445`) cu primul reproducător: bugetul din „*consumers are supposed to use them before they are reused*" e `pool / rată de cadre`, adică ~0,7 s la pool 4 |
 | [pipewire #4863](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/4863) | același defect, ridicat de `pobrn` în august 2025 pentru noduri async | **Comentat pe 16 aug** (nota `3617448`): mai multe buffere nu elimină cursa, doar lungesc fereastra — ceea ce susține punctul lui `pobrn` rămas fără răspuns |
@@ -1457,7 +1457,9 @@ scris pe **18 august** (nota `3619586`):
 > so and report what happens.
 
 E răspuns direct la comentariul nostru din 15 august, care leagă #4797 de #5363 și îi arată !2935.
-„În vreo săptămână" de pe 18 august înseamnă **chiar acum**. Nu s-a răspuns nimic — se decide separat.
+**Nu e nimic de răspuns și nu e nicio decizie de luat**: a spus că încearcă !2935 și revine cu
+rezultatul, deci mingea e la el. Singurul lucru care contează e că, de pe 18 august, cineva din
+afară testează patch-ul — al doilea semnal de genul ăsta pe !2935, după cel de la `rmader`.
 
 De ce l-am ratat: trecerile din 23 și 24 august s-au uitat la MR-uri și PR-uri, adică la ce am
 *trimis*, nu la tichetele unde doar *comentasem*. Contoarele de pe MR-uri nu se mișcă de la un
