@@ -80,11 +80,11 @@ deja" vreuna dintre reparații.
 | [pipewire !2964](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2964) | pasul unui interval de dimensiuni era raportat ca maxim | ✅ **acceptat în master** `cefb4e926` (24 aug), **fast-forward**, sha neschimbat. 👍 de la `rmader`, aprobat de `pobrn`. Desprins din !2950 pe 22 aug, fiindcă măsurătoarea a arătat că e alt defect |
 | [pipewire !2965](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2965) | două defecte la conversia unui `SPA_CHOICE` în `GstCaps`: valoarea preferată era pierdută, iar o fracție care nu încape într-un `GstFraction` era scrisă greșit | ✅ **acceptat în master** `acea30afa` + `c4309f0eb` (24 aug), **fast-forward**. Intrat **fără** aprobare de la `pobrn` — dovadă că aprobarea lui e semnal de recenzie, nu poartă de merge. A înghițit !2966, închis ca dublură |
 | [pipewire !2963](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2963) | un singur control necitibil oprea actualizarea tuturor celorlalte | 🔵 deschis, al doilea comit desprins din !2954, măsurat pe un driver scris anume. Etichetat de `pobrn` pe 22 aug dar **neaprobat** — e chiar forma pentru care el propusese altceva pe `#5431`. Nu e redundant după merge-ul lui !2954: acela atinge `spa_v4l2_enum_controls()`, ăsta `spa_v4l2_update_controls()`. **Retestat 24 aug pe master-ul de azi**: fără el, camera de test **nu apare deloc** în graf ([3.3g](#33g--24-august--cap-coadă-pe-lenovo-suitele-upstream-apoi-fiecare-mr-pe-hardware)) |
-| [facetimehd #334](https://github.com/patjak/facetimehd/pull/334) | AE se așează în 200 ms, nu într-o secundă, la fiecare STREAMON | 🔵 trimis 15 aug, peste [#328](https://github.com/patjak/facetimehd/pull/328) |
+| [facetimehd #334](https://github.com/patjak/facetimehd/pull/334) | AE se așează în 200 ms, nu într-o secundă, la fiecare STREAMON | 🔵 trimis 15 aug; **deschis și după integrarea lui #328 pe 25 aug** — cele două comituri ale lui (`msleep` mutat aici pe 23 aug + pragul de 200 ms) nu sunt în master |
 | [wireplumber #986](https://gitlab.freedesktop.org/pipewire/wireplumber/-/work_items/986) | un nod de cameră `vivid` nu primește niciodată session item, deci clientul pică cu `target not found` | 🔵 **trimis 17 aug**, **primul răspuns de întreținător** în aceeași zi: `julian` a cerut testare cu !876. Testat — presupunerea lui (activare eșuată) e **falsă**; **cauza reală e în PipeWire**: `spa_v4l2_enum_controls()` înregistrează un control cu payload, `VIDIOC_G_CTRL` dă EINVAL și toată enumerarea `Props` cade. Patch de 7 linii, A/B alternat, plus trei probe de infirmare, toate trecute. ✅ **Răspuns postat 18 aug** (nota `3619570`) și **descrierea corectată în patru locuri** — rândul `1.0.5 → works` retras, secțiunea „Where I stopped" înlocuită cu „Cause". Verificat după: comentarii 1 → 2. Defectul e în **PipeWire**, se reproduce de la **1.3.81** încolo ([3.2h](#32h--17-august-seara--986-cauza-găsită-și-în-alt-loc-decât-credeau-toți)–[3.2m](#32m--18-august--postat-si-o-corectie-proprie-105-nu-arata-defectul)). Patch încă **local**, MR abia după ce răspunde |
 | [pipewire #5363](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/5363) | raportul de bază | 🔵 deschis, fără răspuns de mentenanț din 11 iulie; !2935 îl **închide automat la merge** (`Closes #5363`, verificat prin API) |
 | [snapshot #367](https://gitlab.gnome.org/GNOME/snapshot/-/work_items/367) | viewfinder înghețat pe primul cadru | 🔵 deschis, **1 upvote** — altcineva a confirmat bug-ul (8 aug). Mentenantul a propus [!464](https://gitlab.gnome.org/GNOME/snapshot/-/merge_requests/464) (`min-buffers=8`); infirmat cu măsurători pe 10 aug — pe camera asta dă **0 cadre**, nu e un fix. !464 e încă deschis, nemerged |
-| [facetimehd #328…#334](https://github.com/patjak/facetimehd/pulls) | șapte PR-uri de driver (vezi [secțiunea 3.3](#33--driver--șapte-pr-uri-la-patjakfacetimehd)) | 🟡 toate deschise, zero review-uri — dar **`patjak` a răspuns pe 15 aug**, primul semn de la întreținător: nu primise notificări, se uită peste ele. **Toate verificate prin măsurătoare pe 17 aug**, master curat față de master+PR ([3.3a](#33a--17-august--fiecare-patch-verificat-prin-măsurătoare)); doar #332 rămâne netestabil. Menționează că cineva ar fi trimis driverul în kernelul upstream — **confirmat pe 23 aug** prin API-ul patchwork de la linuxtv: seria lui `Jack Flusche`, 5 patch-uri în `drivers/media/pci/facetimehd/`, trimisă 13 aug și **retrimisă identic** pe 20 aug, stare `new`, **zero comentarii**. Cară **șase din șapte** defecte ale noastre ([3.3d](#33d--23-august--verificare-live-nimic-nou-nicăieri-în-afară-de-un-resend-în-linux-media)). Pe **24 aug** au apărut doi vecini în depozit, `#335` și `#337`, amândoi în `fthd_v4l2.c` — testate toate 14 perechi, **zero conflicte** ([3.3e](#33e--24-august--wtaymans-a-integrat-trei-mr-uri-patru-comituri-de-ale-noastre-în-pipewiremaster)) |
+| [facetimehd #328…#334](https://github.com/patjak/facetimehd/pulls) | șapte PR-uri de driver (vezi [secțiunea 3.3](#33--driver--șapte-pr-uri-la-patjakfacetimehd)) | 🟡 toate deschise, zero review-uri — dar **`patjak` a răspuns pe 15 aug**, primul semn de la întreținător: nu primise notificări, se uită peste ele. **Toate verificate prin măsurătoare pe 17 aug**, master curat față de master+PR ([3.3a](#33a--17-august--fiecare-patch-verificat-prin-măsurătoare)); doar #332 rămâne netestabil. Menționează că cineva ar fi trimis driverul în kernelul upstream — **confirmat pe 23 aug** prin API-ul patchwork de la linuxtv: seria lui `Jack Flusche`, 5 patch-uri în `drivers/media/pci/facetimehd/`, trimisă 13 aug și **retrimisă identic** pe 20 aug, stare `new`, **zero comentarii**. Cară **șase din șapte** defecte ale noastre ([3.3d](#33d--23-august--verificare-live-nimic-nou-nicăieri-în-afară-de-un-resend-în-linux-media)). Pe **24 aug** au apărut doi vecini în depozit, `#335` și `#337`, amândoi în `fthd_v4l2.c` — testate toate 14 perechi, **zero conflicte** ([3.3e](#33e--24-august--wtaymans-a-integrat-trei-mr-uri-patru-comituri-de-ale-noastre-în-pipewiremaster)). Pe **25 aug** `patjak` a integrat primele două: **#328 și #330 sunt în `master`**, `fad52fa07` și `b7bddfe9b`, trei comituri cu `patch-id` identic cu ce trimisesem, fără squash și fără rebazare. `master` s-a mutat prima oară din 30 iunie, `364b1c6` → `54fb8f2`. Cele cinci rămase se aplică în continuare curat, și pe master-ul nou și peste `#337` ([3.3j](#33j--25-august--patjak-a-integrat-primele-două-pr-uri-cinci-rămân)) |
 | [snd_hda_macbookpro #187](https://github.com/davidjo/snd_hda_macbookpro/issues/187) | `install.cirrus.driver.sh` pică pe Debian (`.tar.xz`) și pe kerneluri `-rc` (404 la kernel.org) | 🔵 deschis, 7 comentarii |
 | [snd_hda_macbookpro #189](https://github.com/davidjo/snd_hda_macbookpro/pull/189) | fix: folosește sursa de kernel instalată local | 🔵 deschis, 1 comentariu |
 
@@ -644,22 +644,23 @@ obiecte se umple la boot cu alocări de lungă durată, și de atunci refuză t�
 prima fază a arătat `skipped allocations (capacity): 121648` și **zero** eșantioane reale. Verifică
 întotdeauna acel contor înainte să crezi un „zero bug-uri".
 
-### 3.3 🔵 Driver — șapte PR-uri la `patjak/facetimehd`
+### 3.3 🔵 Driver — șapte PR-uri la `patjak/facetimehd`, două integrate
 
-Toate deschise, `MERGEABLE`, bazate direct pe `364b1c6`, și verificate că se aplică și **toate
-împreună**, fără conflict. `patjak` a răspuns pe 15 august — primul semn de la întreținător — și
-spune că se uită peste ele; vezi [3.3a](#33a--17-august--fiecare-patch-verificat-prin-măsurătoare).
+**Pe 25 august `patjak` a integrat #328 și #330.** Restul de cinci sunt deschise și verificate
+că se aplică și toate împreună, fără conflict, pe `master`-ul de azi (`54fb8f2`); vezi
+[3.3j](#33j--25-august--patjak-a-integrat-primele-două-pr-uri-cinci-rămân) și
+[3.3a](#33a--17-august--fiecare-patch-verificat-prin-măsurătoare).
 
 | PR | Ce repară |
 |---|---|
-| [#328](https://github.com/patjak/facetimehd/pull/328) | `break` lipsă la AWB, `FTHD_BUFFERS` în loc de literalul 4, `mdelay`→`msleep` (o secundă de CPU ars la fiecare STREAMON) |
+| [#328](https://github.com/patjak/facetimehd/pull/328) | ✅ **în master** `fad52fa07` (25 aug) — `break` lipsă la AWB, `FTHD_BUFFERS` în loc de literalul 4, `mdelay`→`msleep` (o secundă de CPU ars la fiecare STREAMON) |
 | [#329](https://github.com/patjak/facetimehd/pull/329) | controalele erau aruncate la fiecare STREAMON; `ALIGN(width, 7)` — nu e putere a lui doi, deci era pur și simplu stricat |
-| [#330](https://github.com/patjak/facetimehd/pull/330) | decupare **centrată**: orice rezoluție sub senzor întorcea colțul din stânga-sus |
+| [#330](https://github.com/patjak/facetimehd/pull/330) | ✅ **în master** `b7bddfe9b` (25 aug) — `cmd.y2` scris de două ori, `cmd.y1` niciodată, în comanda de decupare. *Rescrierea decupajului centrat a rămas deoparte, `n-330b`, netrimisă* |
 | [#331](https://github.com/patjak/facetimehd/pull/331) | `ENUM_FRAMESIZES` raportează intervalul real, nu o singură dimensiune |
 | [#332](https://github.com/patjak/facetimehd/pull/332) | un singur timeout de firmware lăsa camera fără buffere până la reîncărcarea modulului |
 | [#333](https://github.com/patjak/facetimehd/pull/333) | **coruperea de memorie**: până la 4095 de octeți scriși *înaintea* bufferului, când acesta nu începe pe graniță de pagină |
 
-| [#334](https://github.com/patjak/facetimehd/pull/334) | așteptarea AE de la fiecare STREAMON: 1000 ms → 200 ms *(stivuit peste #328, îl conține)* |
+| [#334](https://github.com/patjak/facetimehd/pull/334) | așteptarea AE de la fiecare STREAMON: 1000 ms → 200 ms, plus `mdelay`→`msleep` *(comitul mutat aici din #328 pe 23 aug, deci n-a intrat cu #328)* |
 
 Driverul instalat pe mașină e **exact** suma lor *(verificat prin `diff -rq` pe 8 aug)*, construit
 pentru ambele kerneluri. Scriptul de instalare/revenire e local, în
@@ -1486,6 +1487,63 @@ măsurat pe 24 august pe master-ul de azi (deci cu !2954 înăuntru), fără !29
 | snapshot `#367` / `!464` | ultima notă e a noastră (10 aug); `!464` nemerged | `msandova`, 8 aug |
 | `snd_hda_macbookpro #187` / `#189` | neschimbate | `davidjo`, **5 iul** |
 | serie `linux-media` (RESEND 20 aug) | toate 5 patch-urile `new`, **zero comentarii** | — |
+| notificări GitHub / todo-uri GitLab | **0** / **0** | — |
+
+### 3.3j 🔵 25 august — `patjak` a integrat primele două PR-uri; cinci rămân
+
+Prima mișcare a întreținătorului de `facetimehd` de la răspunsul din 15 august. **#328 și #330 au
+intrat în `master`**, la 25 august dimineața:
+
+| PR | Integrat la | Comit de îmbinare | Ce a intrat |
+|---|---|---|---|
+| [#328](https://github.com/patjak/facetimehd/pull/328) | **06:53Z** | `fad52fa07` | `6a1b5f2` *cap the buffer count with FTHD_BUFFERS, not a literal 4* + `e82e363` *add the missing break after the auto white balance case* |
+| [#330](https://github.com/patjak/facetimehd/pull/330) | **07:51Z** | `b7bddfe9b` | `2713264` *isp: assign y1 in the crop command* |
+
+**Nu s-a schimbat nimic în ele.** Verificat cu `patch-id --stable`, comit cu comit, între ramurile
+noastre și `master`:
+
+| Comit | `patch-id` trimis | `patch-id` în master |
+|---|---|---|
+| `6a1b5f2` | `12cb2183ea2e` | `12cb2183ea2e` |
+| `e82e363` | `1df5aabe0a4f` | `1df5aabe0a4f` |
+| `2713264` | `4419338d8dac` | `4419338d8dac` |
+
+Îmbinări adevărate, nu `squash` și nu rebazare — autor și mesaje păstrate. **Zero comentarii** la
+integrare: le-a luat fără să scrie nimic, deci nu e nimic de răspuns.
+
+**`master` s-a mutat prima oară din 30 iunie:** `364b1c6` → `54fb8f2`. Între ale noastre a intrat și
+`#335` al lui `vicamo` (`05b8f99`, *omit filling format description when >= v4.2*), tot azi.
+
+**Cele cinci rămase se aplică în continuare curat.** Testat cu `merge-tree --write-tree` pe
+`54fb8f2`, plus toate perechile cu vecinul `#337`, care e încă deschis:
+
+| PR | Comituri | Pe `master`-ul nou | Cu `#337` | Fișiere |
+|---|---|---|---|---|
+| #329 | 1 | curat | fără conflict | `fthd_isp.c`, `fthd_v4l2.c` |
+| #331 | 2 | curat | fără conflict | `fthd_v4l2.c` |
+| #332 | 1 | curat | fără conflict | `fthd_v4l2.c` |
+| #333 | 2 | curat | fără conflict | `fthd_buffer.c`, `fthd_v4l2.c` |
+| #334 | 2 | curat | fără conflict | `fthd_isp.c` |
+
+`#334` își păstrează cele două comituri: `mdelay`→`msleep` a plecat din #328 la #334 pe 23 august,
+deci n-a intrat acum cu #328 și nu s-a dublat nimic.
+
+**În rest, peste tot, zero mișcare.** Aceeași enumerare din evenimentele contului ca ieri
+([3.3i](#33i--25-august--trecere-peste-tot-unde-am-scris-nu-doar-peste-ce-am-trimis)), plus
+GitHub, patchwork și GNOME:
+
+| Loc | Stare | Ultima mișcare străină |
+|---|---|---|
+| pipewire `!2935 !2950 !2951 !2963` | zero note noi, **zero aprobări**, 👍 `rmader` doar pe !2950 | `pobrn` pe !2950, **15 aug** |
+| !2950, cele două fire ale lui `pobrn` | tot **nerezolvate** | 15 aug |
+| `#4665` | nota noastră e tot singura | — |
+| `#4797` | `Be` tot n-a revenit cu rezultatul testului (a zis „în vreo săptămână", pe 18 aug) | 18 aug |
+| `#5363` `#2489` `#4174` `#4863` | ultima notă e a noastră în fiecare | 15–16 aug |
+| `#5431` | închis de `wtaymans` pe 24 aug | 24 aug |
+| wireplumber `#972` `#986` | închise, neschimbate | 15 iul / 19 aug |
+| snapshot `#367` / `!464` | ultima notă e a noastră (10 aug), `!464` nemerged | `msandova`, 8 aug |
+| `snd_hda_macbookpro #187` / `#189` | neschimbate | `davidjo`, **5 iul** |
+| serie `linux-media` (RESEND 20 aug) | toate 5 `new`, **zero comentarii** | — |
 | notificări GitHub / todo-uri GitLab | **0** / **0** | — |
 
 ### 3.3c 🔵 Auditul de declarare pe cele trei MR-uri PipeWire
