@@ -1443,6 +1443,49 @@ pică cele șase, nu **de ce** — a trebuit recompilat. Iar scriptul de reluare
 jurnalul de valgrind s-a pierdut a doua oară. Diagnosticul a venit până la urmă din rulări manuale
 directe, nu din banc.
 
+### 3.3i 🔵 25 august — trecere peste tot unde am scris, nu doar peste ce am trimis
+
+Diferența față de trecerile de dinainte: locurile n-au mai fost luate dintr-o listă ținută de mână,
+ci **enumerate din evenimentele contului** (`/events?action=commented`). Asta a scos la iveală și un
+tichet pe care nu-l aveam pe listă (`#4863`) și, mai important, un răspuns pe care îl ratasem.
+
+**1. Cineva ne-a răspuns pe [#4797](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/4797)
+acum o săptămână și nu observasem.** `Be` — raportorul, cel cu `x264enc` și două webcam-uri USB — a
+scris pe **18 august** (nota `3619586`):
+
+> Thanks for digging into this and working on a fix! I'll try your suggestions in the next week or
+> so and report what happens.
+
+E răspuns direct la comentariul nostru din 15 august, care leagă #4797 de #5363 și îi arată !2935.
+„În vreo săptămână" de pe 18 august înseamnă **chiar acum**. Nu s-a răspuns nimic — se decide separat.
+
+De ce l-am ratat: trecerile din 23 și 24 august s-au uitat la MR-uri și PR-uri, adică la ce am
+*trimis*, nu la tichetele unde doar *comentasem*. Contoarele de pe MR-uri nu se mișcă de la un
+răspuns pe un tichet.
+
+**2. [#5431](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/5431) a fost închis** de
+`wtaymans` pe 24 august la 13:04, adică exact în minutul în care a fost integrat !2954. Era prevăzut
+— nota de mai jos din secțiunea 3.2 spunea „dacă upstream ia doar comitul 1, #5431 se închide
+oricum" — dar faptul în sine e nou. **Nu acoperă !2963**, care rămâne deschis și are cauză proprie:
+măsurat pe 24 august pe master-ul de azi (deci cu !2954 înăuntru), fără !2963 camera de test
+`failctrl` **nu apare deloc** în graf.
+
+**Restul: zero mișcare peste tot.**
+
+| Loc | Stare la 25 aug | Ultima mișcare străină |
+|---|---|---|
+| facetimehd `#328`…`#334` | toate `OPEN`, `mergeable: clean`, **zero** review-uri, **zero** comentarii inline, zero comentarii noi | `patjak`, **17 aug** |
+| facetimehd master | `364b1c6` | **30 iunie** |
+| pipewire `!2935 !2950 !2951 !2963` | zero note noi, **zero aprobări**, emoji neschimbat (👍 `rmader` doar pe !2950) | `pobrn` pe !2950, **15 aug** |
+| !2950, cele două fire ale lui `pobrn` | tot **nerezolvate**; fără răspuns la nota editată pe 23 aug | 15 aug |
+| `#4665` (reproducătorul postat ieri) | nota noastră e tot singura | — |
+| `#5363` / `#2489` / `#4174` / `#4863` | ultima notă e a noastră în fiecare | 15–16 aug |
+| wireplumber `#972` / `#986` | amândouă închise, neschimbate | 15 iul / 19 aug |
+| snapshot `#367` / `!464` | ultima notă e a noastră (10 aug); `!464` nemerged | `msandova`, 8 aug |
+| `snd_hda_macbookpro #187` / `#189` | neschimbate | `davidjo`, **5 iul** |
+| serie `linux-media` (RESEND 20 aug) | toate 5 patch-urile `new`, **zero comentarii** | — |
+| notificări GitHub / todo-uri GitLab | **0** / **0** | — |
+
 ### 3.3c 🔵 Auditul de declarare pe cele trei MR-uri PipeWire
 
 Întrebarea care l-a declanșat: dacă !2950 se sprijinea nedeclarat pe un driver modificat local, are
