@@ -86,17 +86,22 @@ Quick live test: `sudo apt install cheese && cheese` — webcam preview should a
 > the stream. Raising the driver's buffer count only moves the threshold, which is why the old
 > `FTHD_BUFFERS 4→8` patch that used to live here was dropped.
 >
-> Reported and being fixed upstream — three patches are already in PipeWire master
+> Reported and being fixed upstream — **six patches are now in PipeWire master**
 > ([!2933](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2933),
+> [!2934](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2934),
 > [!2941](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2941),
-> [!2934](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2934)), one more is a
-> deliberate draft, plus six driver PRs at
-> [patjak/facetimehd](https://github.com/patjak/facetimehd/pulls) (centred crop, controls surviving
-> STREAMON, real frame-size reporting, a buffer-context leak, and an out-of-bounds write).
+> [!2954](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2954),
+> [!2964](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2964),
+> [!2965](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2965)), four more are open
+> (!2935, !2950, !2951, !2963), plus eight driver PRs at
+> [patjak/facetimehd](https://github.com/patjak/facetimehd/pulls) — **two already merged** (#328,
+> #330), six open (controls surviving STREAMON, real frame-size reporting, a buffer-context leak, an
+> out-of-bounds write, and the centred crop, split across #329, #331–#334, #338).
 >
-> **None of that has reached you yet.** The accepted patches are in PipeWire *master*; Debian testing
-> ships `1.6.8`, and the driver PRs are unreviewed. This script installs the **stock upstream**
-> driver, so a fresh install behaves exactly like plain upstream — use the workaround above.
+> **The PipeWire side has not reached you yet** — Debian testing ships `1.6.8`, none of the six merged
+> patches are backported there. **The driver side partially has**: a fresh install of this script
+> pulls patjak's current `master`, which now includes #328 and #330; the rest is still unreviewed.
+> Use the workaround above regardless.
 > Status and evidence: [TODO.md, section 3](TODO.md#3--camera-facetime-hd--partajare-de-buffere-nesigură).
 
 ### System fixes (backlight, suspend, lid behavior)
