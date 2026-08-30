@@ -80,11 +80,11 @@ deja" vreuna dintre reparații.
 | [pipewire !2964](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2964) | pasul unui interval de dimensiuni era raportat ca maxim | ✅ **acceptat în master** `cefb4e926` (24 aug), **fast-forward**, sha neschimbat. 👍 de la `rmader`, aprobat de `pobrn`. Desprins din !2950 pe 22 aug, fiindcă măsurătoarea a arătat că e alt defect |
 | [pipewire !2965](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2965) | două defecte la conversia unui `SPA_CHOICE` în `GstCaps`: valoarea preferată era pierdută, iar o fracție care nu încape într-un `GstFraction` era scrisă greșit | ✅ **acceptat în master** `acea30afa` + `c4309f0eb` (24 aug), **fast-forward**. Intrat **fără** aprobare de la `pobrn` — dovadă că aprobarea lui e semnal de recenzie, nu poartă de merge. A înghițit !2966, închis ca dublură |
 | [pipewire !2963](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2963) | un singur control necitibil oprea actualizarea tuturor celorlalte | 🔵 deschis, al doilea comit desprins din !2954, măsurat pe un driver scris anume. Etichetat de `pobrn` pe 22 aug dar **neaprobat** — e chiar forma pentru care el propusese altceva pe `#5431`. Nu e redundant după merge-ul lui !2954: acela atinge `spa_v4l2_enum_controls()`, ăsta `spa_v4l2_update_controls()`. **Retestat 24 aug pe master-ul de azi**: fără el, camera de test **nu apare deloc** în graf ([3.3g](#33g--24-august--cap-coadă-pe-lenovo-suitele-upstream-apoi-fiecare-mr-pe-hardware)) |
-| [facetimehd #334](https://github.com/patjak/facetimehd/pull/334) | AE se așează în 200 ms, nu într-o secundă, la fiecare STREAMON | 🔵 trimis 15 aug; **deschis și după integrarea lui #328 pe 25 aug** — cele două comituri ale lui (`msleep` mutat aici pe 23 aug + pragul de 200 ms) nu sunt în master |
+| [facetimehd #334](https://github.com/patjak/facetimehd/pull/334) | AE se așează în 200 ms, nu într-o secundă, la fiecare STREAMON | 🔵 trimis 15 aug; **deschis și după integrarea lui #328 pe 25 aug** — cele două comituri ale lui (`msleep` mutat aici pe 23 aug + pragul de 200 ms) nu sunt în master. Retestat 30 aug pe masterul de azi, tot curat |
 | [wireplumber #986](https://gitlab.freedesktop.org/pipewire/wireplumber/-/work_items/986) | un nod de cameră `vivid` nu primește niciodată session item, deci clientul pică cu `target not found` | 🔵 **trimis 17 aug**, **primul răspuns de întreținător** în aceeași zi: `julian` a cerut testare cu !876. Testat — presupunerea lui (activare eșuată) e **falsă**; **cauza reală e în PipeWire**: `spa_v4l2_enum_controls()` înregistrează un control cu payload, `VIDIOC_G_CTRL` dă EINVAL și toată enumerarea `Props` cade. Patch de 7 linii, A/B alternat, plus trei probe de infirmare, toate trecute. ✅ **Răspuns postat 18 aug** (nota `3619570`) și **descrierea corectată în patru locuri** — rândul `1.0.5 → works` retras, secțiunea „Where I stopped" înlocuită cu „Cause". Verificat după: comentarii 1 → 2. Defectul e în **PipeWire**, se reproduce de la **1.3.81** încolo ([3.2h](#32h--17-august-seara--986-cauza-găsită-și-în-alt-loc-decât-credeau-toți)–[3.2m](#32m--18-august--postat-si-o-corectie-proprie-105-nu-arata-defectul)). Patch încă **local**, MR abia după ce răspunde |
 | [pipewire #5363](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/5363) | raportul de bază | 🔵 deschis, fără răspuns de mentenanț din 11 iulie; !2935 îl **închide automat la merge** (`Closes #5363`, verificat prin API) |
 | [snapshot #367](https://gitlab.gnome.org/GNOME/snapshot/-/work_items/367) | viewfinder înghețat pe primul cadru | 🔵 deschis, **1 upvote** — altcineva a confirmat bug-ul (8 aug). Mentenantul a propus [!464](https://gitlab.gnome.org/GNOME/snapshot/-/merge_requests/464) (`min-buffers=8`); infirmat cu măsurători pe 10 aug — pe camera asta dă **0 cadre**, nu e un fix. !464 e încă deschis, nemerged |
-| [facetimehd #328…#334](https://github.com/patjak/facetimehd/pulls) | șapte PR-uri de driver (vezi [secțiunea 3.3](#33--driver--șapte-pr-uri-la-patjakfacetimehd)) | 🟡 toate deschise, zero review-uri — dar **`patjak` a răspuns pe 15 aug**, primul semn de la întreținător: nu primise notificări, se uită peste ele. **Toate verificate prin măsurătoare pe 17 aug**, master curat față de master+PR ([3.3a](#33a--17-august--fiecare-patch-verificat-prin-măsurătoare)); doar #332 rămâne netestabil. Menționează că cineva ar fi trimis driverul în kernelul upstream — **confirmat pe 23 aug** prin API-ul patchwork de la linuxtv: seria lui `Jack Flusche`, 5 patch-uri în `drivers/media/pci/facetimehd/`, trimisă 13 aug și **retrimisă identic** pe 20 aug, stare `new`, **zero comentarii**. Cară **șase din șapte** defecte ale noastre ([3.3d](#33d--23-august--verificare-live-nimic-nou-nicăieri-în-afară-de-un-resend-în-linux-media)). Pe **24 aug** au apărut doi vecini în depozit, `#335` și `#337`, amândoi în `fthd_v4l2.c` — testate toate 14 perechi, **zero conflicte** ([3.3e](#33e--24-august--wtaymans-a-integrat-trei-mr-uri-patru-comituri-de-ale-noastre-în-pipewiremaster)). Pe **25 aug** `patjak` a integrat primele două: **#328 și #330 sunt în `master`**, `fad52fa07` și `b7bddfe9b`, trei comituri cu `patch-id` identic cu ce trimisesem, fără squash și fără rebazare. `master` s-a mutat prima oară din 30 iunie, `364b1c6` → `54fb8f2`. Cele cinci rămase se aplică în continuare curat, și pe master-ul nou și peste `#337` ([3.3j](#33j--25-august--patjak-a-integrat-primele-două-pr-uri-cinci-rămân)) |
+| [facetimehd #328…#338](https://github.com/patjak/facetimehd/pulls) | șapte + una PR-uri de driver (vezi [secțiunea 3.3](#33--driver--șapte-pr-uri-la-patjakfacetimehd)) | 🟡 toate deschise, zero review-uri — dar **`patjak` a răspuns pe 15 aug**, primul semn de la întreținător: nu primise notificări, se uită peste ele. **Toate verificate prin măsurătoare pe 17 aug**, master curat față de master+PR ([3.3a](#33a--17-august--fiecare-patch-verificat-prin-măsurătoare)); doar #332 rămâne netestabil. Menționează că cineva ar fi trimis driverul în kernelul upstream — **confirmat pe 23 aug** prin API-ul patchwork de la linuxtv: seria lui `Jack Flusche`, 5 patch-uri în `drivers/media/pci/facetimehd/`, trimisă 13 aug și **retrimisă identic** pe 20 aug, stare `new`, **zero comentarii**. Cară **șase din șapte** defecte ale noastre ([3.3d](#33d--23-august--verificare-live-nimic-nou-nicăieri-în-afară-de-un-resend-în-linux-media)). Pe **24 aug** au apărut doi vecini în depozit, `#335` și `#337`, amândoi în `fthd_v4l2.c` — testate toate 14 perechi, **zero conflicte** ([3.3e](#33e--24-august--wtaymans-a-integrat-trei-mr-uri-patru-comituri-de-ale-noastre-în-pipewiremaster)). Pe **25 aug** `patjak` a integrat primele două: **#328 și #330 sunt în `master`**, `fad52fa07` și `b7bddfe9b`, trei comituri cu `patch-id` identic cu ce trimisesem, fără squash și fără rebazare. `master` s-a mutat prima oară din 30 iunie, `364b1c6` → `54fb8f2`. Cele cinci rămase se aplică în continuare curat, și pe master-ul nou și peste `#337` ([3.3j](#33j--25-august--patjak-a-integrat-primele-două-pr-uri-cinci-rămân)). Pe **30 aug**, patru comentarii de recenzie nepublicate ale lui `patjak` citite prin scurgerea de evenimente GitHub — toate spun același lucru: istoricul schimbării merge în mesajul de commit, nu în comentariul din cod. Cele două patch-uri ținute la sertar rescrise pe stilul lui și trimise ca **[#338](https://github.com/patjak/facetimehd/pull/338)**; toate șase verificate din nou, live de pe GitHub și cu camera reală pe MacBookPro14,1 — opt defecte măsurate, toate reparate ([3.3k](#33k--30-august--review-uri-nepostate-ale-lui-patjak-citite-cele-două-patch-uri-ținute-rescrise-pr-338-trimis)–[3.3l](#33l--30-august--masterul-de-azi-pe-amândouă-mașinile-cap-coadă-cu-camera-reală)) |
 | [snd_hda_macbookpro #187](https://github.com/davidjo/snd_hda_macbookpro/issues/187) | `install.cirrus.driver.sh` pică pe Debian (`.tar.xz`) și pe kerneluri `-rc` (404 la kernel.org) | 🔵 deschis, 7 comentarii |
 | [snd_hda_macbookpro #189](https://github.com/davidjo/snd_hda_macbookpro/pull/189) | fix: folosește sursa de kernel instalată local | 🔵 deschis, 1 comentariu |
 
@@ -1545,6 +1545,108 @@ GitHub, patchwork și GNOME:
 | `snd_hda_macbookpro #187` / `#189` | neschimbate | `davidjo`, **5 iul** |
 | serie `linux-media` (RESEND 20 aug) | toate 5 `new`, **zero comentarii** | — |
 | notificări GitHub / todo-uri GitLab | **0** / **0** | — |
+
+### 3.3k ✅ 30 august — review-uri nepostate ale lui `patjak` citite, cele două patch-uri ținute rescrise, PR #338 trimis
+
+Evenimentele contului `patjak` de pe GitHub arată și comentarii de recenzie care nu au fost niciodată
+publicate (parte dintr-un review lăsat în ciornă) — vizibile prin `/repos/.../events`, invizibile prin
+API-ul obișnuit de recenzii. Patru, toate din **25 august**, câte unul pe #329, #332, #333, #334, toate
+spunând **același lucru** cu cuvinte diferite: codul nu trebuie să povestească istoricul schimbării, aia
+e treaba mesajului de commit, nu a comentariului din sursă.
+
+> „There is no need to explain what the code used to do here." (#329) · „Can you make this comment
+> shorter?… there is no need to explain the history of the change in the code itself." (#333) · „There
+> is no need to explain how the code was fixed here." (#332) · comentariul de la #334 poate fi șters de
+> tot, se repetă din mesajul de commit.
+
+Cele două patch-uri ținute la sertar (`patches/n-330b/`, redenumirea câmpurilor + crop-ul centrat)
+aveau exact viciul criticat: comentariul din cod de la crop narra istoricul („used to do… that is what
+the old hardcoded 1280x720 got wrong"), iar mesajele de commit cărau tabele de măsurători întinse.
+Recalibrate pe stilul chiar acceptat de el la #330 (`271326499`): un paragraf, un fragment mic de cod,
+fără tabel.
+
+**Rescrise prin git, nu prin editare de text** — commit-urile refăcute de la zero (`git commit -F`),
+nu `rebase -i`, ca să nu existe risc de dezacord între antet și diff:
+
+| | înainte | după |
+|---|---|---|
+| comentariul din cod (crop) | 10 rânduri, istoric | 3 rânduri, timp prezent |
+| mesaj commit (redenumire) | 5 paragrafe + tabel | 2 paragrafe |
+| mesaj commit (crop) | 5 paragrafe + tabel de măsurători | 2 paragrafe |
+
+**Codul funcțional neatins** — verificat linie cu linie față de versiunea deja testată pe hardware:
+singura diferență e comentariul. Numerotarea fișierelor corectată `2/3, 3/3` → `1/2, 2/2`, fiindcă
+partea 1 din seria originală de trei (fix-ul `y1`) e deja în `master` prin #330.
+
+Retestat de la zero după rescriere: se aplică singure și cu toate cele cinci PR-uri deschise (zero
+conflicte), compilează curat inclusiv sub `W=1`.
+
+**Trimis** — ramură `crop-window` pe fork, [PR #338](https://github.com/patjak/facetimehd/pull/338),
+două comituri. Descrierea e scurtă și trimite direct la promisiunea din #331: *„There is one more patch
+not sent yet: the channel-start crop returns the top left corner of the frame at any size below the
+sensor… I am holding it back rather than adding an eighth PR to the pile."* Zero comentarii, zero
+recenzii la trimitere — normal, abia deschis.
+
+### 3.3l ✅ 30 august — masterul de azi, pe amândouă mașinile, cap-coadă, cu camera reală
+
+**PipeWire și WirePlumber s-au mai mișcat**: `69187d4cd` → `adad3f54d` (+18 comituri), WirePlumber a
+lansat **0.5.16** (`5019de2a` → `ec59fa56`). Cele patru MR-uri (`!2935 !2950 !2951 !2963`) tot aplicate
+curat, tot fără nicio mișcare străină.
+
+**Lenovo — un incident real, prins din timp a doua oară.** `make clean` urmat separat de `make modules`
+pentru facetimehd, pe acest kernel, intră într-o buclă recursivă de Kbuild (`need-builtin=1
+need-modorder=1`) — **2421 procese `make`** la al doilea episod, memorie epuizată. Primul episod a
+înghețat mașina de tot (fără reacție la tastatură USB, ecran, sau consolă — power-off dur, recuperat
+fizic). Al doilea a fost prins la 431 MiB disponibil și oprit cu `kill -9` pe tot grupul de procese,
+înainte să se repete. Cauza, izolată: **nu `W=1`, ci `clean`** — o singură invocare `make modules`,
+fără `clean` niciodată, pe clonă proaspătă, a mers curat de fiecare dată, inclusiv sub `W=1`. Instalat
+`earlyoom` (nu exista deloc pe mașină) ca plasă de siguranță permanentă, activă la fiecare boot de-acum.
+
+**Bancul de pe Lenovo reconstruit din zero**, `wt-curat`/`wt-pr` (worktree-uri separate, ca înainte),
+`52/52` + `52/52` (aceleași nume de test, nu doar același număr) + `55/55`, zero avertismente noi.
+Identitatea binarului chiar încărcat verificată cu md5, nu doar presupusă.
+
+**MacBookPro14,1 — aceeași verificare, plus camera reală.** Bancul din `~/.cache/pipewire-5363/verif-mr`
+era blocat la aceleași comituri vechi ca Lenovo dinainte de actualizare — adus la zi, worktree nou
+`wt-pr` creat acolo (nu exista separarea gol/cu-patch). Build curat pe amândouă variantele
+(`488/488` + `962/962` + `160/160` ținte, zero avertismente), teste `52/52` + `52/52` + `55/55`.
+
+**Plus, pentru prima oară, un test funcțional cu camera reală** (facetimehd live, DKMS, neschimbat):
+matricea de hold la `hold=1/4/8/12/16` — pe master gol, blocaj total (4 cadre, mereu, din hold=4 în
+sus), cu cele patru MR-uri, salvat complet (89–115 cadre). Confirmare directă pe hardware-ul țintă,
+lucru pe care Lenovo nu-l putea oferi vreodată (are doar UVC).
+
+**facetimehd, compilare separată** (fără să ating `/usr/src/facetimehd-0.7.0.1`, sursa DKMS activă):
+master gol și master+cinci PR-uri+cele două patch-uri (10 comituri, zero conflicte), ambele curate,
+inclusiv sub `W=1` — aceleași două avertismente pre-existente (`fthd_drv.c:134`, `fthd_isp.c:663`),
+zero noi.
+
+**Testare reală, cu schimbare temporară a modulului activ** — folosit bancul deja existent din
+`fthd-masuratori/unelte/ruleaza.py` (marcaj `MODULE_VERSION`, verificare de identitate înainte de
+măsurare, nu presupunere). Două variante noi înregistrate, `v-master-30aug` și `v-tot-30aug`:
+
+| măsurătoare | master | combinație (5 PR + 2 patch) |
+|---|---|---|
+| `REQBUFS` cu `USERPTR` | acceptat | **refuzat** (`EINVAL`) |
+| timp `STREAMON` | 1078 ms | **297 ms** |
+| avertismente kernel | 8 | **0** |
+| controale la `STREAMON` | A≈D — pierdute (126.86/126.75) | **A≈C** — păstrate (29.06/28.77) |
+| crop, corelație colț stânga-sus | 0.96 | **0.23** |
+| crop, corelație centru | 0.24 | **0.65** |
+| lățimi impare acceptate | 12 | **0** |
+| contradicții `ENUM_FRAMEINTERVALS` | 4 | **0** |
+| santinelă buffer nealiniat | trece (bug) | **refuzat la toate 4 offset-urile** |
+
+Toate opt defectele măsurate, reparate — exact cifrele din campania inițială, reconfirmate pe
+masterul de azi. Modulul original restaurat (`rmmod` + `modprobe`) și verificat sănătos: firmware
+încărcat curat, `/sys/module/facetimehd/version` inexistent (dovadă că nu mai rulează o variantă
+marcată de-a noastră).
+
+**După trimiterea PR #338**, re-verificare live, nu din fișiere locale: clonă proaspătă, cele șase
+PR-uri trase direct de pe GitHub (`pull/N/head`), toate zece comituri se combină fără conflicte,
+`patch-id` identic cu ce fusese testat înainte de push (o nepotrivire aparentă la prima verificare
+s-a dovedit a fi o comparație greșită, cu o copie locală veche de pe Lenovo, dinainte de rescriere —
+corectată), compilare curată inclusiv `W=1`, `insmod`/`rmmod` fără nicio eroare.
 
 ### 3.3c 🔵 Auditul de declarare pe cele trei MR-uri PipeWire
 
