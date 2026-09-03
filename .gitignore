@@ -23,3 +23,12 @@ ISSUE_opriri_spontane.md
 # Se reconstruieste din zero; de sters dupa ce upstream se pronunta, mai putin
 # camera-fix/, care trebuie mutat in proiect.
 pipewire-5363/
+
+# Bancul A/B pentru .hcd-ul BCM4350C0 (PR #2): jurnale de boot rece si cele doua
+# blob-uri de firmware. Blob-urile nu se redistribuie, iar jurnalele sunt ale
+# masinii asteia. Mutat aici din ~/ pe 3 sep 2026.
+bt-ab/
+
+# Unitatea netconsole propusa pentru opririle spontane si refuzata explicit;
+# tine de ISSUE_opriri_spontane.md, la fel de local ca el.
+netconsole-macbook.service
