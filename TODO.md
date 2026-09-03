@@ -30,21 +30,20 @@ Fișier unic: **ce e rezolvat**, **ce e deschis și se poate repara**, **ce e wo
 |---|---|---|---|---|
 | 1 | Bluetooth mort la ~14% din boot-uri (`-110`) | 🟡 activ | experiment de 3 linii care separă „warm vs cold"; SMC reset ca remediu | [1](#1--bluetooth-bcm4350c0--init-eșuat-la-14-din-boot-uri) |
 | 2 | WiFi BCM4350 — desincronizare ring, risc de panică | 🟡 activ | raport upstream cu dovezile din pstore; monitorizare cu prag | [2](#2--wifi-bcm4350--desincronizare-ring-msgbuf) |
-| 3 | Cameră — partajare de buffere fără `SPA_META_Busy` (aplicațiile îngheață) | 🔵 upstream | **3 patch-uri acceptate în master**; !2935 e gata de review din 15 aug | [3](#3--camera-facetime-hd--partajare-de-buffere-nesigură) |
+| 3 | Cameră — partajare de buffere fără `SPA_META_Busy` (aplicațiile îngheață) | 🔵 upstream | **șase patch-uri PipeWire + două driver acceptate în master**; patru PipeWire + șase driver încă deschise (30 aug) | [3](#3--camera-facetime-hd--partajare-de-buffere-nesigură) |
 | 4 | Sacadare cu 2 browsere + saturație termică | 🟢 | curățare fizică + tab-ul Chrome; abia apoi eventual daemon de ventilator | [4](#4--termic--sacadare) |
 | 5 | Suspend / s2idle | 🟡 opțional | experiment reversibil, dacă chiar vrei suspend | [5](#5--suspend--s2idle) |
 | 6 | Zgomot de log (DMAR / ACPI / SGX / nvme0n2) | 🔴 | nimic — vezi de ce „fix-ul fără dezactivarea IOMMU" nu funcționează | [6](#6--zgomot-de-log) |
 | 7 | Tot ce e deja închis (NVRAM, audio, RAPL, rfkill, kernel…) | ✅ | nimic | [7](#7--rezolvate-arhivă-tehnică) |
-| **8** | **Opriri spontane, fără urmă în jurnal** | 🟡 **activ** | netconsole către al doilea PC, ca următoarea să lase o urmă | [8](#8--opriri-spontane--cauză-nedeterminată) |
+| **8** | **Opriri spontane, fără urmă în jurnal** | 🟡 **fără urmărire activă** | nimic — nicio recidivă din 5 aug (25 de zile), instrumentarea nu s-a confirmat necesară | [8](#8--opriri-spontane--cauză-nedeterminată) |
 
 **Ordinea recomandată:**
 
 | Prioritate | Acțiune | Efort | Risc | Câștig |
 |---|---|---|---|---|
 | **P1** | Curățare fizică ventilator + radiator (+ eventual PTM7950) | 1-2 h | mediu (demontare) | marja termică — măsura principală anti-sacadare |
-| **P1** | **Netconsole către al doilea PC** ([secțiunea 8](#8--opriri-spontane--cauză-nedeterminată)) | 30 min | zero | singura cale de a prinde următoarea oprire spontană |
 | **P2** | Identificat tab-ul Chrome de 10-13% (`Shift+Esc`) | 5 min | zero | ~10% CPU permanent |
-| **P2** | Hook de shutdown care logează verbul (`reboot`/`poweroff`) | 15 min | mic | răspunde la întrebarea BT `-110` **și** la [secțiunea 8](#8--opriri-spontane--cauză-nedeterminată) |
+| **P2** | Hook de shutdown care logează verbul (`reboot`/`poweroff`) | 15 min | mic | răspunde la întrebarea BT `-110` — separă warm reboot de power-cycle real |
 | **P3** | Raport upstream `brcmfmac` cu dovezile din pstore | 1-2 h | zero | poate scoate riscul de panică definitiv |
 | **P4** | Experiment s2idle (doar dacă vrei suspend) | 30 min | mediu, reversibil | lid-close real |
 | **P5** | Daemon de ventilator pe `fan1_min` dinamic | 2 h | mic (dacă se face corect) | mic — doar cazul „rafală după liniște" |
@@ -189,18 +188,11 @@ Fisher exact, o coadă:  p = 0,055
 
 ### 1.4 🟢 De făcut
 
-- [ ] **P2 — experimentul care răspunde definitiv. `⏳ NEFĂCUT`** (verificat 8 aug:
-      `/usr/lib/systemd/system-shutdown/` conține doar `fwupd.shutdown`.) `systemd` execută scripturile din
-      `/usr/lib/systemd/system-shutdown/` cu **verbul ca `$1`** (`reboot`, `poweroff`, `halt`, `kexec`).
-      Directorul există deja (conține `fwupd.shutdown`). Prima versiune trebuie doar să **măsoare**,
-      nu să repare:
-
-      /usr/lib/systemd/system-shutdown/00-log-verb   →  adaugă „<data> <verb>" într-un fișier persistent
-                                                        (obligatoriu: shebang + chmod +x, altfel
-                                                         systemd îl ignoră în tăcere)
-
-      După 2-3 săptămâni, corelezi fișierul cu boot-urile care au avut `Reset failed (-110)`. Abia atunci
-      știi dacă warm reboot-ul e cauza dominantă — și, dacă e, poți testa varianta activă
+- [x] **P2 — instrumentat, 30 august.** `/usr/lib/systemd/system-shutdown/00-log-verb` scrie
+      „<dată> <verb>" în `/var/log/shutdown-verb.log` la fiecare shutdown, testat direct (nu doar
+      sintactic — invocat manual, a scris corect). **Măsoară, nu răspunde încă**: abia peste 2-3
+      săptămâni, când corelezi fișierul cu boot-urile care au avut `Reset failed (-110)`, afli dacă
+      warm reboot-ul e cauza dominantă. Revino atunci — dacă e, varianta activă e testabilă
       (`btmgmt power off` sau `hciconfig hci0 down` înainte de reboot; ambele binare există).
 - [ ] **Experiment ieftin de încercat la următorul `-110`** (5 secunde, complet reversibil):
       `sudo modprobe -r hci_uart && sudo modprobe hci_uart` — reîncarcă transportul și re-rulează init-ul
@@ -341,16 +333,16 @@ desincronizarea firmware-ului — aia rămâne.
 
 ### 2.7 🟢 Monitorizare automată — `⏳ NEFĂCUT`
 
-*(Verificat 8 aug: nu există niciun timer propriu în `/etc/systemd/system/`.)*
+*(Implementat 30 august.)*
 
-- [ ] Timer systemd zilnic care numără evenimentele din ultimele 24 h și alertează peste prag.
-      Detalii de implementare care contează:
-      - filtrul explicit e **obligatoriu**: `journalctl _TRANSPORT=kernel --since "24 hours ago"
-        -g "Invalid packet id" | grep -c "Invalid packet id"` — fără al doilea `grep`, se numără și
-        liniile de separator dintre boot-uri;
-      - notificarea din context root: `systemd-run --machine=vik@ --user …` sau `busctl`, **nu**
-        `sudo -u vik notify-send` cu `DBUS_SESSION_BUS_ADDRESS` ghicit;
-      - prag rezonabil pe datele reale: **> 5/zi** (media actuală ~2/zi, vârful a fost 14).
+- [x] **Timer systemd zilnic, activ** (`wifi-desync-check.timer`, enabled, rulează la miezul nopții
+      + `Persistent=true`). Script `/usr/local/bin/wifi-desync-check.sh`:
+      `journalctl _TRANSPORT=kernel --since "24 hours ago" -g "Invalid packet id" | grep -c "Invalid
+      packet id"`, prag **> 5/zi** (media ~2/zi, vârful istoric 14), notificare prin
+      `systemd-run --machine=vik@ --user --collect -- notify-send …`. Mecanismul de notificare
+      **testat direct și confirmat** (a apărut pe ecran), separat de numărătoare — nu doar sintaxă
+      verificată. Contorul de azi: 1. **Nu spune încă nimic despre trend** — abia peste o lună de
+      date se vede dacă desincronizarea rămâne stabilă sau crește.
 
 ---
 
@@ -3347,23 +3339,19 @@ alimentatorul de 61 W poate să nu acopere vârful. Bateria e la **62% sănătat
 Kernelul e `tainted` de două module out-of-tree (`facetimehd`, `snd_hda_codec_cs8409`). Un blocaj de
 driver e plauzibil pentru două dintre căderi, dar **nu explică** cele trei nocturne, cu mașina inactivă.
 
-### 8.1 🟢 De făcut, în ordinea raportului cost/informație — `⏳ NIMIC APLICAT`
+### 8.1 Instrumentarea (netconsole, panic-on-lockup, test cu blacklist) — scoasă de pe listă, 30 august
 
-- [ ] **1. netconsole către al doilea PC.** Trimite mesajele de kernel prin UDP pe măsură ce apar,
-      deci prinde un oops *înainte* ca mașina să moară. Singurul lucru care transformă „nimic în
-      jurnal" în „avem urma". Risc zero, reversibil.
-- [ ] **2. Panic pe blocaj** — `panic_on_oops=1`, `softlockup_panic=1`, `hardlockup_panic=1`.
-      **Doar împreună cu (1)**, altfel se pierde și informația care există azi.
-- [ ] **3. Separare pe încărcare** — o noapte cu `facetimehd` pe blacklist. Dacă opririle nocturne
-      continuă, driverul e exclus definitiv; dacă se opresc, e primul suspect.
-- [ ] **4. Alimentare**, dacă (3) nu lămurește: consumul măsurat la priză sub încărcare, sau alt
-      alimentator.
+Nimic din familia asta nu s-a confirmat necesar — fenomenul nu s-a mai repetat, deci nu există ce
+diagnostic să instrumentăm acum. Nu se urmărește activ. Dacă recidivează, secțiunea 8 de mai sus
+tot are diagnosticul complet ca să se reia de acolo.
 
 ### 8.2 Stare de fapt
 
-**Nicio recidivă din 5 august.** Ultimele trei opriri (7 aug 08:17, 7 aug 19:39, 8 aug 08:09) au
-toate `systemd-shutdown` în jurnal — **ordonate** *(verificat 8 aug)*. Trei zile nu înseamnă
-rezolvat: intervalul dintre incidente a fost și de patru zile.
+**Nicio recidivă din 5 august — reconfirmat 30 august, 25 de zile curate.** Ultimele trei opriri
+din documentul original (7-8 aug) aveau toate `systemd-shutdown` în jurnal — ordonate. Verificat
+din nou acum: `last -x` arată trei reporniri (24-26 aug) marcate „crash", dar jurnalul lor arată
+secvență completă și ordonată (`systemd-reboot.service: Finished`, `Shutting down` curat) — e o
+particularitate a lui `last` la perechea reboot-urilor, nu o recidivă reală.
 
 ---
 
