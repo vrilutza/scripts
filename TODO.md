@@ -376,9 +376,16 @@ doar activarea benzilor. Un adaptor fără el e limitat în bandă **și surd**.
 **Ce NU e dovedit:** că adaptorul e surd pe 5 GHz. Controlul cu Lenovo e neconcludent — vede și el
 zero pe 5 GHz, dar vede doar **1** rețea pe 2,4 față de 9, deci are altă poziție sau altă antenă.
 
-**Întrebarea care închide subiectul, și e pentru Vik:** routerul tău emite pe 5 GHz? Dacă da și noi
-vedem zero, adaptorul e surd și pista din #213 se aplică. Dacă nu, măsurătoarea nu spune nimic și
-trebuie repetată unde există un AP de 5 GHz.
+**Întrebarea s-a închis (5 sep, captură din interfața routerului):** routerul e **numai 2,4 GHz** —
+`Network Mode: 802.11 b/g/n`, fără `a`/`ac`/`ax` și fără secțiune separată de 5 GHz. Deci cele zero
+rețele de 5 GHz **nu spun nimic** despre adaptor: nu era nimic de văzut de la routerul propriu.
+
+**Și nu există simptom pe 2,4 GHz:** semnalul măsurat e **−37 dBm** (`iw dev wlp2s0 link`), aproape
+de maximul practic. Cazul „surd" din #213 era **−74 dBm**. Placa raportează bloc `VHT`, deci `ac`
+e suportat de hardware.
+
+**Verdict: pistă parcată, nu infirmată.** Nu se poate testa de aici. Ca s-o testăm ne-ar trebui un
+AP de 5 GHz confirmat — un telefon cu hotspot pe 5 GHz ar fi cel mai ieftin test.
 
 **Legătura cu secțiunea 2:** dacă adaptorul lucrează fără calibrare RF, semnalul slab și
 retransmisiile ar putea contribui la desincronizarea `msgbuf` urmărită aici. **Ipoteză, nemăsurată.**
@@ -388,10 +395,12 @@ retransmisiile ar putea contribui la desincronizarea `msgbuf` urmărită aici. *
 raportul — `//SND_PCI_QUIRK(0x106b, 0x3600, "MacBookPro 14,2", …)` comentat, `0x3900` (14,3)
 activ — iar `MacBookPro14,1` nu apare deloc în el și audio merge oricum, prin ramurile de rulare.
 
-**De făcut:**
-- [ ] răspuns la întrebarea despre router, apoi măsurătoare într-un loc cu AP de 5 GHz confirmat
-- [ ] dacă se confirmă: căutat un NVRAM pentru `brcmfmac4350c2-pcie` (extras din macOS, ca la #213)
-- [ ] `iw reg set` nu persistă peste repornire; dacă ajută, trebuie făcut permanent
+**De făcut, când apare ocazia:**
+- [ ] măsurătoare lângă un AP de 5 GHz confirmat (hotspot de telefon pe 5 GHz e destul)
+- [ ] dacă adaptorul chiar nu-l vede: căutat un NVRAM pentru `brcmfmac4350c2-pcie` (extras din
+      macOS, ca la #213)
+- [ ] `iw reg set` nu persistă peste repornire; oricum n-a avut efect, placa raportează `country 99`
+      propriu
 
 ## 3. 🔵 Camera FaceTime HD — partajare de buffere nesigură
 
