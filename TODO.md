@@ -346,6 +346,53 @@ desincronizarea firmware-ului — aia rămâne.
 
 ---
 
+### 2.8 🟡 NVRAM și date de reglementare lipsă — pistă din `Dunedan/mbp-2016-linux#213`
+
+Raport din 18 august 2026 pentru **MacBookPro14,2** ([#213](https://github.com/Dunedan/mbp-2016-linux/issues/213)):
+`brcmfmac` nu încarcă **niciun NVRAM** pentru BCM43602. Diagnosticul propus e adresa MAC —
+`00:90:4c:*` e OUI-ul generic Broadcom, deci nicio configurație de placă n-a fost citită. După ce a
+pus `/lib/firmware/brcm/brcmfmac43602-pcie.txt` cu MAC-ul real și a repornit:
+
+| | fără NVRAM | cu NVRAM |
+|---|---|---|
+| MAC | `00:90:4c:*` | MAC-ul Apple real |
+| benzi | doar Band 1 | Band 1 + Band 2 |
+| semnal, aceeași poziție | **−74 dBm** | **−42 dBm** |
+
+Câștigul de **26 dB** e partea importantă: fișierul poartă tabelele de putere și calibrarea RF, nu
+doar activarea benzilor. Un adaptor fără el e limitat în bandă **și surd**.
+
+**Verificat pe mașina noastră (5 sep), ce se potrivește și ce nu:**
+
+| | la noi |
+|---|---|
+| MAC generic Broadcom | **NU** — `8c:85:90:…`, OUI Apple, deci vine din OTP-ul cipului |
+| NVRAM încărcat | **NU** — nu există niciun `.txt` pentru 4350 în `linux-firmware`, doar `.bin` |
+| avertisment în log | **DA** — `brcmf_c_process_clm_blob: no clm_blob available (err=-2), device may have limited channels available` |
+| domeniu de reglementare | **`country 00`** (nedefinit). `iw reg set RO` schimbă globalul, dar placa raportează `country 99` propriu, care are ultimul cuvânt |
+| Band 2 anunțată | **DA**, canalele 36–48 la 20 dBm; 10 canale dezactivate, DFS-urile `no IR` |
+| rețele de 5 GHz văzute | **zero**, din 9 vizibile pe 2,4 GHz |
+
+**Ce NU e dovedit:** că adaptorul e surd pe 5 GHz. Controlul cu Lenovo e neconcludent — vede și el
+zero pe 5 GHz, dar vede doar **1** rețea pe 2,4 față de 9, deci are altă poziție sau altă antenă.
+
+**Întrebarea care închide subiectul, și e pentru Vik:** routerul tău emite pe 5 GHz? Dacă da și noi
+vedem zero, adaptorul e surd și pista din #213 se aplică. Dacă nu, măsurătoarea nu spune nimic și
+trebuie repetată unde există un AP de 5 GHz.
+
+**Legătura cu secțiunea 2:** dacă adaptorul lucrează fără calibrare RF, semnalul slab și
+retransmisiile ar putea contribui la desincronizarea `msgbuf` urmărită aici. **Ipoteză, nemăsurată.**
+
+**Partea de audio din același raport** — verificată, nu ne privește: microfonul intern la noi
+**nu** e mut (`wpctl` dă `vol: 1.00`, fără `MUTED`). Tabelul de quirk-uri arată exact cum descrie
+raportul — `//SND_PCI_QUIRK(0x106b, 0x3600, "MacBookPro 14,2", …)` comentat, `0x3900` (14,3)
+activ — iar `MacBookPro14,1` nu apare deloc în el și audio merge oricum, prin ramurile de rulare.
+
+**De făcut:**
+- [ ] răspuns la întrebarea despre router, apoi măsurătoare într-un loc cu AP de 5 GHz confirmat
+- [ ] dacă se confirmă: căutat un NVRAM pentru `brcmfmac4350c2-pcie` (extras din macOS, ca la #213)
+- [ ] `iw reg set` nu persistă peste repornire; dacă ajută, trebuie făcut permanent
+
 ## 3. 🔵 Camera FaceTime HD — partajare de buffere nesigură
 
 > **Rescrisă integral 8 august 2026.** Versiunea de dinainte descria un diagnostic (limita de 4
