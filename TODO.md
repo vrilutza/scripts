@@ -3029,6 +3029,27 @@ ambele kernele. Preferința lui Vik — controlul aprins — stă **în afara dr
 
 Jurnal: `pipewire-5363/fthd-masuratori/rezultate/JURNAL-3sep-review-si-decupare.md`, §47–56.
 
+### 3.3n 🟡 De reluat, în ordine (5 septembrie)
+
+1. **Cele trei patch-uri de expunere** ([3.3m](#33m--45-septembrie--imaginea-întunecată-cauza-găsită-trei-patch-uri-netrimise)):
+   reverificate, descrieri rescrise pe Problem/Reproduction/Changes/Fix/Impact, **aprobare separată
+   pe fiecare** înainte de trimitere.
+2. **Blocarea din Snapshot — ipoteza lui Vik: e adusă de noi, din alt proiect.**
+   ⚠️ Ce am afirmat („nu e de la noi") e **prea tare**: controlul a fost doar pe driver — un modul
+   verificat numeric echivalent cu `master` se blochează identic. **Partea de PipeWire n-a fost
+   controlată**, iar acolo avem `!2954`, `!2964`, `!2965` acceptate pe 24 august.
+   Prima întrebare de răspuns: **conține `pipewire 1.6.8-1` din Debian comiturile noastre?**
+   Arborele local `~/.cache/pipewire-5363/src` e `1.6.8-1` din `apt-get source` **plus** patch-urile
+   noastre de banc, deci nu răspunde la întrebare. Se verifică în depozitul upstream: în ce tag au
+   intrat cele trei MR-uri. Dacă sunt în 1.6.8, controlul corect e o versiune **fără** ele.
+3. **Dungajul vertical și tenta verzuie** — grupul `AWB` are 46 de comenzi, driverul folosește 2
+   (`descrieri/FIRMWARE-harta.md`). Aceeași metodă ca la expunere.
+4. **`#340` — încadrarea corectată**: blocarea mașinii apare și cu reparația de PLL activă.
+5. **Harta firmware-ului, trimisă lui `patjak`?** `descrieri/FIRMWARE-harta.md` — 409 comenzi
+   declarate, 43 folosite, nimeni nu are documentul ăsta, iar el a spus pe `#328` că nu știe dacă
+   driverul ține de `media` sau `staging`. Candidat real, dar **discuție separată** de cele trei
+   patch-uri: una pe rând.
+
 ### 3.4 ✅ Ce s-a închis din versiunea veche a acestei secțiuni
 
 - ~~patch local `FTHD_BUFFERS` 4→8~~ — **retras**, trata simptomul ([secțiunea 3.1](#31-cauza-rădăcină-așa-cum-e-ea))
