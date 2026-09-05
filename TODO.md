@@ -2974,6 +2974,61 @@ Tot aici, încă o sondă care nu putea reuși: verificarea provenienței modulu
 Raport complet: `pipewire-5363/results/VIVID-CAUZA-17aug.md`. Draft de răspuns, **nepostat**:
 `results/NOTA-986-raspuns.md`. Patch-ul rămâne **local**, pe `wt-ctrl:v4l2-payload`.
 
+### 3.3m 🟡 4–5 septembrie — imaginea întunecată: cauza găsită, trei patch-uri **netrimise**
+
+**Problema.** Pe întuneric, camera dădea luminozitate medie **2,2 din 255** — practic negru.
+
+**Cauza, în lanț:**
+
+1. `fthd_isp.c` trimite `frametime * 256` la `FRAME_RATE_MIN/MAX_SET`. `frametime` e intervalul
+   dintre cadre **în milisecunde**; firmware-ul așteaptă **cadre pe secundă × 256**.
+2. Deci cere 40 fps în loc de 25 → se plafonează la 30, iar reglajul de rată de cadre e **inert și
+   inversat** (cerând 50 fps se obțin 20).
+3. `min == max` ⇒ AE nu poate încetini ⇒ expunerea maximă e blocată la 33 ms
+   (`integ_max = 1000/fps`, măsurat: 33/50/66/100/199/399/997).
+4. AE-ul poate folosi doar câștig, iar plafonul de câștig e 4096 (implicitul firmware-ului, pe care
+   driverul nu-l atinge niciodată). Câmpul e pe 16 biți; interval util 256–65535.
+
+**Cele trei patch-uri**, în `~/.cache/pipewire-5363/fthd-live-4sep`, pe `master` (`5c34206`):
+
+| ramură | ce e |
+|---|---|
+| `frame-rate-units` | bug curat: `256000 / frametime` în loc de `frametime * 256` |
+| `exposure-auto-priority` | `V4L2_CID_EXPOSURE_AUTO_PRIORITY` + `V4L2_CID_EXPOSURE_AUTO`, **implicit 0** |
+| `ae-gain-cap` | `FTHD_AE_GAIN_CAP 32768` trimis la pornirea canalului |
+
+**Dovezi.** Rată cerută vs livrată, 6 predicții scrise înainte, 6 nimerite (50→20, 45→22, 40→25,
+≤33→30); după reparație 30/25/15/10/5 → 30,09/25,11/15,20/10,03/5,01. Luminozitate în aceeași
+cameră: master 2,2 (de două ori) → cu patch-uri 40,8/38,5. Conformitate: **6 eșecuri și 8176
+rapoarte de corupere pe master curat, identic cu patch-urile** — zero regresii, verificat cu control.
+
+**Ce NU e verificat, de scris în PR:** plafonul de câștig e o cifră măsurată **doar pe senzorul
+1771**; driverul suportă și 1675 (MacBook 12", 848x588). Risc mărginit (plafonul leagă doar când AE
+n-are lumină), dar nemăsurat.
+
+**Corectat prin măsurătoare, după ce afirmasem contrariul:** pragul de încetinire **leagă și la
+lumină bună** — camera merge la 15 fps și acolo, cu zgomot mai mic (4,73 față de 7,10) și aceeași
+luminozitate. Deci e un compromis fluiditate/calitate, nu un câștig gratuit; de-aia implicitul e 0.
+
+**Două lucruri dovedite că NU sunt de la noi:**
+- **Blocarea din Snapshot** (prima filmare merge, a doua după redeschidere se oprește) apare identic
+  pe un driver verificat numeric echivalent cu master. Familia lui #331, spațiu utilizator.
+- **Blocarea mașinii** apare și cu reparația de PLL activă și funcțională ⇒ **încadrarea din #340 e
+  prea tare și trebuie corectată**. Fereastra fatală e `fthd_hw.c:414–446`, programarea PHY-ului DDR;
+  se execută numai la încărcarea modulului.
+
+**Instalat pe mașină:** DKMS `facetimehd/0.7.2+vik-20260905` (sursa de ieri + cele trei patch-uri),
+ambele kernele. Preferința lui Vik — controlul aprins — stă **în afara driverului**, în
+`/etc/udev/rules.d/99-facetimehd-expunere.rules`.
+
+**De făcut:**
+- [ ] rescris descrierile celor trei pe structura Problem/Reproduction/Changes/Fix/Impact
+- [ ] trimis, **câte o aprobare separată pe fiecare**
+- [ ] corectat încadrarea din #340
+- [ ] investigat dungajul vertical de pe perete (zgomot de tipar) și tenta verzuie (balans de alb)
+
+Jurnal: `pipewire-5363/fthd-masuratori/rezultate/JURNAL-3sep-review-si-decupare.md`, §47–56.
+
 ### 3.4 ✅ Ce s-a închis din versiunea veche a acestei secțiuni
 
 - ~~patch local `FTHD_BUFFERS` 4→8~~ — **retras**, trata simptomul ([secțiunea 3.1](#31-cauza-rădăcină-așa-cum-e-ea))
