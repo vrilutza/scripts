@@ -7,9 +7,9 @@ Fișier unic: **ce e rezolvat**, **ce e deschis și se poate repara**, **ce e wo
 | | |
 |---|---|
 | **Hardware** | MacBookPro14,1 (A1708), i5-7360U 2C/4T, Iris 640, 8 GB RAM, Apple S3X NVMe, BCM4350C0 (WiFi PCIe + BT UART), FaceTime HD, CS8409/CS42L83 |
-| **Software** | Debian testing/forky, kernel `7.1.6+deb14-amd64` (+ `7.1.3` păstrat ca rezervă, DKMS construit pe ambele), pipewire 1.6.8-1, wireplumber 0.5.15-1, Chrome 151.0.7922.108, GNOME/Wayland |
-| **Verificat pe viu** | **8 august 2026** — reverificare completă a cifrelor de mai jos pe **196 de boot-uri** (19 mai → 8 aug). Verificarea anterioară: 27 iulie, 173 de boot-uri. Ce nu s-a putut reverifica e marcat explicit `⏳ neconfirmat`. |
-| **Stare de bază** | Hardware-ul e funcțional. Margini: 2 probleme cronice (BT, WiFi), 1 **nediagnosticată** (opriri spontane), 1 la upstream (cameră — 18 rapoarte trimise, 3 patch-uri acceptate în master, 2 laptopuri de test), 1 fizică (termic). Tabloul complet al rapoartelor: [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou). |
+| **Software** | Debian testing/forky, kernel `7.1.13+deb14-amd64` (+ `7.1.12` păstrat ca rezervă, DKMS construit pe ambele), pipewire 1.6.8-1, wireplumber 0.5.15-1, GNOME/Wayland. Driver cameră: DKMS `facetimehd/0.7.2`. *(Verificat pe mașină pe 12 sep 2026.)* |
+| **Verificat pe viu** | Cifrele de BT/WiFi: **8 august 2026**, pe **196 de boot-uri** (19 mai → 8 aug); anterior 27 iulie, 173 de boot-uri. Starea upstream și cea a mașinii: **12 septembrie 2026**, prin API și direct pe mașini. Ce nu s-a putut reverifica e marcat explicit `⏳ neconfirmat`. |
+| **Stare de bază** | Hardware-ul e funcțional. Margini: 2 probleme cronice (BT, WiFi), 1 **nediagnosticată** (opriri spontane), 1 la upstream (cameră), 1 fizică (termic). La upstream, verificat prin API pe 12 sep: **unsprezece MR-uri PipeWire acceptate** (trei dintre ele și în ramura `1.6`), **cinci PR-uri de driver integrate**, două MR-uri și nouă PR-uri încă deschise. 2 laptopuri de test. Tabloul complet: [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou). |
 
 **Legendă:**
 
@@ -699,11 +699,21 @@ zice „nu reproduc", și va avea dreptate despre simptom, greșit despre defect
 
 ### 3.2f 🔵 Kernel de depanare pe Lenovo — KASAN, lockdep, KFENCE
 
-Compilat mainline **7.1.8** (aceeași versiune cu MacBook-ul, deci relevant direct) cu `KASAN`,
-`PROVE_LOCKING`, `DEBUG_VM`, `DEBUG_LIST`, `DEBUG_ATOMIC_SLEEP` și `KFENCE_NUM_OBJECTS=16383`.
-Instalat ca `7.1.8-kasan`, **nu** implicit — `GRUB_DEFAULT` e fixat explicit pe `7.0.0-28-generic`,
-fiindcă intrarea „Ubuntu" din GRUB alege mereu cel mai recent kernel, adică ar fi ales tăcut pe cel
-de 2–5× mai lent și ar fi falsificat orice măsurătoare ulterioară.
+> **Refăcut pe 12 septembrie 2026.** `7.1.8-kasan` a fost șters și înlocuit cu **`7.2.5-kasan`**
+> (stable, lansat 11 sep, sha256 verificat față de kernel.org), cu aceleași opțiuni plus altele
+> noi: `KASAN_INLINE`, `KASAN_VMALLOC` (tampoanele `vivid` sunt vmalloc, deci erau **invizibile**
+> pentru KASAN), injecție de erori, `netconsole`, `pstore-ram`, `usbmon`, `VIDEO_ADV_DEBUG`, BTF,
+> trasoare de latență, `DPM_WATCHDOG`, `BRCMDBG`, stivă Bluetooth cu controler HCI virtual, plus
+> USB storage / exFAT / NTFS3 / overlayfs care lipseau. `GRUB_DEFAULT` e acum pinuit pe
+> **`7.0.0-31-generic`**. Lista completă a capacităților și comenzile de pornire:
+> `pipewire-5363/JURNAL.md` §5.6–5.8. Măsurat: boot 2 min 44 s față de 1 min 41 s, RAM vizibilă
+> 6654 MB față de 7799.
+
+Versiunea din august, pentru context: compilat mainline **7.1.8** (aceeași versiune cu MacBook-ul)
+cu `KASAN`, `PROVE_LOCKING`, `DEBUG_VM`, `DEBUG_LIST`, `DEBUG_ATOMIC_SLEEP` și
+`KFENCE_NUM_OBJECTS=16383`. Instalat ca `7.1.8-kasan`, **nu** implicit — `GRUB_DEFAULT` era fixat
+explicit pe `7.0.0-28-generic`, fiindcă intrarea „Ubuntu" din GRUB alege mereu cel mai recent
+kernel, adică ar fi ales tăcut pe cel de 2–5× mai lent și ar fi falsificat orice măsurătoare.
 
 **Rezultat pe căile noastre: zero rapoarte.** Stres v4l2 pe camera reală, pe `vivid` inclusiv
 alocări de 3840x2160, plus sarcina PipeWire completă. Ambele detectoare au control pozitiv verificat:
@@ -712,7 +722,13 @@ raportate corect.
 
 Singurul lucru găsit e un impas potențial AB-BA în `nouveau`, la suspendarea automată a GPU-ului —
 dar e [cunoscut din 2021](https://gitlab.freedesktop.org/drm/nouveau/-/issues/101), aceeași pereche
-de mutex-uri, și n-are legătură cu camera.
+de mutex-uri, și n-are legătură cu camera. *(Reapărut identic pe `7.2.5-kasan` la 12 sep;
+`nouveau#101` e tot deschis, verificat prin API. „N-are legătură cu camera" rămâne valabil —
+dacă are legătură cu **afișajul** e altă întrebare, încă deschisă: vezi `JURNAL.md` §7.3.)*
+
+**Nou pe `7.2.5-kasan`, fiindcă `DMA_API_DEBUG` a fost activat pentru prima dată:** `i915`
+eliberează memorie DMA cu alte atribute decât cele cu care a mapat-o
+(`mapped with 0x130` / `unmapped with 0x0`), cu `WARNING` în `kernel/dma/debug.c:1091`.
 
 ⚠️ **Kernelul Ubuntu are deja `KFENCE` compilat, dar e inutil fără rebuild:** pool-ul de 255 de
 obiecte se umple la boot cu alocări de lungă durată, și de atunci refuză tăcut orice eșantion — în
