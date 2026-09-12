@@ -3488,8 +3488,9 @@ sursa distribuției. Până se acceptă, pasul manual de mai sus rămâne obliga
 
 > **Secțiune nouă, 8 august 2026.** Problema exista din 26 iulie și **nu figura în acest fișier**,
 > deși e singura de aici fără niciun diagnostic. Investigația completă, cu jurnale și cronologie,
-> e în `ISSUE_opriri_spontane.md` — **numai local pe laptop**, fiindcă e specifică acestei mașini
-> și conține extrase brute de jurnal.
+> e în `pipewire-5363/documente-locale/ISSUE_opriri_spontane.md` — **numai local pe laptop**,
+> fiindcă e specifică acestei mașini și conține extrase brute de jurnal. *(Mutat acolo pe 12
+> septembrie, din rădăcina proiectului; directorul acela e sub git local, fără remote.)*
 
 **Cinci opriri abrupte între 26 iulie și 5 august**, fără ca laptopul să fie oprit de utilizator și
 **fără nicio urmă în jurnal** — journald se oprește odată cu mașina, deci ultimul lucru scris e o
