@@ -92,15 +92,18 @@ Quick live test: `sudo apt install cheese && cheese` — webcam preview should a
 > [!2941](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2941),
 > [!2954](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2954),
 > [!2964](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2964),
-> [!2965](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2965)), four more are open
-> (!2935, !2950, !2951, !2963), plus eight driver PRs at
-> [patjak/facetimehd](https://github.com/patjak/facetimehd/pulls) — **two already merged** (#328,
-> #330), six open (controls surviving STREAMON, real frame-size reporting, a buffer-context leak, an
-> out-of-bounds write, and the centred crop, split across #329, #331–#334, #338).
+> [!2965](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2965)) — **ten are merged
+> in all**, the later ones being !2935, !2963, !2950, !2985 and !2986 — and two are open (!2951,
+> !2998). On the driver side, [patjak/facetimehd](https://github.com/patjak/facetimehd/pulls) has
+> **five merged** (#328, #329, #330, #332, #333) and nine open (#331, #334, #338, #340, #342, #343,
+> #344, #345, #347).
 >
-> **The PipeWire side has not reached you yet** — Debian testing ships `1.6.8`, none of the six merged
-> patches are backported there. **The driver side partially has**: a fresh install of this script
-> pulls patjak's current `master`, which now includes #328 and #330; the rest is still unreviewed.
+> **Part of the PipeWire side has now reached the stable branch.** Debian forky still ships `1.6.8`,
+> but three of the merged patches were cherry-picked into upstream's `1.6` branch and will arrive
+> with 1.6.9: the native frame size (!2950), the non-fatal control read (!2963) and the media-type
+> filter (!2986). The rest are master-only. **The driver side partially has too**: a fresh install of
+> this script pulls patjak's current `master`, which now includes five of them; the rest is still
+> under review.
 > Use the workaround above regardless.
 > Status and evidence: [TODO.md, section 3](TODO.md#3--camera-facetime-hd--partajare-de-buffere-nesigură).
 

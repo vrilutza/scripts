@@ -191,34 +191,55 @@ CURRENT_STEP="ETAPA 4/9 — Driver camera FaceTime HD (DKMS)"
 step "$CURRENT_STEP"
 info "Proiect: https://github.com/patjak/facetimehd"
 
-if sudo dkms status 2>/dev/null | grep -q "facetimehd"; then
-    warn "Driver-ul camerei este deja inregistrat in DKMS. Sar aceasta etapa."
+cd "$WORKDIR"
+if [ -d "facetimehd" ]; then
+    info "Repo exista, actualizez..."
+    git -C facetimehd fetch --tags --quiet || warn "git fetch a esuat, continui cu versiunea existenta."
+    git -C facetimehd pull --quiet || warn "git pull a esuat, continui cu versiunea existenta."
 else
-    cd "$WORKDIR"
-    if [ -d "facetimehd" ]; then
-        info "Repo exista, actualizez..."
-        git -C facetimehd pull || warn "git pull a esuat, continui cu versiunea existenta."
-    else
-        info "Clonez repo-ul..."
-        git clone https://github.com/patjak/facetimehd.git \
-            || fail "git clone facetimehd a esuat."
-    fi
+    info "Clonez repo-ul..."
+    git clone https://github.com/patjak/facetimehd.git \
+        || fail "git clone facetimehd a esuat."
+fi
 
-    FTIMEHD_VER=$(grep "^PACKAGE_VERSION=" "$WORKDIR/facetimehd/dkms.conf" \
-        | cut -d= -f2 | tr -d '"')
-    [ -z "$FTIMEHD_VER" ] && FTIMEHD_VER="0.7.0.1"
-    info "Versiune driver camera: $FTIMEHD_VER"
+# Versiunea din dkms.conf e nemodificata in upstream de ani (0.7.0.1), asa ca nu
+# spune nimic despre ce cod e de fapt instalat: doua instalari facute la luni
+# distanta ar purta acelasi nume. Se ia din git, unde se vede si tag-ul, si cate
+# comituri sunt peste el, si care comit anume.
+FTIMEHD_VER=$(git -C "$WORKDIR/facetimehd" describe --tags --always 2>/dev/null)
+[ -z "$FTIMEHD_VER" ] && FTIMEHD_VER=$(grep "^PACKAGE_VERSION=" \
+    "$WORKDIR/facetimehd/dkms.conf" | cut -d= -f2 | tr -d '"')
+[ -z "$FTIMEHD_VER" ] && FTIMEHD_VER="necunoscut"
+info "Versiune driver camera: $FTIMEHD_VER"
+
+DKMS_SRC="/usr/src/facetimehd-${FTIMEHD_VER}"
+
+if sudo dkms status facetimehd 2>/dev/null | grep -q "facetimehd/${FTIMEHD_VER}.*installed"; then
+    warn "Driver-ul camerei $FTIMEHD_VER e deja instalat prin DKMS. Sar aceasta etapa."
+else
+    # Orice alta versiune inregistrata e dintr-o rulare veche: se scoate, altfel
+    # raman mai multe si nu se mai stie care se incarca la boot.
+    for v in $(sudo dkms status facetimehd 2>/dev/null | sed 's#^facetimehd/##; s#,.*##' | sort -u); do
+        [ "$v" = "$FTIMEHD_VER" ] && continue
+        info "Scot versiunea DKMS veche $v..."
+        sudo dkms remove -m facetimehd -v "$v" --all >/dev/null 2>&1 \
+            || warn "dkms remove $v a esuat, continui."
+        sudo rm -rf "/usr/src/facetimehd-$v"
+    done
 
     cd facetimehd || fail "Nu am putut intra in directorul facetimehd."
     info "Compilare modul kernel..."
     make || fail "Compilarea facetimehd a esuat."
 
-    DKMS_SRC="/usr/src/facetimehd-${FTIMEHD_VER}"
-    if [ ! -d "$DKMS_SRC" ]; then
-        info "Copiere sursa in $DKMS_SRC..."
-        sudo cp -r "$WORKDIR/facetimehd" "$DKMS_SRC" \
-            || fail "Copierea surselor DKMS a esuat."
-    fi
+    # Sursa se rescrie de fiecare data: altfel `git pull` aduce cod nou, dar DKMS
+    # continua sa compileze copia veche din /usr/src.
+    info "Copiere sursa in $DKMS_SRC..."
+    sudo rm -rf "$DKMS_SRC"
+    sudo cp -r "$WORKDIR/facetimehd" "$DKMS_SRC" \
+        || fail "Copierea surselor DKMS a esuat."
+    # DKMS cere ca versiunea din dkms.conf sa fie cea cu care il inregistram.
+    sudo sed -i "s/^PACKAGE_VERSION=.*/PACKAGE_VERSION=${FTIMEHD_VER}/" "$DKMS_SRC/dkms.conf" \
+        || fail "Nu am putut scrie versiunea in $DKMS_SRC/dkms.conf."
 
     info "dkms add..."
     sudo dkms add -m facetimehd -v "$FTIMEHD_VER" \
