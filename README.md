@@ -86,17 +86,23 @@ Quick live test: `sudo apt install cheese && cheese` — webcam preview should a
 > the stream. Raising the driver's buffer count only moves the threshold, which is why the old
 > `FTHD_BUFFERS 4→8` patch that used to live here was dropped.
 >
-> Reported and being fixed upstream — **six patches are now in PipeWire master**
+> Reported and being fixed upstream. **Eleven patches are in PipeWire master**
 > ([!2933](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2933),
 > [!2934](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2934),
+> [!2935](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2935),
 > [!2941](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2941),
+> [!2950](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2950),
 > [!2954](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2954),
+> [!2963](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2963),
 > [!2964](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2964),
-> [!2965](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2965)) — **ten are merged
-> in all**, the later ones being !2935, !2963, !2950, !2985 and !2986 — and two are open (!2951,
-> !2998). On the driver side, [patjak/facetimehd](https://github.com/patjak/facetimehd/pulls) has
-> **five merged** (#328, #329, #330, #332, #333) and nine open (#331, #334, #338, #340, #342, #343,
-> #344, #345, #347).
+> [!2965](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2965),
+> [!2985](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2985),
+> [!2986](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2986)) and **two are
+> open** ([!2951](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951),
+> [!2998](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2998)). On the driver
+> side, [patjak/facetimehd](https://github.com/patjak/facetimehd/pulls) has **five merged**
+> (#328, #329, #330, #332, #333) and **nine open** (#331, #334, #338, #340, #342, #343, #344,
+> #345, #347). *(Counts verified against the forge APIs on 2026-09-12.)*
 >
 > **Part of the PipeWire side has now reached the stable branch.** Debian forky still ships `1.6.8`,
 > but three of the merged patches were cherry-picked into upstream's `1.6` branch and will arrive
@@ -573,9 +579,14 @@ machine. The chronic desync remains a generic-firmware quirk, handled by the Sta
 
 ## Tested on
 
-Debian Testing/forky. **Currently `7.1.6+deb14-amd64`**, with `7.1.3` kept installed as a fallback
-and DKMS built for both. Re-checked 2026-08-08: both DKMS modules installed for both kernels,
-camera verified end to end, Bluetooth and WiFi up.
+Debian Testing/forky. **Currently `7.1.13+deb14-amd64`**, with `7.1.12` kept installed as a
+fallback and all three DKMS modules (`facetimehd/0.7.2`, `snd_hda_macbookpro`, `v4l2loopback`)
+built for both. Re-checked 2026-09-12: camera verified end to end, Bluetooth and WiFi up.
+
+> A DKMS module is only built for the kernels it was installed against. After replacing one by
+> hand, check `dkms status` lists **every** kernel you might boot — on 2026-09-12 `facetimehd` was
+> briefly present for `7.1.13` only, which would have left the fallback kernel without a camera.
+> `sudo dkms install -m <module> -v <version> -k <kernel>` fills the gap.
 
 Nothing in this repo is pinned to a kernel version. The machine has run the whole `7.0.x` → `7.1.x`
 path since May 2026; the two DKMS modules rebuild themselves on upgrade and the camera stack was

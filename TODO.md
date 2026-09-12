@@ -3432,6 +3432,12 @@ păstrat deliberat ca rezervă, cu DKMS construit pentru amândouă (`facetimehd
 cameră: toate variantele de driver compilează fără warning, `v4l2-compliance` dă **exact** aceleași
 50/7 ca pe 7.1.3, captura merge de la 320x240 la 1296x736.
 
+⚠️ **După ce înlocuiești un modul DKMS de mână, verifică `dkms status` pentru *fiecare* kernel pe
+care l-ai putea porni.** Un modul se construiește doar pentru kernelele pentru care a fost instalat.
+Pe 12 septembrie, după trecerea driverului camerei pe `0.7.2`, el exista doar pentru `7.1.13` — deci
+kernelul de rezervă `7.1.12` ar fi pornit **fără cameră**, și s-ar fi văzut abia când ai fi avut
+nevoie de el. Reparat cu `sudo dkms install -m facetimehd -v 0.7.2 -k 7.1.12+deb14-amd64`.
+
 ⚠️ **Înainte de orice upgrade de kernel: `apt install linux-source-<X.Y>`** — altfel build-ul DKMS al
 audio-ului pică. Vezi [secțiunea 7.9](#79-️-capcana-de-la-fiecare-upgrade-de-kernel--linux-source-întâi).
 
