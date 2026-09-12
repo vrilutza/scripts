@@ -645,7 +645,7 @@ Din cele trei observate pe 16 august, **unul s-a dovedit al meu**:
   și raportat ca [wireplumber #986](https://gitlab.freedesktop.org/pipewire/wireplumber/-/work_items/986).
 * **`update_controls` → `-EINVAL` pe `vivid`** — ~~rămâne neraportat, e zgomot în log, cu efect
   practic aproape nul~~. **Greșit, corectat pe 17 aug seara:** este exact cauza lui #986. Vezi
-  [3.2h](#32h--17-august-seara--986-cauza-gasita-si-in-alta-parte-decat-credeau-toti). Lecția:
+  [3.2h](#32h--17-august-seara--986-cauza-găsită-și-în-alt-loc-decât-credeau-toți). Lecția:
   „zgomot în log" a fost o presupunere, nu o măsurătoare — n-am urmărit niciodată unde ajunge
   acel `-EINVAL`.
 
