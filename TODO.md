@@ -88,6 +88,10 @@ pachete. De reținut înainte de a-i spune cuiva că „are deja" vreuna dintre 
 | [facetimehd](https://github.com/patjak/facetimehd/pulls) — **deschise** | #331 (enumerare reală), #334 (AE în 200 ms), #338 (decupare centrată), #340 (bucla PLL), #342 (`CREATE_BUFS`), #343 (unitățile ratei + implicitul și `G_PARM`), #344 (AE coboară rata), #345 (plafonul de tampoane), #347 (`VIDIOC_G_SELECTION`) | 🔵 **nouă deschise**, toate `MERGEABLE`. Testate împreună pe 12 sep: `v4l2-compliance` **48/48**, zero conflicte între ele și cu #346 al altcuiva |
 | [facetimehd #346](https://github.com/patjak/facetimehd/pull/346) (kurobeats) | scoate YVYU, a cărui ieșire e coruptă | 🟡 al altcuiva, deschis 10 sep. Am confirmat simptomul și am **măsurat cauza**: datele sunt bune, dar deplasate cu exact un octet — verificat la trei rezoluții |
 | [linux-media, seria lui Jack Flusche](https://patchwork.linuxtv.org/project/linux-media/list/?series=29296) | driverul trimis în kernelul upstream, import textual din `patjak/facetimehd` | 🟡 trimisă 13 aug, retrimisă 20 aug, stare `new`, **zero comentarii** de atunci. Codul importat e de dinainte de 20 aug, deci **fără** cele cinci reparații ale noastre acceptate ulterior |
+| [GNOME Snapshot #367](https://gitlab.gnome.org/GNOME/snapshot/-/work_items/367) | vizorul îngheață pe primul cadru: pipeline-ul ține tot bazinul de 4 tampoane | ✅ **închis** (8 sep). Depus de noi pe 11 iul, 3 note. **Dar reparația nu e sus:** `!464` e încă deschis |
+| [GNOME Snapshot !464](https://gitlab.gnome.org/GNOME/snapshot/-/merge_requests/464) | `aperture: Set min-buffers to 8 on the pipewiresrc` | 🔵 **deschis**, al lui `msandova`, neatins din 8 aug. Issue-ul s-a închis fără el — de întrebat dacă mai e nevoie de MR |
+| [pipewire #5431](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/5431) (fostul `wireplumber#986`) | un nod `vivid` nu primea niciodată session item | ✅ **închis** (24 aug), 4 note. Mutat din WirePlumber în PipeWire, de aceea `wireplumber#986` apare închis |
+| [pipewire #4842](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/4842) | scurtătura neverificată din enumerarea v4l2 | 🔵 **deschis** din aug 2025, 2 note. **Îl închide !2998**, trimis de noi pe 12 sep |
 | [snd_hda_macbookpro #187](https://github.com/davidjo/snd_hda_macbookpro/issues/187) | `install.cirrus.driver.sh` pică pe Debian (`.tar.xz`) și pe kerneluri `-rc` (404 la kernel.org) | 🔵 deschis, 7 comentarii |
 | [snd_hda_macbookpro #189](https://github.com/davidjo/snd_hda_macbookpro/pull/189) | fix: folosește sursa de kernel instalată local | 🔵 deschis, 1 comentariu |
 
@@ -808,9 +812,9 @@ Trecere prin tot ce e deschis, la cerere. **Zero mișcare** peste tot unde aște
 | 👍-uri | `rmader` pe !2950, !2954, !2964 — **aceleași trei**, niciunul nou | 22 aug 16:45 |
 | **aprobări** | **`pobrn` a aprobat !2954 și !2964** — găsit abia la a doua trecere | 22 aug 17:34 / 17:45 |
 | pipewire master / wireplumber master | `f03a55d7` / `8cf44a43` — neschimbate față de verificarea de ieri | 21 / 20 aug |
-| `pipewire#5431` (fostul `wireplumber#986`) | deschis, 5 note | `pobrn`, **18 aug** |
+| `pipewire#5431` (fostul `wireplumber#986`) | **închis 24 aug**, 4 note *(era „deschis, 5 note" — verificat prin API pe 12 sep)* | `pobrn`, **18 aug** |
 | `pipewire#5363` | deschis, 3 note | 15 aug |
-| `snapshot#367` / `!464` | deschise | 10 / 8 aug |
+| `snapshot#367` / `!464` | **#367 închis 8 sep; `!464` încă deschis** *(verificat 12 sep)* | 10 / 8 aug |
 | notificări GitHub, todo-uri GitLab | **zero** amândouă | — |
 | comentarii inline de review pe cele 7 PR | **zero** (verificat separat de comentariile de pe fir) | — |
 | `patjak/facetimehd` branch `development` | `45f6e62b5`, divergent, **ultimul comit oct. 2024** | 2024 |
@@ -1541,7 +1545,7 @@ măsurat pe 24 august pe master-ul de azi (deci cu !2954 înăuntru), fără !29
 | `#4665` (reproducătorul postat ieri) | nota noastră e tot singura | — |
 | `#5363` / `#2489` / `#4174` / `#4863` | ultima notă e a noastră în fiecare | 15–16 aug |
 | wireplumber `#972` / `#986` | amândouă închise, neschimbate | 15 iul / 19 aug |
-| snapshot `#367` / `!464` | ultima notă e a noastră (10 aug); `!464` nemerged | `msandova`, 8 aug |
+| snapshot `#367` / `!464` | **#367 închis 8 sep**; `!464` nemerged și neatins din 8 aug | `msandova`, 8 aug |
 | `snd_hda_macbookpro #187` / `#189` | neschimbate | `davidjo`, **5 iul** |
 | serie `linux-media` (RESEND 20 aug) | toate 5 patch-urile `new`, **zero comentarii** | — |
 | notificări GitHub / todo-uri GitLab | **0** / **0** | — |
@@ -1598,7 +1602,7 @@ GitHub, patchwork și GNOME:
 | `#5363` `#2489` `#4174` `#4863` | ultima notă e a noastră în fiecare | 15–16 aug |
 | `#5431` | închis de `wtaymans` pe 24 aug | 24 aug |
 | wireplumber `#972` `#986` | închise, neschimbate | 15 iul / 19 aug |
-| snapshot `#367` / `!464` | ultima notă e a noastră (10 aug), `!464` nemerged | `msandova`, 8 aug |
+| snapshot `#367` / `!464` | **#367 închis 8 sep**; `!464` nemerged și neatins din 8 aug | `msandova`, 8 aug |
 | `snd_hda_macbookpro #187` / `#189` | neschimbate | `davidjo`, **5 iul** |
 | serie `linux-media` (RESEND 20 aug) | toate 5 `new`, **zero comentarii** | — |
 | notificări GitHub / todo-uri GitLab | **0** / **0** | — |
