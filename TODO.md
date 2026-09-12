@@ -30,7 +30,7 @@ Fișier unic: **ce e rezolvat**, **ce e deschis și se poate repara**, **ce e wo
 |---|---|---|---|---|
 | 1 | Bluetooth mort la ~14% din boot-uri (`-110`) | 🟡 activ | experiment de 3 linii care separă „warm vs cold"; SMC reset ca remediu | [1](#1--bluetooth-bcm4350c0--init-eșuat-la-14-din-boot-uri) |
 | 2 | WiFi BCM4350 — desincronizare ring, risc de panică | 🟡 activ | raport upstream cu dovezile din pstore; monitorizare cu prag | [2](#2--wifi-bcm4350--desincronizare-ring-msgbuf) |
-| 3 | Cameră — partajare de buffere fără `SPA_META_Busy` (aplicațiile îngheață) | 🔵 upstream | **șase patch-uri PipeWire + două driver acceptate în master**; patru PipeWire + șase driver încă deschise (30 aug) | [3](#3--camera-facetime-hd--partajare-de-buffere-nesigură) |
+| 3 | Cameră — partajare de buffere fără `SPA_META_Busy` (aplicațiile îngheață) | 🔵 upstream | **unsprezece patch-uri PipeWire + cinci de driver acceptate în master** (trei dintre cele PipeWire și în ramura `1.6`); două PipeWire + nouă driver încă deschise *(verificat prin API, 12 sep)* | [3](#3--camera-facetime-hd--partajare-de-buffere-nesigură) |
 | 4 | Sacadare cu 2 browsere + saturație termică | 🟢 | curățare fizică + tab-ul Chrome; abia apoi eventual daemon de ventilator | [4](#4--termic--sacadare) |
 | 5 | Suspend / s2idle | 🟡 opțional | experiment reversibil, dacă chiar vrei suspend | [5](#5--suspend--s2idle) |
 | 6 | Zgomot de log (DMAR / ACPI / SGX / nvme0n2) | 🔴 | nimic — vezi de ce „fix-ul fără dezactivarea IOMMU" nu funcționează | [6](#6--zgomot-de-log) |
@@ -433,7 +433,7 @@ retras: trata simptomul, iar ca patch upstream ar fi fost respins pe bună drept
 
 `FTHD_BUFFERS` e azi **4**, valoarea upstream *(verificat 8 aug: `fthd_drv.h:30`)*.
 
-### 3.2 🔵 PipeWire — zece patch-uri acceptate, două în review
+### 3.2 🔵 PipeWire — unsprezece patch-uri acceptate, două în review
 
 Vezi tabloul complet din [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou). Pe scurt:
 
@@ -755,7 +755,7 @@ că se aplică și toate împreună, fără conflict, pe `master`-ul de azi (`54
 
 Driverul instalat pe mașină e **exact** suma lor *(verificat prin `diff -rq` pe 8 aug)*, construit
 pentru ambele kerneluri. Scriptul de instalare/revenire e local, în
-`pipewire-5363/camera-fix/install-pr333.sh` (nu e publicat — vezi nota din [secțiunea 3.2](#32--pipewire--zece-patch-uri-acceptate-două-în-review)).
+`pipewire-5363/camera-fix/install-pr333.sh` (nu e publicat — vezi nota din [secțiunea 3.2](#32--pipewire--unsprezece-patch-uri-acceptate-două-în-review)).
 
 ### 3.3a 🔵 17 august — fiecare patch verificat prin măsurătoare
 
