@@ -478,9 +478,23 @@ patch scrie `provided 4 buffers, using 2`.
 
 Evidența completă — bancul de test, măsurătorile, ce s-a retras și de ce — stă în
 `pipewire-5363/`, **numai local pe laptop** (nu e publicată: e material de lucru, nu documentație
-de proiect). De curățat după ce upstream se pronunță, mai puțin `camera-fix/`, care aparține
-proiectului ăstuia. Ce contează pentru cineva din afară e deja în MR-urile și PR-urile linkate
-mai sus.
+de proiect), mai puțin `camera-fix/`, care aparține proiectului ăstuia. Ce contează pentru cineva
+din afară e deja în MR-urile și PR-urile linkate mai sus.
+
+> ⚠️ **Consolidat pe 12 septembrie 2026 — căile vechi din acest fișier nu mai există pe disc.**
+> Cele 203 documente de acolo au fost reduse la trei vii: `pipewire-5363/STARE.md` (starea de azi),
+> `pipewire-5363/JURNAL.md` (măsurători, cauze, infirmări, capcane) și `README.md` (harta).
+> Motivul: jurnalele vechi ajunseseră să se contrazică între ele și **trimiteau pe piste greșite**.
+>
+> **Nimic nu s-a pierdut** — `pipewire-5363/` are propriul `.git` (local, fără remote), iar tot ce
+> s-a șters e în istoricul lui: `git -C pipewire-5363 log --all --diff-filter=D --name-only`.
+> Deci o cale ca `pipewire-5363/results/VIVID-CAUZA-17aug.md`, citată mai jos, se recuperează de
+> acolo. Ce a rămas pe disc: datele brute (CSV, log, JSON), uneltele, patch-urile netrimise și
+> bancul adus de pe Lenovo.
+>
+> Singurele **șterse definitiv** sunt cele șapte generații de ciorne de descrieri
+> (`descrieri/final/`, `descrieri/scurte/`, `descrieri/dupa-22aug-b/` și restul): textele lor sunt
+> publice pe forje, iar copiile locale se contraziceau între ele.
 
 ### 3.2b 🔵 Pornirea lentă a camerei — și de ce era vina noastră
 
@@ -725,7 +739,7 @@ că se aplică și toate împreună, fără conflict, pe `master`-ul de azi (`54
 
 Driverul instalat pe mașină e **exact** suma lor *(verificat prin `diff -rq` pe 8 aug)*, construit
 pentru ambele kerneluri. Scriptul de instalare/revenire e local, în
-`pipewire-5363/camera-fix/install-pr333.sh` (nu e publicat — vezi nota din [secțiunea 3.2](#32--pipewire--trei-patch-uri-acceptate-al-patrulea-în-review)).
+`pipewire-5363/camera-fix/install-pr333.sh` (nu e publicat — vezi nota din [secțiunea 3.2](#32--pipewire--zece-patch-uri-acceptate-două-în-review)).
 
 ### 3.3a 🔵 17 august — fiecare patch verificat prin măsurătoare
 
@@ -3162,7 +3176,7 @@ Jurnal: `pipewire-5363/fthd-masuratori/rezultate/JURNAL-3sep-review-si-decupare.
 
 - ~~patch local `FTHD_BUFFERS` 4→8~~ — **retras**, trata simptomul ([secțiunea 3.1](#31-cauza-rădăcină-așa-cum-e-ea))
 - ~~*fosta* secțiune 3.3, persistența patch-ului 4→8 în scriptul de setup~~ — **fără obiect**, patch-ul nu
-  mai există *(numerele se refereau la structura veche a secțiunii; azi [secțiunea 3.3](#33--driver--șapte-pr-uri-la-patjakfacetimehd) e altceva)*
+  mai există *(numerele se refereau la structura veche a secțiunii; azi [secțiunea 3.3](#33--driver--nouă-pr-uri-deschise-la-patjakfacetimehd-cinci-integrate) e altceva)*
 - ~~*fosta* secțiune 3.4, PR upstream `patjak/facetimehd` cu 4→8~~ — **nu s-a trimis și nu se mai trimite**;
   în locul lui au plecat cele șase de mai sus
 - ~~„fix-ul propus e de o linie (`SPA_MIN(8u, …)`)"~~ — **infirmat** de analiza de cauză rădăcină
