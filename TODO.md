@@ -3568,6 +3568,29 @@ tot are diagnosticul complet ca să se reia de acolo.
 
 ### 8.2 Stare de fapt
 
+> **Reverificat pe 13 septembrie, cu două instrumente independente** — sfârșitul jurnalului fiecărui
+> boot și `/var/log/shutdown-verb.log`, care se confirmă reciproc pe tot intervalul acoperit:
+>
+> - **7 opriri abrupte între 3 sep 09:07 și 4 sep 20:34** — toate în boot-uri cu **3 până la 98 de
+>   încărcări** ale modulului `facetimehd`, adică în seria de teste de reîncărcare, **nu** opriri
+>   spontane în sensul de mai sus;
+> - **13 opriri ordonate la rând de atunci**, până pe 13 sep.
+>
+> Cauza blocărilor **provocate de reîncărcare** a fost găsită: bucla de așteptare a PLL-ului S2 e
+> inversată (**0 din 120** cu reparația, față de 2 din 18) — trimisă ca
+> [facetimehd #340](https://github.com/patjak/facetimehd/pull/340). **Nu e dovedit că explică și
+> cele cinci opriri spontane de mai sus**, dintre care trei noaptea, cu mașina inactivă. Detalii:
+> `pipewire-5363/JURNAL.md` §3.6.
+>
+> ⚠️ **Driverul implicit actual, `0.7.2`, NU are reparația** — nici master nu o are. Pe 13 sep, a doua
+> pornire pe el a ieșit `Failed to lock S2 PLL: 0xc902c902` fără nicio linie de bypass, adică exact
+> starea pe care #340 o repară.
+>
+> ⚠️ **Logger-ul de opriri n-a scris nimic între 30 aug și 4 sep.** Prima versiune scria în
+> `/var/log` după ce systemd remontase deja `/` read-only; append-ul eșua în tăcere. Versiunea
+> reparată (remontează rw cât scrie) e instalată pe **4 sep, 19:26**. Deci datele de corelare pentru
+> Bluetooth (§1.4) încep abia de atunci, nu din 30 august.
+
 **Nicio recidivă din 5 august — reconfirmat 30 august, 25 de zile curate.** Ultimele trei opriri
 din documentul original (7-8 aug) aveau toate `systemd-shutdown` în jurnal — ordonate. Verificat
 din nou acum: `last -x` arată trei reporniri (24-26 aug) marcate „crash", dar jurnalul lor arată
