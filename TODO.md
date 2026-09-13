@@ -3217,7 +3217,8 @@ Jurnal: `pipewire-5363/fthd-masuratori/rezultate/JURNAL-3sep-review-si-decupare.
 ### 3.3n 🟡 De reluat, în ordine (5 septembrie)
 
 > **Stare la 13 sep:** 1 ✅ (#343, #344, al treilea aruncat); 2 ✅ (cauza găsită în aceeași zi, reparată
-> de !2935, acceptat pe 7 sep); 4 ✅ (descrierea #340 corectată pe 13 sep); **3 și 5 rămân deschise.**
+> de !2935, acceptat pe 7 sep); 4 ✅ (descrierea #340 corectată pe 13 sep); 5 ✅ (harta publicată pe 13 sep ca pagina
+> [Firmware](https://github.com/patjak/facetimehd/wiki/Firmware) din wiki, care exista ca link fără pagină); **rămâne deschis 3.**
 
 1. **Cele trei patch-uri de expunere** ([3.3m](#33m--45-septembrie--imaginea-întunecată-cauza-găsită-trei-patch-uri-netrimise)):
    reverificate, descrieri rescrise pe Problem/Reproduction/Changes/Fix/Impact, **aprobare separată
