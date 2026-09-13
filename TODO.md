@@ -76,7 +76,7 @@ pachete. De reținut înainte de a-i spune cuiva că „are deja" vreuna dintre 
 | [pipewire !2954](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2954) | enumerarea `SPA_PARAM_Props` cădea din cauza unui singur control | ✅ **acceptat** `6734d69c8` (24 aug), 👍 `rmader`, aprobat de `pobrn` |
 | [pipewire !2964](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2964) | pasul unui interval de dimensiuni raportat ca maxim | ✅ **acceptat** `cefb4e926` (24 aug), fast-forward |
 | [pipewire !2965](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2965) | două defecte la conversia `SPA_CHOICE` → `GstCaps` | ✅ **acceptat** `acea30afa` + `c4309f0eb` (24 aug). A înghițit !2966, închis ca dublură |
-| [pipewire !2935](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2935) | copiere când pool-ul se golește | ✅ **acceptat** `bf3951eb0` (9 sep, `wtaymans`), după 40 de zile în review. **A închis issue-ul #5363** |
+| [pipewire !2935](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2935) | copiere când pool-ul se golește | ✅ **acceptat** `bf3951eb0` (7 sep, `wtaymans`), după 38 de zile în review. **A închis issue-ul #5363** |
 | [pipewire !2963](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2963) | un control necitibil oprea actualizarea celorlalte | ✅ **acceptat** `919de4c52` (7 sep) și **cules în ramura 1.6** ca `458b8b183` |
 | [pipewire !2950](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2950) | o sursă cu interval era deschisă la cea mai mică dimensiune | ✅ **acceptat** `3b1857f34` (9 sep) și **cules în 1.6** ca `bcf371452`. `wtaymans` a cerut o corecție reală (rezerva la eșecul `G_SELECTION` devenise maximul); corectată și măsurată în ambele sensuri |
 | [pipewire !2985](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2985) | `PW_BUFFERS_FLAG_IN_PRIORITY` făcea de un an inversul a ce spune propriul lui mesaj de commit | ✅ **acceptat** `cebbb24d6` (7 sep), la 2h28m după trimitere. A ieșit din sugestia lui `pobrn` de pe !2980 |
@@ -88,8 +88,8 @@ pachete. De reținut înainte de a-i spune cuiva că „are deja" vreuna dintre 
 | [facetimehd](https://github.com/patjak/facetimehd/pulls) — **deschise** | #331 (enumerare reală), #334 (AE în 200 ms), #338 (decupare centrată), #340 (bucla PLL), #342 (`CREATE_BUFS`), #343 (unitățile ratei + implicitul și `G_PARM`), #344 (AE coboară rata), #345 (plafonul de tampoane), #347 (`VIDIOC_G_SELECTION`) | 🔵 **nouă deschise**, toate `MERGEABLE`. Testate împreună pe 12 sep: `v4l2-compliance` **48/48**, zero conflicte între ele și cu #346 al altcuiva |
 | [facetimehd #346](https://github.com/patjak/facetimehd/pull/346) (kurobeats) | scoate YVYU, a cărui ieșire e coruptă | 🟡 al altcuiva, deschis 10 sep. Am confirmat simptomul și am **măsurat cauza**: datele sunt bune, dar deplasate cu exact un octet — verificat la trei rezoluții |
 | [linux-media, seria lui Jack Flusche](https://patchwork.linuxtv.org/project/linux-media/list/?series=29296) | driverul trimis în kernelul upstream, import textual din `patjak/facetimehd` | 🟡 trimisă 13 aug, retrimisă 20 aug, stare `new`, **zero comentarii** de atunci. Codul importat e de dinainte de 20 aug, deci **fără** cele cinci reparații ale noastre acceptate ulterior |
-| [GNOME Snapshot #367](https://gitlab.gnome.org/GNOME/snapshot/-/work_items/367) | vizorul îngheață pe primul cadru: pipeline-ul ține tot bazinul de 4 tampoane | ⛔ **închis de noi** (8 sep), fiindcă era **raportat în proiectul greșit**. Simptomul apare în Snapshot, dar cauza e în pluginul v4l2 al PipeWire: preferatul fix de 4 tampoane. Munca reală s-a mutat în `pipewire#5363`, închis de !2935. Depus 11 iul, 3 note |
-| [GNOME Snapshot !464](https://gitlab.gnome.org/GNOME/snapshot/-/merge_requests/464) | `aperture: Set min-buffers to 8 on the pipewiresrc` | 🔵 **deschis**, al lui `msandova`, neatins din 8 aug. **Reparația nu e corectă, și am arătat-o chiar acolo:** `min-buffers=8` rupe negocierea cu libcamera — exact motivul pentru care upstream a coborât `DEFAULT_MIN_BUFFERS` de la 8 la 1 în `e81fb7732` — iar pe o cameră plafonată la 4 tampoane (facetimehd) dă **zero cadre**. Măsurat pe Lenovo: nesetat → 4, `=8` → 16. Reparațiile corecte sunt în **PipeWire** (!2935) și în **driver** (#345, plafonul 4 → 8). Vezi [3.2c](#32c--al-doilea-laptop--ce-a-schimbat) |
+| [GNOME Snapshot #367](https://gitlab.gnome.org/GNOME/snapshot/-/work_items/367) | vizorul îngheață pe primul cadru: pipeline-ul ține tot bazinul de 4 tampoane | ⛔ **închis de noi** pe 8 sep, cu nota *„Closing this issue as the bug was fixed"* — a doua zi după ce !2935 a intrat în PipeWire (7 sep, 11:19). Analiza noastră de pe 10 aug, tot aici, arătase că **reparația nu e în Snapshot**: simptomul apare acolo, dar cauza e că `pipewiresrc` dă aval memorie partajată cu un tampon pe care îl reciclează producătorul (`pipewire#5363`). Depus 11 iul |
+| [GNOME Snapshot !464](https://gitlab.gnome.org/GNOME/snapshot/-/merge_requests/464) | `aperture: Set min-buffers to 8 on the pipewiresrc` | 🔵 **deschis**, al lui `msandova`, neatins din 8 aug. **Reparația nu e corectă, și am arătat-o pe [#367](https://gitlab.gnome.org/GNOME/snapshot/-/work_items/367) pe 10 aug** (pe `!464` există doar nota de sistem care îl leagă de #367): `min-buffers=8` rupe negocierea cu libcamera — exact motivul pentru care upstream a coborât `DEFAULT_MIN_BUFFERS` de la 8 la 1 în `e81fb7732` — iar pe o cameră plafonată la 4 tampoane (facetimehd) dă **zero cadre**. Măsurat pe Lenovo: nesetat → 4, `=8` → 16. Reparațiile corecte sunt în **PipeWire** (!2935) și în **driver** (#345, plafonul 4 → 8). Vezi [3.2c](#32c--al-doilea-laptop--ce-a-schimbat) |
 | [pipewire #5431](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/5431) (fostul `wireplumber#986`) | un nod `vivid` nu primea niciodată session item | ✅ **închis** (24 aug), 4 note. Mutat din WirePlumber în PipeWire, de aceea `wireplumber#986` apare închis |
 | [pipewire #4842](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/4842) | scurtătura neverificată din enumerarea v4l2 | 🔵 **deschis** din aug 2025, 2 note. **Îl închide !2998**, trimis de noi pe 12 sep |
 | [snd_hda_macbookpro #187](https://github.com/davidjo/snd_hda_macbookpro/issues/187) | `install.cirrus.driver.sh` pică pe Debian (`.tar.xz`) și pe kerneluri `-rc` (404 la kernel.org) | 🔵 deschis, 7 comentarii |
@@ -570,7 +570,7 @@ commit-ul din master) și din **1.6.0** (27 ian 2026). Deci **1.4.4–1.4.11 sun
 
 Deci blocajul se atinge acum când consumatorul ține **patru** cadre, nu șaisprezece. Nu s-a stricat
 nimic — s-a micșorat marja. Și întoarcerea nu e disponibilă: 8 rupe libcamera, iar pe o cameră
-plafonată la 4 dă zero cadre, exact cum am arătat la snapshot!464.
+plafonată la 4 dă zero cadre, exact cum am arătat pe snapshot#367, măsurând setarea propusă de !464.
 
 **Neregresie pentru !2950 și !2951** pe cameră cu dimensiuni discrete: tot identic, în afară de un
 rând care s-a **îmbunătățit** — proba cu `reconfigure`, 30 → 54 de cadre. Ceea ce a infirmat propria
@@ -844,7 +844,7 @@ Trecere prin tot ce e deschis, la cerere. **Zero mișcare** peste tot unde aște
 | pipewire master / wireplumber master | `f03a55d7` / `8cf44a43` — neschimbate față de verificarea de ieri | 21 / 20 aug |
 | `pipewire#5431` (fostul `wireplumber#986`) | **închis 24 aug**, 4 note *(era „deschis, 5 note" — verificat prin API pe 12 sep)* | `pobrn`, **18 aug** |
 | `pipewire#5363` | deschis, 3 note | 15 aug |
-| `snapshot#367` / `!464` | **#367 închis de noi pe 8 sep** — proiect greșit, cauza era în PipeWire; `!464` încă deschis *(verificat 12 sep)* | 10 / 8 aug |
+| `snapshot#367` / `!464` | **#367 închis de noi pe 8 sep**, după ce reparația a intrat în PipeWire; `!464` încă deschis *(verificat 13 sep)* | 10 / 8 aug |
 | notificări GitHub, todo-uri GitLab | **zero** amândouă | — |
 | comentarii inline de review pe cele 7 PR | **zero** (verificat separat de comentariile de pe fir) | — |
 | `patjak/facetimehd` branch `development` | `45f6e62b5`, divergent, **ultimul comit oct. 2024** | 2024 |
@@ -1575,7 +1575,7 @@ măsurat pe 24 august pe master-ul de azi (deci cu !2954 înăuntru), fără !29
 | `#4665` (reproducătorul postat ieri) | nota noastră e tot singura | — |
 | `#5363` / `#2489` / `#4174` / `#4863` | ultima notă e a noastră în fiecare | 15–16 aug |
 | wireplumber `#972` / `#986` | amândouă închise, neschimbate | 15 iul / 19 aug |
-| snapshot `#367` / `!464` | **#367 închis de noi pe 8 sep** (proiect greșit); `!464` nemerged și neatins din 8 aug | `msandova`, 8 aug |
+| snapshot `#367` / `!464` | **#367 închis de noi pe 8 sep** (reparația intrase în PipeWire); `!464` nemerged și neatins din 8 aug | `msandova`, 8 aug |
 | `snd_hda_macbookpro #187` / `#189` | neschimbate | `davidjo`, **5 iul** |
 | serie `linux-media` (RESEND 20 aug) | toate 5 patch-urile `new`, **zero comentarii** | — |
 | notificări GitHub / todo-uri GitLab | **0** / **0** | — |
@@ -1632,7 +1632,7 @@ GitHub, patchwork și GNOME:
 | `#5363` `#2489` `#4174` `#4863` | ultima notă e a noastră în fiecare | 15–16 aug |
 | `#5431` | închis de `wtaymans` pe 24 aug | 24 aug |
 | wireplumber `#972` `#986` | închise, neschimbate | 15 iul / 19 aug |
-| snapshot `#367` / `!464` | **#367 închis de noi pe 8 sep** (proiect greșit); `!464` nemerged și neatins din 8 aug | `msandova`, 8 aug |
+| snapshot `#367` / `!464` | **#367 închis de noi pe 8 sep** (reparația intrase în PipeWire); `!464` nemerged și neatins din 8 aug | `msandova`, 8 aug |
 | `snd_hda_macbookpro #187` / `#189` | neschimbate | `davidjo`, **5 iul** |
 | serie `linux-media` (RESEND 20 aug) | toate 5 `new`, **zero comentarii** | — |
 | notificări GitHub / todo-uri GitLab | **0** / **0** | — |
@@ -1745,7 +1745,7 @@ Cronologia detaliată, cu fiecare măsurătoare, stă în jurnalul local
 (`pipewire-5363/JURNAL.md`, care nu face parte din acest depozit). Aici doar ce schimbă starea:
 
 **Acceptate.** `wtaymans` a luat !2963 (7 sep), !2985 (7 sep, la 2h28m după trimitere), !2935
-(7 sep, după 40 de zile), !2950 și !2986 (9 sep). Cu ele, **issue-ul #5363 s-a închis**. Trei dintre
+(7 sep, după 38 de zile), !2950 și !2986 (9 sep). Cu ele, **issue-ul #5363 s-a închis**. Trei dintre
 ele au fost culese și în ramura `1.6` și vin cu 1.6.9.
 
 **Închis de noi.** !2980: după ce !2985 a rezolvat central partea care conta, `wtaymans` și `pobrn`
