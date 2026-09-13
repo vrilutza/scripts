@@ -3594,8 +3594,8 @@ tot are diagnosticul complet ca să se reia de acolo.
 > la fiecare încărcare, fără niciun timeout de firmware: în `insmod`-ul de după un reset de bus PCI
 > al camerei (`echo 1 > /sys/bus/pci/devices/0000:03:00.0/reset`), **în aceeași fereastră DDR40**
 > (`fthd_hw.c:414–446`) ca moartea prinsă complet cu bucla originală. Resetul nu omoară determinist
-> (un boot a supraviețuit la 64). Care acces omoară: **neexplicat**. De când resetul a fost scos,
-> nicio oprire abruptă — corelație, nu dovadă. O a treia (`-22`) a venit după ~6 ore de
+> (un boot a supraviețuit la 64). Care acces omoară: **neexplicat**. După 4 sep resetul a mai fost
+> folosit doar de două ori (6 sep), fără moarte, și nicio oprire abruptă — corelație, nu dovadă. O a treia (`-22`) a venit după ~6 ore de
 > inactivitate, tot neexplicată. **Știut din 4 sep seara** — de aici bifa din
 > [3.3m](#33m--45-septembrie--imaginea-întunecată-cauza-găsită-trei-patch-uri-netrimise)
 > „corectat încadrarea din #340", **încă deschisă**.
