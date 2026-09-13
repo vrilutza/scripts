@@ -3576,11 +3576,22 @@ tot are diagnosticul complet ca să se reia de acolo.
 >   spontane în sensul de mai sus;
 > - **13 opriri ordonate la rând de atunci**, până pe 13 sep.
 >
-> Cauza blocărilor **provocate de reîncărcare** a fost găsită: bucla de așteptare a PLL-ului S2 e
-> inversată (**0 din 120** cu reparația, față de 2 din 18) — trimisă ca
-> [facetimehd #340](https://github.com/patjak/facetimehd/pull/340). **Nu e dovedit că explică și
-> cele cinci opriri spontane de mai sus**, dintre care trei noaptea, cu mașina inactivă. Detalii:
-> `pipewire-5363/JURNAL.md` §3.6.
+> **Ce explică reparația PLL** ([facetimehd #340](https://github.com/patjak/facetimehd/pull/340)):
+> blocările la reîncărcarea modulului **după un timeout de firmware** — cu bucla originală 2 din 18,
+> cu primul comit al reparației **0 din 120**.
+>
+> ⚠️ **Ce NU explică:** două dintre cele 7 (`-15`, `-14`, 4 sep seara) au murit **cu bucla reparată**
+> la fiecare încărcare, fără niciun timeout de firmware: în `insmod`-ul de după un reset de bus PCI
+> al camerei (`echo 1 > /sys/bus/pci/devices/0000:03:00.0/reset`), **în aceeași fereastră DDR40**
+> (`fthd_hw.c:414–446`) ca moartea prinsă complet cu bucla originală. Resetul nu omoară determinist
+> (un boot a supraviețuit la 64). Care acces omoară: **neexplicat**. De când resetul a fost scos,
+> nicio oprire abruptă — corelație, nu dovadă. O a treia (`-22`) a venit după ~6 ore de
+> inactivitate, tot neexplicată. **Știut din 4 sep seara** — de aici bifa din
+> [3.3m](#33m--45-septembrie--imaginea-întunecată-cauza-găsită-trei-patch-uri-netrimise)
+> „corectat încadrarea din #340", **încă deschisă**.
+>
+> **Nu e dovedit nici că explică cele cinci opriri spontane de mai sus**, dintre care trei noaptea,
+> cu mașina inactivă. Tabelul complet, boot cu boot: `pipewire-5363/JURNAL.md` §3.6.
 >
 > ⚠️ **Driverul implicit actual, `0.7.2`, NU are reparația** — nici master nu o are. Pe 13 sep, a doua
 > pornire pe el a ieșit `Failed to lock S2 PLL: 0xc902c902` fără nicio linie de bypass, adică exact
