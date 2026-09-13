@@ -488,14 +488,14 @@ working suspend and the laptop runs on AC, so this costs nothing. To opt out:
 `sudo systemctl disable bluetooth-rfkill-unblock.service`.
 
 > Note: this rfkill soft-block is a **software** state and is distinct from the two hardware issues
-> above (UART baudrate / SMC reset, and the warm-reboot `Reset failed (-110)`). Soft-block =
+> above (UART baudrate / SMC reset, and the `Reset failed (-110)` at boot). Soft-block =
 > `Powered: no` with a clean adapter; hardware = `hci0` timing out or `DOWN`.
 
-### Warm reboot can leave WiFi/Bluetooth unresponsive
+### WiFi/Bluetooth can come up unresponsive
 
 WiFi (BCM4350 on PCIe) and Bluetooth (BCM4350C0 on UART) are the **same physical Broadcom combo
-chip**. A warm reboot (`sudo reboot`) does **not** fully power-cycle this chip, and after several
-rapid successive reboots it can land in an unresponsive state:
+chip**. A warm reboot (`sudo reboot`) does **not** fully power-cycle this chip. Either side can come up
+unresponsive:
 
 - **WiFi**: `brcmfmac: brcmf_chip_recognition: MMIO read failed: 0xffffffff` → `brcmf_pcie_probe: failed` (chip returns all-ones on PCIe = not responding)
 - **Bluetooth**: `command 0xfc18 tx timeout` → `BCM: Reset failed (-110)` (chip times out on UART), `hci0` stays `DOWN`
@@ -503,12 +503,14 @@ rapid successive reboots it can land in an unresponsive state:
 This is a **hardware-level limitation, not a software bug** — none of this repo's hooks run on
 reboot.
 
-⚠️ **But it is only part of the story, and the honest version matters here.** Measured across 173
-boots: a fast restart (<45 s gap) doubles the risk of a dead Bluetooth controller — 21% vs 10% —
-but at `p = 0.055` that is suggestive, not proven. More importantly, **half the failures (12 of 24)
-happened after long power-offs**, one of them after 23.9 hours, which power-cycles the chip for
-certain. So warm reboot cannot be the only cause; there is also a race in the UART init sequence.
-Full analysis in [TODO.md, section 1.3](TODO.md#13-teoria-warm-reboot--măsurată-nu-presupusă-27-iul).
+⚠️ **For Bluetooth, re-measurement says warm reboot is not the cause.** In July, across 173 boots, a
+fast restart (<45 s gap) looked like it doubled the risk of a dead controller — 21% vs 10%, `p = 0.055`,
+found on the same data the idea came from. Re-measured on 13 September across all 264 boots with
+Bluetooth init: on the boots **after** that analysis the effect did not repeat — 9% after a fast
+restart vs 17% after a long power-off — and across all boots it is 18% vs 13%, `p = 0.21`. What
+stays true: on about **one boot in seven** the chip does not answer its very first command, before
+any firmware is read, with no known correlate. Full analysis in
+[TODO.md, section 1.3](TODO.md#13-teoria-warm-reboot--măsurată-nu-presupusă-27-iul).
 
 **Recovery: a full power-off, not a warm reboot.**
 

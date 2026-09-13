@@ -147,6 +147,21 @@ timeout izolat, ci lipsă totală de răspuns pe UART.
 
 ### 1.2 Statistica — reverificată pe 196 de boot-uri (19 mai → 8 aug)
 
+> **Refăcută pe 13 sep, pe toate cele 264 de boot-uri cu init BT** (19 mai → 13 sep), cu
+> `bt-ab/statistica/numara-boot-uri.py` (rezultatul brut în `boot-uri-13sep.tsv`, analiza în
+> `analiza-13sep.txt`). Instrumentul a fost validat întâi pe valori cunoscute: dă exact
+> **195 / 168 / 27** până pe 8 aug, ca tabelul de mai jos, și recunoaște corect cele trei arme din
+> 21 aug. *(Prima lui versiune citea doar boot-ul curent — `journalctl -k` implică `-b`.)*
+>
+> | perioadă | boot-uri cu init | BT mort (primul `0xfc18` = `-110`) |
+> |---|---|---|
+> | până pe 19 aug, **fără** `.hcd` | 209 | **28 (13,4%)** |
+> | 21 aug 06:14 → 13 sep, **cu** `brcm/BCM.hcd` (`f968320b`, instalat în urma PR-ului din `vrilutza/MacBookPro14.1`) | 49 | **9 (18,4%)** |
+>
+> Diferența nu e semnificativă (Fisher, două cozi, **p = 0,37**). Și nici n-ar putea fi a patch-ului:
+> toate cele 9 sunt **mute de la prima comandă**, înainte ca firmware-ul să fie citit. **Rata e
+> aceeași de la început: ~1 boot din 7.**
+
 | Observație | 27 iulie | **8 august** | Interpretare |
 |---|---|---|---|
 | `failed to write update baudrate` | 173 | **195** | apare la *fiecare* boot cu init BT |
@@ -164,6 +179,21 @@ Corelația cu `.hcd` e decisivă: pe boot-urile cu `-110` **nu apare nici `chip 
 ideea „extragem `.hcd`-ul din macOS și se repară" (vezi **E11**, Anexa C).
 
 ### 1.3 Teoria „warm reboot" — măsurată, nu presupusă (27 iul)
+
+> ⚠️ **INFIRMATĂ pe date noi, 13 sep.** Tabelul de mai jos (27 iul) era sugestiv la `p = 0,055`,
+> găsit pe aceleași date pe care s-a formulat teoria. Pe boot-urile de **după** 27 iul, pe care
+> analiza veche nu le-a văzut, efectul **nu se repetă — e chiar invers**:
+>
+> ```
+>                         repornire rapidă (<45 s)   pauză ≥45 s
+> până la 27 iul (control)     12/57  = 21%           12/115 = 10%    p = 0,05 (reprodus)
+> după 27 iul (date noi)        2/22  =  9%           12/70  = 17%    p = 0,90
+> toate                        14/79  = 18%           24/185 = 13%    p = 0,21
+> ```
+>
+> Cu verbul real al opririi (logger funcțional din 4 sep): după `reboot` 1 din 3, după `poweroff`
+> 2 din 10 — prea puține ca să spună ceva. **Concluzia de lucru: repornirea caldă nu e cauza.**
+> Rămâne mutismul cipului la prima comandă, la ~1 boot din 7, fără corelat cunoscut.
 
 `README`-ul și versiunile vechi ale acestui fișier spuneau: *„`reboot` nu power-cycle-ază cipul → poate
 rămâne mut"*. Verbul de shutdown **nu e persistat în jurnal** (`journald` se oprește înainte ca
@@ -205,6 +235,14 @@ Fisher exact, o coadă:  p = 0,055
       **Măsoară, nu răspunde încă**: abia peste 2-3 săptămâni de la 4 sep, când corelezi fișierul cu boot-urile care au avut `Reset failed (-110)`, afli dacă
       warm reboot-ul e cauza dominantă. Revino atunci — dacă e, varianta activă e testabilă
       (`btmgmt power off` sau `hciconfig hci0 down` înainte de reboot; ambele binare există).
+- [x] **Automatizat pe 13 sep:** `bt-la-boot.timer` rulează la 2 minute după fiecare boot
+      `bt-ab/bt-la-boot.sh`. Pe un boot sănătos scrie un rând în `bt-ab/la-110/jurnal.txt` și atât.
+      Pe un boot mort captează starea, încearcă **A** (unbind/bind pe `serial0-0`), apoi **B**
+      (reîncărcarea `hci_uart`), scrie raportul în `bt-ab/la-110/` și trimite o notificare.
+      Validat: detecția pe 7 boot-uri cu rezultat cunoscut (sănătoase, mute la prima comandă, moarte
+      după patch), iar ramura A pe controllerul sănătos — revine `UP RUNNING` după rebind, iar
+      verificarea de viață dă fals cât timp `hci0` lipsește. **Nevalidat:** ce face A sau B pe un cip
+      chiar mut, și notificarea din ramura moartă — asta se află abia la primul `-110`.
 - [ ] **Experiment ieftin de încercat la următorul `-110`** (5 secunde, complet reversibil):
       `sudo modprobe -r hci_uart && sudo modprobe hci_uart` — reîncarcă transportul și re-rulează init-ul
       fără shutdown. **Poate să nu ajute** (nu face power-cycle cipului). Dar rezultatul e informativ în
@@ -220,7 +258,7 @@ Fisher exact, o coadă:  p = 0,055
 | Mesaj | Cauză | Verdict |
 |---|---|---|
 | `failed to write update baudrate (-16)` (149 boot-uri) | ACPI Apple nu descrie GPIO-ul de reset → UART-ul nu poate fi reconfigurat → rămâne 115200 | 🔴 Won't-fix. 115200 e suficient pentru mouse/tastatură/căști A2DP |
-| `firmware: failed to load brcm/BCM.hcd (-2)` → `Patch file not found` (149 boot-uri) | `.hcd` = patch RAM **opțional** peste ROM-ul controllerului; Debian (`firmware-brcm80211`) nu livrează blob-ul Apple (ne-redistribuibil legal, ca nvram/clm_blob de pe WiFi). `-2` = `-ENOENT`; `btbcm` continuă pe ROM-ul built-in | 🔴 Won't-fix. Vezi **E11** — nu rezolvă `-110` |
+| `firmware: failed to load brcm/BCM.hcd (-2)` → `Patch file not found` (149 boot-uri; **din 21 aug nu mai apare**, fiindcă `brcm/BCM.hcd` e instalat — amprenta controllerului e identică cu și fără el, vezi `bt-ab/`) | `.hcd` = patch RAM **opțional** peste ROM-ul controllerului; Debian (`firmware-brcm80211`) nu livrează blob-ul Apple (ne-redistribuibil legal, ca nvram/clm_blob de pe WiFi). `-2` = `-ENOENT`; `btbcm` continuă pe ROM-ul built-in | 🔴 Won't-fix. Vezi **E11** — nu rezolvă `-110` |
 
 Ambele au aceeași rădăcină ca `brcmfmac: failed to load ...MacBookPro14,1.*`: Apple ține
 firmware/calibrare custom în macOS, Linux cade pe generic/ROM și merge.
@@ -3169,7 +3207,7 @@ ambele kernele. Preferința lui Vik — controlul aprins — stă **în afara dr
 **De făcut:**
 - [x] rescris descrierile celor trei pe structura Problem/Reproduction/Changes/Fix/Impact
 - [x] trimis, **câte o aprobare separată pe fiecare** — #343, #344; al treilea aruncat
-- [ ] corectat încadrarea din #340
+- [x] corectat încadrarea din #340 — **abia pe 13 sep**, descrierea editată, fără comentariu nou
 - [ ] investigat dungajul vertical de pe perete (zgomot de tipar) și tenta verzuie (balans de alb)
 
 Jurnal: `pipewire-5363/fthd-masuratori/rezultate/JURNAL-3sep-review-si-decupare.md`, §47–56.
@@ -3177,7 +3215,7 @@ Jurnal: `pipewire-5363/fthd-masuratori/rezultate/JURNAL-3sep-review-si-decupare.
 ### 3.3n 🟡 De reluat, în ordine (5 septembrie)
 
 > **Stare la 13 sep:** 1 ✅ (#343, #344, al treilea aruncat); 2 ✅ (cauza găsită în aceeași zi, reparată
-> de !2935, acceptat pe 7 sep); **3, 4 și 5 rămân deschise.**
+> de !2935, acceptat pe 7 sep); 4 ✅ (descrierea #340 corectată pe 13 sep); **3 și 5 rămân deschise.**
 
 1. **Cele trei patch-uri de expunere** ([3.3m](#33m--45-septembrie--imaginea-întunecată-cauza-găsită-trei-patch-uri-netrimise)):
    reverificate, descrieri rescrise pe Problem/Reproduction/Changes/Fix/Impact, **aprobare separată
@@ -3192,7 +3230,7 @@ Jurnal: `pipewire-5363/fthd-masuratori/rezultate/JURNAL-3sep-review-si-decupare.
    intrat cele trei MR-uri. Dacă sunt în 1.6.8, controlul corect e o versiune **fără** ele.
 3. **Dungajul vertical și tenta verzuie** — grupul `AWB` are 46 de comenzi, driverul folosește 2
    (`descrieri/FIRMWARE-harta.md`). Aceeași metodă ca la expunere.
-4. **`#340` — încadrarea corectată**: blocarea mașinii apare și cu reparația de PLL activă.
+4. **`#340` — încadrarea corectată**: blocarea mașinii apare și cu reparația de PLL activă. ✅ 13 sep.
 5. **Harta firmware-ului, trimisă lui `patjak`?** `descrieri/FIRMWARE-harta.md` — 409 comenzi
    declarate, 43 folosite, nimeni nu are documentul ăsta, iar el a spus pe `#328` că nu știe dacă
    driverul ține de `media` sau `staging`. Candidat real, dar **discuție separată** de cele trei
@@ -3394,7 +3432,7 @@ DMAR: ANDD device: 9 name: \_SB.PCI0.UA00     ← nu se rezolvă
 | Item | De ce nu se poate |
 |---|---|
 | **Suspend S3 / hibernare** | S3 nu se trezește fiabil pe NVMe+EFI Apple → blocat via `systemctl mask` (ETAPA 5e). Hibernarea ar moșteni aceleași probleme de resume. Pentru s2idle vezi [secțiunea 5](#5--suspend--s2idle) |
-| **Broadcom WiFi/BT la repornire** | `reboot` nu power-cycle-ază cipul → poate rămâne mut (`Reset failed -110`). **Dar e doar un factor agravant, nu cauza unică** — vezi [secțiunea 1.3](#13-teoria-warm-reboot--măsurată-nu-presupusă-27-iul) (14% din boot-uri, jumătate după opriri lungi) |
+| **Broadcom WiFi/BT la repornire** | Cipul rămâne mut la prima comandă (`Reset failed -110`) la ~1 boot din 7. **Repornirea caldă nu e cauza** — efectul din iulie nu s-a repetat pe date noi, vezi [secțiunea 1.3](#13-teoria-warm-reboot--măsurată-nu-presupusă-27-iul) (28 din 209 boot-uri fără patch, 9 din 49 cu patch) |
 | **Firmware Apple BCM4350 (WiFi/BT)** | Fișierele nu există public și nici în macOS pt. Mac-urile non-T2: calibrarea stă în OTP-ul cipului (citit deja de `brcmfmac`), datele regulatorii în firmware-ul Apple „bmac" (split-MAC, incompatibil). Investigat 8 iul 2026 — mesajele „failed to load …MacBookPro14,1.*" rămân cosmetice |
 | **facetimehd PLL lock** | `Failed to lock S2 PLL` — bug upstream `patjak/facetimehd`; camera merge pe PLL alternativ |
 | **ASPM PCIe** | `can't disable ASPM` — Apple BIOS restricționează; `pcie_aspm=off` ar avea alte efecte |
@@ -3593,12 +3631,11 @@ tot are diagnosticul complet ca să se reia de acolo.
 > ⚠️ **Ce NU explică:** două dintre cele 7 (`-15`, `-14`, 4 sep seara) au murit **cu bucla reparată**
 > la fiecare încărcare, fără niciun timeout de firmware: în `insmod`-ul de după un reset de bus PCI
 > al camerei (`echo 1 > /sys/bus/pci/devices/0000:03:00.0/reset`), **în aceeași fereastră DDR40**
-> (`fthd_hw.c:414–446`) ca moartea prinsă complet cu bucla originală. Resetul nu omoară determinist
+> (`fthd_hw.c:411–444` pe master) ca moartea prinsă complet cu bucla originală. Resetul nu omoară determinist
 > (un boot a supraviețuit la 64). Care acces omoară: **neexplicat**. După 4 sep resetul a mai fost
 > folosit doar de două ori (6 sep), fără moarte, și nicio oprire abruptă — corelație, nu dovadă. O a treia (`-22`) a venit după ~6 ore de
-> inactivitate, tot neexplicată. **Știut din 4 sep seara** — de aici bifa din
-> [3.3m](#33m--45-septembrie--imaginea-întunecată-cauza-găsită-trei-patch-uri-netrimise)
-> „corectat încadrarea din #340", **încă deschisă**.
+> inactivitate, tot neexplicată. **Știut din 4 sep seara**; descrierea #340 a fost corectată în
+> consecință abia pe **13 sep**.
 >
 > **Nu e dovedit nici că explică cele cinci opriri spontane de mai sus**, dintre care trei noaptea,
 > cu mașina inactivă. Tabelul complet, boot cu boot: `pipewire-5363/JURNAL.md` §3.6.
