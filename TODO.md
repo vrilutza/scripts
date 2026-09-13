@@ -1761,7 +1761,7 @@ exact forma cerută de `pobrn` în #4842 (2025) și de `wtaymans` pe 8 sep. Enum
 `strace`: 174 → 272 de ioctl-uri pe o negociere, cu timpul neschimbat; partea de *cache* pe care o
 menționa `wtaymans` **nu** e făcută, și scrie în descriere de ce.
 
-**Driver.** Patru PR-uri noi: #342 (`CREATE_BUFS`), #343 (unitățile ratei, cu un al doilea comit
+**Driver.** Cinci PR-uri noi între 6 și 12 sep: #342 (`CREATE_BUFS`), #343 (unitățile ratei, cu un al doilea comit
 care pune implicitul înapoi la 30 fps și face `G_PARM` să spună adevărul), #344, #345, #347
 (`VIDIOC_G_SELECTION`). Toate cele nouă deschise plus #346 al lui `kurobeats` fuzionează fără
 conflict și trec `v4l2-compliance` **48/48**, față de 45/48 pe master curat — `test Scaling` e al
@@ -3117,6 +3117,10 @@ Raport complet: `pipewire-5363/results/VIVID-CAUZA-17aug.md`. Draft de răspuns,
 
 ### 3.3m 🟡 4–5 septembrie — imaginea întunecată: cauza găsită, trei patch-uri **netrimise**
 
+> **Stare la 13 sep:** din cele trei, unitățile ratei au plecat ca **#343** (6 sep), coborârea ratei
+> de AE ca **#344** (7 sep), iar plafonul de câștig a fost **aruncat** (strică lizibilitatea, JURNAL
+> §6). Rămân deschise de aici doar bifa pentru **#340** și dungajul/tenta.
+
 **Problema.** Pe întuneric, camera dădea luminozitate medie **2,2 din 255** — practic negru.
 
 **Cauza, în lanț:**
@@ -3163,14 +3167,17 @@ ambele kernele. Preferința lui Vik — controlul aprins — stă **în afara dr
 `/etc/udev/rules.d/99-facetimehd-expunere.rules`.
 
 **De făcut:**
-- [ ] rescris descrierile celor trei pe structura Problem/Reproduction/Changes/Fix/Impact
-- [ ] trimis, **câte o aprobare separată pe fiecare**
+- [x] rescris descrierile celor trei pe structura Problem/Reproduction/Changes/Fix/Impact
+- [x] trimis, **câte o aprobare separată pe fiecare** — #343, #344; al treilea aruncat
 - [ ] corectat încadrarea din #340
 - [ ] investigat dungajul vertical de pe perete (zgomot de tipar) și tenta verzuie (balans de alb)
 
 Jurnal: `pipewire-5363/fthd-masuratori/rezultate/JURNAL-3sep-review-si-decupare.md`, §47–56.
 
 ### 3.3n 🟡 De reluat, în ordine (5 septembrie)
+
+> **Stare la 13 sep:** 1 ✅ (#343, #344, al treilea aruncat); 2 ✅ (cauza găsită în aceeași zi, reparată
+> de !2935, acceptat pe 7 sep); **3, 4 și 5 rămân deschise.**
 
 1. **Cele trei patch-uri de expunere** ([3.3m](#33m--45-septembrie--imaginea-întunecată-cauza-găsită-trei-patch-uri-netrimise)):
    reverificate, descrieri rescrise pe Problem/Reproduction/Changes/Fix/Impact, **aprobare separată
