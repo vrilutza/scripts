@@ -197,9 +197,12 @@ Fisher exact, o coadă:  p = 0,055
 ### 1.4 🟢 De făcut
 
 - [x] **P2 — instrumentat, 30 august.** `/usr/lib/systemd/system-shutdown/00-log-verb` scrie
-      „<dată> <verb>" în `/var/log/shutdown-verb.log` la fiecare shutdown, testat direct (nu doar
-      sintactic — invocat manual, a scris corect). **Măsoară, nu răspunde încă**: abia peste 2-3
-      săptămâni, când corelezi fișierul cu boot-urile care au avut `Reset failed (-110)`, afli dacă
+      „<dată> <verb>" în `/var/log/shutdown-verb.log` la fiecare shutdown.
+      ⚠️ **Testul de pe 30 august n-a dovedit nimic**: invocat manual, cu `/` montat read-write, a scris
+      corect — dar la o oprire reală systemd rulează hook-ul după ce `/` e deja read-only, și n-a
+      scris **niciun rând** la opririle ordonate din 31 aug, 1 și 2 sep. Reparat pe **4 sep, 19:26**
+      (remontează rw cât scrie); de atunci 13 opriri = 13 rânduri. **Datele încep deci pe 4 sep.**
+      **Măsoară, nu răspunde încă**: abia peste 2-3 săptămâni de la 4 sep, când corelezi fișierul cu boot-urile care au avut `Reset failed (-110)`, afli dacă
       warm reboot-ul e cauza dominantă. Revino atunci — dacă e, varianta activă e testabilă
       (`btmgmt power off` sau `hciconfig hci0 down` înainte de reboot; ambele binare există).
 - [ ] **Experiment ieftin de încercat la următorul `-110`** (5 secunde, complet reversibil):
@@ -339,9 +342,9 @@ eliberarea lui — orice inserție mai jos ratează scopul.
 **Ce face și ce nu face:** transformă o panică într-un pachet aruncat + o linie de log. **Nu** repară
 desincronizarea firmware-ului — aia rămâne.
 
-### 2.7 🟢 Monitorizare automată — `⏳ NEFĂCUT`
+### 2.7 🟢 Monitorizare automată — activă din 30 august
 
-*(Implementat 30 august.)*
+*(Reverificat 13 sep: `wifi-desync-check.timer` activ, următoarea rulare la miezul nopții.)*
 
 - [x] **Timer systemd zilnic, activ** (`wifi-desync-check.timer`, enabled, rulează la miezul nopții
       + `Persistent=true`). Script `/usr/local/bin/wifi-desync-check.sh`:
@@ -3514,7 +3517,7 @@ sudo apt install linux-source-<X.Y> && sudo dpkg --configure -a
 
 `facetimehd` nu e afectat (nu descarcă nimic).
 
-Raportat upstream, ambele scrise de aici, **ambele încă deschise** *(verificat 8 aug)*:
+Raportat upstream, ambele scrise de aici, **ambele încă deschise** *(verificat 13 sep, neschimbate)*:
 [issue #187](https://github.com/davidjo/snd_hda_macbookpro/issues/187) (7 comentarii) și
 [PR #189](https://github.com/davidjo/snd_hda_macbookpro/pull/189), care face scriptul să prefere
 sursa distribuției. Până se acceptă, pasul manual de mai sus rămâne obligatoriu.
