@@ -445,7 +445,9 @@ raportul — `//SND_PCI_QUIRK(0x106b, 0x3600, "MacBookPro 14,2", …)` comentat,
 activ — iar `MacBookPro14,1` nu apare deloc în el și audio merge oricum, prin ramurile de rulare.
 
 **De făcut, când apare ocazia:**
-- [ ] măsurătoare lângă un AP de 5 GHz confirmat (hotspot de telefon pe 5 GHz e destul)
+- [ ] măsurătoare lângă un AP de 5 GHz confirmat (hotspot de telefon pe 5 GHz e destul) — **parcat**:
+      acasă nu există 5 GHz (ONT-ul/routerul e doar `b/g/n`, captura din 5 sep); se face doar dacă apare
+      un AP de 5 GHz la îndemână
 - [ ] dacă adaptorul chiar nu-l vede: căutat un NVRAM pentru `brcmfmac4350c2-pcie` (extras din
       macOS, ca la #213)
 - [ ] `iw reg set` nu persistă peste repornire; oricum n-a avut efect, placa raportează `country 99`
@@ -3279,7 +3281,8 @@ PSI-mem = 0. Consistent: fără sarcină nu e nicio problemă.
 
 ### 4.2 De făcut
 
-- [ ] **P1 — curățare fizică ventilator + radiator** (eventual repastare). **Măsura principală.** Note:
+- [ ] **P1 — curățare fizică ventilator + radiator** (eventual repastare). **Măsura principală.**
+      *(13 sep: o face Vik când are timp și anunță; atunci se măsoară înainte/după.)* Note:
       - capacul A1708 = șuruburi **pentalobe P5**; înăuntru **T5**;
       - deconectezi flexul bateriei **înainte** de a atinge radiatorul;
       - **PTM7950** e alegerea corectă pentru un die expus (fără pump-out), superioară pastelor clasice;
