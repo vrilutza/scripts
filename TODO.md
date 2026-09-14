@@ -3188,7 +3188,7 @@ cameră: master 2,2 (de două ori) → cu patch-uri 40,8/38,5. Conformitate: **6
 rapoarte de corupere pe master curat, identic cu patch-urile** — zero regresii, verificat cu control.
 
 **Ce NU e verificat, de scris în PR:** plafonul de câștig e o cifră măsurată **doar pe senzorul
-1771**; driverul suportă și 1675 (MacBook 12", 848x588). Risc mărginit (plafonul leagă doar când AE
+nostru** (MacBookPro14,1, 1296x736; „1771” scris aici era nedovedit, vezi JURNAL §9, 14 sep); driverul suportă și 1675 (MacBook 12", 848x588). Risc mărginit (plafonul leagă doar când AE
 n-are lumină), dar nemăsurat.
 
 **Corectat prin măsurătoare, după ce afirmasem contrariul:** pragul de încetinire **leagă și la
