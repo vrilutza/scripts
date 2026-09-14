@@ -3219,6 +3219,8 @@ Jurnal: `pipewire-5363/fthd-masuratori/rezultate/JURNAL-3sep-review-si-decupare.
 > **Stare la 13 sep:** 1 ✅ (#343, #344, al treilea aruncat); 2 ✅ (cauza găsită în aceeași zi, reparată
 > de !2935, acceptat pe 7 sep); 4 ✅ (descrierea #340 corectată pe 13 sep); 5 ✅ (harta publicată pe 13 sep ca pagina
 > [Firmware](https://github.com/patjak/facetimehd/wiki/Firmware) din wiki, care exista ca link fără pagină); **rămâne deschis 3.**
+>
+> **3, 14 sep:** driverul rulează fără calibrarea senzorului (id `0005 0248`, pe care nu-l are în tabel); fișierul `1571_01XX.dat` a fost găsit și extras din driverul Windows Boot Camp. **Testul A/B e planificat pentru 14 sep** — plan în `pipewire-5363/fthd-masuratori/descrieri/PLAN-test-calibrare-1571.md`, context în `pipewire-5363/JURNAL.md` §3.10.
 
 1. **Cele trei patch-uri de expunere** ([3.3m](#33m--45-septembrie--imaginea-întunecată-cauza-găsită-trei-patch-uri-netrimise)):
    reverificate, descrieri rescrise pe Problem/Reproduction/Changes/Fix/Impact, **aprobare separată
