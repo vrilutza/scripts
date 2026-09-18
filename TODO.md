@@ -7,9 +7,9 @@ Fișier unic: **ce e rezolvat**, **ce e deschis și se poate repara**, **ce e wo
 | | |
 |---|---|
 | **Hardware** | MacBookPro14,1 (A1708), i5-7360U 2C/4T, Iris 640, 8 GB RAM, Apple S3X NVMe, BCM4350C0 (WiFi PCIe + BT UART), FaceTime HD, CS8409/CS42L83 |
-| **Software** | Debian testing/forky, kernel `7.1.13+deb14-amd64` (+ `7.1.12` păstrat ca rezervă, DKMS construit pe ambele), pipewire 1.6.8-1, wireplumber 0.5.15-1, GNOME/Wayland. Driver cameră: DKMS `facetimehd/0.7.2`. *(Verificat pe mașină pe 12 sep 2026.)* |
+| **Software** | Debian testing/forky, kernel `7.1.13+deb14-amd64` (+ `7.1.12` păstrat ca rezervă, DKMS construit pe ambele), pipewire 1.6.8-1, wireplumber 0.5.17-1, GNOME/Wayland. Driver cameră: DKMS `facetimehd/0.7.2`. *(Verificat pe mașină pe 12 sep 2026; pachetele PipeWire/WirePlumber reverificate cu `dpkg` pe 18 sep.)* |
 | **Verificat pe viu** | Cifrele de BT/WiFi: **8 august 2026**, pe **196 de boot-uri** (19 mai → 8 aug); anterior 27 iulie, 173 de boot-uri. Starea upstream și cea a mașinii: **12 septembrie 2026**, prin API și direct pe mașini. Ce nu s-a putut reverifica e marcat explicit `⏳ neconfirmat`. |
-| **Stare de bază** | Hardware-ul e funcțional. Margini: 2 probleme cronice (BT, WiFi), 1 **nediagnosticată** (opriri spontane), 1 la upstream (cameră), 1 fizică (termic). La upstream, verificat prin API pe 12 sep: **unsprezece MR-uri PipeWire acceptate** (trei dintre ele și în ramura `1.6`), **cinci PR-uri de driver integrate**, două MR-uri și nouă PR-uri încă deschise. 2 laptopuri de test. Tabloul complet: [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou). |
+| **Stare de bază** | Hardware-ul e funcțional. Margini: 2 probleme cronice (BT, WiFi), 1 **nediagnosticată** (opriri spontane), 1 la upstream (cameră), 1 fizică (termic). La upstream, verificat prin API pe 18 sep: **douăsprezece MR-uri PipeWire acceptate** (trei dintre ele și în ramura `1.6`), **cinci PR-uri de driver integrate**, un MR (!2951) și nouă PR-uri încă deschise — toate nouă revizuite și republicate pe 17 sep. 2 laptopuri de test. Tabloul complet: [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou). |
 
 **Legendă:**
 
@@ -30,7 +30,7 @@ Fișier unic: **ce e rezolvat**, **ce e deschis și se poate repara**, **ce e wo
 |---|---|---|---|---|
 | 1 | Bluetooth mort la ~14% din boot-uri (`-110`) | 🟡 activ | experiment de 3 linii care separă „warm vs cold"; SMC reset ca remediu | [1](#1--bluetooth-bcm4350c0--init-eșuat-la-14-din-boot-uri) |
 | 2 | WiFi BCM4350 — desincronizare ring, risc de panică | 🟡 activ | raport upstream cu dovezile din pstore; monitorizare cu prag | [2](#2--wifi-bcm4350--desincronizare-ring-msgbuf) |
-| 3 | Cameră — partajare de buffere fără `SPA_META_Busy` (aplicațiile îngheață) | 🔵 upstream | **unsprezece patch-uri PipeWire + cinci de driver acceptate în master** (trei dintre cele PipeWire și în ramura `1.6`); două PipeWire + nouă driver încă deschise *(verificat prin API, 12 sep)* | [3](#3--camera-facetime-hd--partajare-de-buffere-nesigură) |
+| 3 | Cameră — partajare de buffere fără `SPA_META_Busy` (aplicațiile îngheață) | 🔵 upstream | **douăsprezece patch-uri PipeWire + cinci de driver acceptate în master** (trei dintre cele PipeWire și în ramura `1.6`); un PipeWire (!2951) + nouă driver încă deschise *(verificat prin API, 18 sep)* | [3](#3--camera-facetime-hd--partajare-de-buffere-nesigură) |
 | 4 | Sacadare cu 2 browsere + saturație termică | 🟢 | curățare fizică + tab-ul Chrome; abia apoi eventual daemon de ventilator | [4](#4--termic--sacadare) |
 | 5 | Suspend / s2idle | 🟡 opțional | experiment reversibil, dacă chiar vrei suspend | [5](#5--suspend--s2idle) |
 | 6 | Zgomot de log (DMAR / ACPI / SGX / nvme0n2) | 🔴 | nimic — vezi de ce „fix-ul fără dezactivarea IOMMU" nu funcționează | [6](#6--zgomot-de-log) |
@@ -59,12 +59,12 @@ de kernel. Stă în [secțiunea 7](#7--rezolvate-arhivă-tehnică) fiindcă acol
 ## 0.1 Rapoarte trimise upstream — tablou
 
 Toate raportate de aici. Ține-le într-un singur loc: patru s-au și rezolvat, iar despre restul e ușor
-să uiți că există. Stare verificată prin API pe **12 septembrie 2026**.
+să uiți că există. Stare verificată prin API pe **18 septembrie 2026**.
 
 ⚠️ **Trei dintre patch-urile acceptate au ajuns în ramura stabilă, restul sunt doar în master.**
 Verificat cu `git merge-base --is-ancestor` pe ramura `1.6`: !2950 (`bcf371452`), !2963
-(`458b8b183`) și !2986 (`e78eb993c`) sunt acolo și vin cu **1.6.9**; celelalte șapte rămân în
-master. Debian forky livrează încă `1.6.8-1`, deci pe mașina asta niciuna nu e încă activă prin
+(`458b8b183`) și !2986 (`e78eb993c`) sunt acolo și vin cu **1.6.9**; celelalte nouă rămân în
+master (reverificat pe 18 sep după titlurile comiturilor, pe capul `1.6` `8fa27cab` din 17 sep; !2998 e doar în master). Debian forky livrează încă `1.6.8-1`, deci pe mașina asta niciuna nu e încă activă prin
 pachete. De reținut înainte de a-i spune cuiva că „are deja" vreuna dintre reparații.
 
 | Unde | Ce | Stare |
@@ -82,16 +82,16 @@ pachete. De reținut înainte de a-i spune cuiva că „are deja" vreuna dintre 
 | [pipewire !2985](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2985) | `PW_BUFFERS_FLAG_IN_PRIORITY` făcea de un an inversul a ce spune propriul lui mesaj de commit | ✅ **acceptat** `cebbb24d6` (7 sep), la 2h28m după trimitere. A ieșit din sugestia lui `pobrn` de pe !2980 |
 | [pipewire !2986](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2986) | filtrul cerea `raw`, pluginul v4l2 răspundea `mjpg` | ✅ **acceptat** `ae7cb6730` (9 sep) și **cules în 1.6** ca `e78eb993c` |
 | [pipewire !2980](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2980) | numărul de tampoane oferit de sursa v4l2 | ⛔ **închis de noi** (7 sep): !2985 a rezolvat central partea care conta, iar `wtaymans` și `pobrn` au spus amândoi că un client fără preferință trebuie să primească ceva conservator. Cifrele de memorie din descriere susțineau poziția lor |
-| [pipewire !2951](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951) | `pipewiresrc` repornea fluxul la renegocieri care nu cereau nimic | 🔵 deschis din 15 aug, **zero comentarii din afară**. Remăsurat pe 12 sep pe GStreamer 1.28.4: 240 de cadre cu 4 pauze de ~1,25 s, față de 387 fără nicio pauză |
-| [pipewire !2998](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2998) | enumerarea v4l2 rescrisă: `enumerate all + spa_pod_filter()`, **+23/−287** | 🔵 trimis 12 sep, CI verde. Închide issue-ul #4842, cerut de `pobrn` în 2025 și de `wtaymans` pe 8 sep |
+| [pipewire !2951](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951) | `pipewiresrc` repornea fluxul la renegocieri care nu cereau nimic | 🔵 deschis din 15 aug, **zero comentarii din afară**, neatins din 12 sep. Remăsurat pe 12 sep pe GStreamer 1.28.4: 240 de cadre cu 4 pauze de ~1,25 s, față de 387 fără nicio pauză. Pe 16 sep, în Snapshot pe master cu !2998, pauzele de ~0,55 s au venit exact din renegocierile pe care le repară !2951; A/B-ul cu/fără !2951 pe același master **nu e încă făcut** |
+| [pipewire !2998](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2998) | enumerarea v4l2 rescrisă: `enumerate all + spa_pod_filter()`, **+23/−287** | ✅ **acceptat** `a7eb57adb` (16 sep, 08:34 UTC), doar în master. **A închis issue-ul #4842**, cerut de `pobrn` în 2025 și de `wtaymans` pe 8 sep |
 | [facetimehd](https://github.com/patjak/facetimehd/pulls) — **acceptate** | #328 (două curățenii), #329 (controalele la STREAMON), #330 (`y1` în comanda de crop), #332 (contextele de tampoane la timeout de firmware), #333 (scrierea în fața tamponului nealiniat) | ✅ **cinci în master**, ultimele două pe 4-5 sep. `patjak` le ia în valuri și nu lasă comentarii |
-| [facetimehd](https://github.com/patjak/facetimehd/pulls) — **deschise** | #331 (enumerare reală), #334 (AE în 200 ms), #338 (decupare centrată), #340 (bucla PLL), #342 (`CREATE_BUFS`), #343 (unitățile ratei + implicitul și `G_PARM`), #344 (AE coboară rata), #345 (plafonul de tampoane), #347 (`VIDIOC_G_SELECTION`) | 🔵 **nouă deschise**, toate `MERGEABLE`. Testate împreună pe 12 sep: `v4l2-compliance` **48/48**, zero conflicte între ele și cu #346 al altcuiva |
+| [facetimehd](https://github.com/patjak/facetimehd/pulls) — **deschise** | #331 (enumerare reală), #334 (AE în 200 ms), #338 (decupare centrată), #340 (bucla PLL), #342 (`CREATE_BUFS`), #343 (unitățile ratei + implicitul și `G_PARM`), #344 (AE coboară rata), #345 (plafonul de tampoane), #347 (`VIDIOC_G_SELECTION`) | 🔵 **nouă deschise**, toate **revizuite și republicate pe 17 sep** (14 commit-uri în 9 teme, `mergeable`/`clean`); pe seria completă `v4l2-compliance` **57/57** fără avertismente (16 sep). **Cinci cu corecții noi de cod:** #340 (eroarea DDR propagată până la inițializarea principală), #342 (limitele de locuri și de memorie la `CREATE_BUFS`), #343 (fără pierdere de precizie prin ms, conversii protejate, schimbarea refuzată în timpul capturii), #344 (starea se schimbă doar după ce firmware-ul acceptă comanda; ramura conține întregul #343), #345 (indexul de debug reparat înainte de plafonul 8). **Patru cu cod neschimbat**, doar explicații și istoric mai clare: #347, #331, #334, #338. Niciun răspuns de la `patjak` până pe 18 sep (ultima lui activitate: 4 sep). Vezi [3.3p](#33p--1618-septembrie--seria-revizuită-și-republicată-bancurile-auditate-ciornele-pipewire-ținute-local) |
 | [facetimehd #346](https://github.com/patjak/facetimehd/pull/346) (kurobeats) | scoate YVYU, a cărui ieșire e coruptă | 🟡 al altcuiva, deschis 10 sep. Am confirmat simptomul și am **măsurat cauza**: datele sunt bune, dar deplasate cu exact un octet — verificat la trei rezoluții |
 | [linux-media, seria lui Jack Flusche](https://patchwork.linuxtv.org/project/linux-media/list/?series=29296) | driverul trimis în kernelul upstream, import textual din `patjak/facetimehd` | 🟡 trimisă 13 aug, retrimisă 20 aug, stare `new`, **zero comentarii** de atunci. Codul importat e de dinainte de 20 aug, deci **fără** cele cinci reparații ale noastre acceptate ulterior |
 | [GNOME Snapshot #367](https://gitlab.gnome.org/GNOME/snapshot/-/work_items/367) | vizorul îngheață pe primul cadru: pipeline-ul ține tot bazinul de 4 tampoane | ⛔ **închis de noi** pe 8 sep, cu nota *„Closing this issue as the bug was fixed"* — a doua zi după ce !2935 a intrat în PipeWire (7 sep, 11:19). Analiza noastră de pe 10 aug, tot aici, arătase că **reparația nu e în Snapshot**: simptomul apare acolo, dar cauza e că `pipewiresrc` dă aval memorie partajată cu un tampon pe care îl reciclează producătorul (`pipewire#5363`). Depus 11 iul |
 | [GNOME Snapshot !464](https://gitlab.gnome.org/GNOME/snapshot/-/merge_requests/464) | `aperture: Set min-buffers to 8 on the pipewiresrc` | 🔵 **deschis**, al lui `msandova`, neatins din 8 aug. **Reparația nu e corectă, și am arătat-o pe [#367](https://gitlab.gnome.org/GNOME/snapshot/-/work_items/367) pe 10 aug** (pe `!464` există doar nota de sistem care îl leagă de #367): `min-buffers=8` rupe negocierea cu libcamera — exact motivul pentru care upstream a coborât `DEFAULT_MIN_BUFFERS` de la 8 la 1 în `e81fb7732` — iar pe o cameră plafonată la 4 tampoane (facetimehd) dă **zero cadre**. Măsurat pe Lenovo: nesetat → 4, `=8` → 16. Reparațiile corecte sunt în **PipeWire** (!2935) și în **driver** (#345, plafonul 4 → 8). Vezi [3.2c](#32c--al-doilea-laptop--ce-a-schimbat) |
 | [pipewire #5431](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/5431) (fostul `wireplumber#986`) | un nod `vivid` nu primea niciodată session item | ✅ **închis** (24 aug), 4 note. Mutat din WirePlumber în PipeWire, de aceea `wireplumber#986` apare închis |
-| [pipewire #4842](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/4842) | scurtătura neverificată din enumerarea v4l2 | 🔵 **deschis** din aug 2025, 2 note. **Îl închide !2998**, trimis de noi pe 12 sep |
+| [pipewire #4842](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/4842) | scurtătura neverificată din enumerarea v4l2 | ✅ **închis** pe 16 sep, de !2998 |
 | [snd_hda_macbookpro #187](https://github.com/davidjo/snd_hda_macbookpro/issues/187) | `install.cirrus.driver.sh` pică pe Debian (`.tar.xz`) și pe kerneluri `-rc` (404 la kernel.org) | 🔵 deschis, 7 comentarii |
 | [snd_hda_macbookpro #189](https://github.com/davidjo/snd_hda_macbookpro/pull/189) | fix: folosește sursa de kernel instalată local | 🔵 deschis, 1 comentariu |
 
@@ -476,7 +476,7 @@ retras: trata simptomul, iar ca patch upstream ar fi fost respins pe bună drept
 
 `FTHD_BUFFERS` e azi **4**, valoarea upstream *(verificat 8 aug: `fthd_drv.h:30`)*.
 
-### 3.2 🔵 PipeWire — unsprezece patch-uri acceptate, două în review
+### 3.2 🔵 PipeWire — douăsprezece patch-uri acceptate, unul în review
 
 Vezi tabloul complet din [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou). Pe scurt:
 
@@ -494,7 +494,7 @@ Vezi tabloul complet din [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou)
 | **!2935** | copierea când pool-ul se golește | ✅ în master `bf3951eb0` (9 sep); a închis #5363 |
 | **!2985** | prioritatea consumatorului la negocierea tampoanelor | ✅ în master `cebbb24d6`, acceptat în 2h28m |
 | !2951 | repornirea fluxului la renegocieri inutile | 🔵 deschis, zero comentarii din afară, remăsurat 12 sep |
-| !2998 | enumerarea v4l2 rescrisă cu `spa_pod_filter()` | 🔵 trimis 12 sep, CI verde, închide #4842 |
+| **!2998** | enumerarea v4l2 rescrisă cu `spa_pod_filter()` | ✅ în master `a7eb57adb` (16 sep); a închis #4842 |
 | ~~!2966~~ | fracție care nu încape într-un `GstFraction` | ⛔ închis, topit în !2965 |
 | ~~!2980~~ | numărul de tampoane oferit de sursa v4l2 | ⛔ închis de noi pe 7 sep, după !2985 |
 
@@ -798,7 +798,7 @@ că se aplică și toate împreună, fără conflict, pe `master`-ul de azi (`54
 
 Driverul instalat pe mașină e **exact** suma lor *(verificat prin `diff -rq` pe 8 aug)*, construit
 pentru ambele kerneluri. Scriptul de instalare/revenire e local, în
-`pipewire-5363/camera-fix/install-pr333.sh` (nu e publicat — vezi nota din [secțiunea 3.2](#32--pipewire--unsprezece-patch-uri-acceptate-două-în-review)).
+`pipewire-5363/camera-fix/install-pr333.sh` (nu e publicat — vezi nota din [secțiunea 3.2](#32--pipewire--douăsprezece-patch-uri-acceptate-unul-în-review)).
 
 ### 3.3a 🔵 17 august — fiecare patch verificat prin măsurătoare
 
@@ -1820,6 +1820,55 @@ lui #331, ambele eșecuri `CREATE_BUFS` sunt ale lui #342, verificat aplicându-
 Cele trei controale sunt **identice la fiecare măsură**, deci diferențele sunt ale patch-urilor
 noastre, nu ale mișcării upstream. Iar #345 are efect **doar pe master**: pe 1.6 driverul dă tot opt
 tampoane, dar clientul primește patru, fiindcă !2985 nu a fost cules acolo.
+
+### 3.3p 🔵 16–18 septembrie — seria revizuită și republicată, bancurile auditate, ciornele PipeWire ținute local
+
+**Seria facetimehd, revizuită pe 16 sep și republicată pe 17 sep** (lucrat cu Codex; tot ce s-a
+făcut e în `pipewire-5363/JURNAL.md` §10, §15–17 și în `facetimehd-codex/`). Toate cele nouă
+ramuri PR au fost actualizate într-un singur push atomic (`--force-with-lease`), 14 commit-uri în 9
+teme, fără nicio atribuire AI. Seria completă: `v4l2-compliance` **57/57** fără avertismente; PipeWire
+master `a7eb57adb` (conține !2998) 54/54 teste; WirePlumber master 57/57; fiecare ramură compilată
+separat cu `W=1` (9/9, cu două avertismente preexistente).
+
+| PR | Ce s-a schimbat față de versiunea trimisă înainte |
+|---|---|
+| #340 — PLL | **cod nou:** eroarea DDR e propagată până la funcția principală, care oprește inițializarea |
+| #342 — `CREATE_BUFS` | **cod nou:** verificarea locurilor disponibile și a memoriei deja alocate (plafon 16 MiB) |
+| #343 — rata cadrelor | **cod nou:** fără pierdere de precizie prin milisecunde, conversii mari protejate, schimbarea refuzată în timpul capturii |
+| #344 — expunere | **cod nou:** starea internă se schimbă doar după ce firmware-ul acceptă comanda; ramura conține întregul #343 |
+| #345 — opt tampoane | **cod nou:** indexul din mesajul de debug reparat (ieșea din tablou la sloturile 4–7) înaintea creșterii plafonului |
+| #347 — dimensiunea senzorului | cod identic; scopul și legătura cu #331 explicate mai clar |
+| #331 — rezoluții | cod identic; dependența de #347 și limitele de compatibilitate clarificate |
+| #334 — așteptarea expunerii | cod identic; separarea dintre eliminarea așteptării active și reducerea duratei păstrată |
+| #338 — decupaj central | cod identic; separarea redenumirilor de calculul decupajului păstrată |
+
+„Cod identic” la ultimele patru înseamnă că nu aveau nevoie de o corecție funcțională, nu că ar fi mai
+slabe. Până pe 18 sep, **niciun răspuns** de la `patjak` la vreunul (ultima lui activitate: 4 sep).
+
+**Snapshot, pe master cu !2998:** două filmări 1296×736 decodabile (139 și 150 de cadre), dar cu pauze
+de ~0,55 s. Toate șapte vin din renegocieri ale aceluiași format — comportamentul pe care îl repară
+!2951. A/B-ul pe același master, cu și fără !2951, rămâne de făcut.
+
+**Auditul bancurilor (16–17 sep, ambele mașini):** instrumentele mele aveau defecte reale — runner-ul
+MacBook de la 05:44 nu transmitea opțiunile clientului, analizorul accepta orice eroare drept eșec de
+alocare prezis și numea „OK” și rulări fără EOS, reîncercările amestecau negocieri în același caz,
+selecția WirePlumber depindea de ordinea brațelor, reconfigurarea declara succes după o eroare,
+numărătorul de cadre număra și pachete audio, iar pe Lenovo 12 probe vechi dădeau succes pe un socket
+inexistent. Reparate (10 fișiere pe MacBook, 17 pe Lenovo) și reanalizate 953 de înregistrări:
+**431** capturi cu EOS, **430** terminări de proces prezise, **38** eșecuri de alocare prezise, **54**
+excluse. Rectificări: „640/640” e **639/640** (un caz cu 12 încercări); „zero rapoarte KASAN” nu
+dovedește că driverul nu corupe memoria, doar că nu s-a detectat nimic în acele rulări. Rapoarte:
+`facetimehd-codex/audit/`; jurnal §11–14.
+
+**Ciornele de reparație PipeWire, ținute local (16 sep):** două comituri pe `2fd2d224c`
+(`~/.cache/banc-mbp/wt-fix-16sep`, ramura `fix-tampoane-16sep`) — garda de index din `mmap_read()`,
+care oprește căderea daemonului pe v4l2loopback, și tăierea preferinței la interval în `filter.h`,
+care dă 8 tampoane în loc de 4 unui client fără setări. **Netrimise, după regula lui Vik**: nimic nu
+pleacă până nu sunt acoperite joburile CI, efectul asupra audio și ramura 1.6. Plan:
+`pipewire-5363/fthd-masuratori/descrieri/PLAN-weekend-19-20sep.md`; rapoartele-ciornă sunt alături.
+
+**Tot pe 16 sep:** a opta moarte a MacBook-ului la reîncărcarea driverului ([8.2](#82-stare-de-fapt)) și
+uneltele noi de depanare ([8.1](#81-instrumentarea-netconsole-panic-on-lockup-test-cu-blacklist--scoasă-de-pe-listă-30-august)).
 
 ### 3.3c 🔵 Auditul de declarare pe cele trei MR-uri PipeWire
 
@@ -3216,6 +3265,10 @@ Jurnal: `pipewire-5363/fthd-masuratori/rezultate/JURNAL-3sep-review-si-decupare.
 
 ### 3.3n 🟡 De reluat, în ordine (5 septembrie)
 
+> **Stare la 18 sep:** punctul 3 (calibrarea `1571`) se face în weekendul 19–20 sep, la lumina zilei, cu
+> Lenovo alături ca referință — `pipewire-5363/fthd-masuratori/descrieri/PLAN-test-calibrare-1571.md`.
+> Restul lucrului de weekend (joburile CI, A/B audio, ramura 1.6) e în `PLAN-weekend-19-20sep.md`, același director.
+>
 > **Stare la 13 sep:** 1 ✅ (#343, #344, al treilea aruncat); 2 ✅ (cauza găsită în aceeași zi, reparată
 > de !2935, acceptat pe 7 sep); 4 ✅ (descrierea #340 corectată pe 13 sep); 5 ✅ (harta publicată pe 13 sep ca pagina
 > [Firmware](https://github.com/patjak/facetimehd/wiki/Firmware) din wiki, care exista ca link fără pagină); **rămâne deschis 3.**
@@ -3616,6 +3669,13 @@ driver e plauzibil pentru două dintre căderi, dar **nu explică** cele trei no
 
 ### 8.1 Instrumentarea (netconsole, panic-on-lockup, test cu blacklist) — scoasă de pe listă, 30 august
 
+> **Actualizare 16–17 sep:** netconsole merge în ambele sensuri — MacBook→Lenovo prin
+> `netconsole-macbook.service` (există din august; Lenovo scrie în `/var/log/netconsole/kernel.log`),
+> iar din 17 sep și Lenovo→MacBook (receptorul `netconsole-asculta` repornit și activat la autentificare).
+> Pe 16 sep au fost instalate și validate pe MacBook `gdb`, `rr`, `valgrind`, `perf`, `bpftrace`,
+> `trace-cmd`, cu `kernel.perf_event_paranoid=1` în `/etc/sysctl.d/90-depanare-vik.conf`; `v4l2-tracer`
+> era deja instalat. KASAN rămâne doar pe Lenovo — motivul în `pipewire-5363/JURNAL.md` §5.0.
+
 Nimic din familia asta nu s-a confirmat necesar — fenomenul nu s-a mai repetat, deci nu există ce
 diagnostic să instrumentăm acum. Nu se urmărește activ. Dacă recidivează, secțiunea 8 de mai sus
 tot are diagnosticul complet ca să se reia de acolo.
@@ -3629,6 +3689,11 @@ tot are diagnosticul complet ca să se reia de acolo.
 >   încărcări** ale modulului `facetimehd`, adică în seria de teste de reîncărcare, **nu** opriri
 >   spontane în sensul de mai sus;
 > - **13 opriri ordonate la rând de atunci**, până pe 13 sep.
+> - **16 sep, 05:46 — a opta moarte la reîncărcare:** capcana de ieșire a unui test a dat
+>   `modprobe facetimehd` (`0.7.2`, nereparat). Cutia neagră arată `Failed to lock S2 PLL`,
+>   `DDR40 PHY PLL locked on safe settings`, `STRAP valid`, `Configuring DDR PLLs for 450 MHz`, apoi
+>   nimic; jurnalul se oprește la `fthd_hw_deinit`, iar `last -x` spune `crash`. **Fără** reset PCI
+>   înainte. Detalii: `pipewire-5363/JURNAL.md` §3.6.
 >
 > **Ce explică reparația PLL** ([facetimehd #340](https://github.com/patjak/facetimehd/pull/340)):
 > blocările la reîncărcarea modulului **după un timeout de firmware** — cu bucla originală 2 din 18,
