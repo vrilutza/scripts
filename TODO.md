@@ -1867,6 +1867,19 @@ care dă 8 tampoane în loc de 4 unui client fără setări. **Netrimise, după 
 pleacă până nu sunt acoperite joburile CI, efectul asupra audio și ramura 1.6. Plan:
 `pipewire-5363/fthd-masuratori/descrieri/PLAN-weekend-19-20sep.md`; rapoartele-ciornă sunt alături.
 
+**19 sep — garda din `mmap_read()` separată de `filter.h` și testată complet, local.** Commit-ul
+`efd425e04` pe master `decc0d2ef` (ramura `garda-mmap-19sep`), cu mesajul scris după who-t, a trecut:
+- suita de teste 54/54 pe ambele mașini;
+- jobul CI ASan/UBSan, identic cu și fără gardă;
+- patru treceri de 40 de cazuri: fără gardă, daemonul cade de fiecare dată; cu gardă, niciodată;
+- gdb pe ambele mașini;
+- reproducerea cu unelte standard, rulată verbatim.
+
+Ramura 1.6 (1.6.9, 17 sep) cade încă de la alocare, pentru că nu are !2934; cu !2934 + garda: 80 din 80 de
+rulări pe ambele mașini. Ciorna de MR, fără link-uri și fără nume străine în afara reproducerii:
+`pipewire-5363/fthd-masuratori/descrieri/MR-garda-mmap-read.md`. **Așteaptă aprobarea lui Vik pentru
+trimitere.** Tăierea din `filter.h` rămâne separată, ca întrebare de politică.
+
 **Tot pe 16 sep:** a opta moarte a MacBook-ului la reîncărcarea driverului ([8.2](#82-stare-de-fapt)) și
 uneltele noi de depanare ([8.1](#81-instrumentarea-netconsole-panic-on-lockup-test-cu-blacklist--scoasă-de-pe-listă-30-august)).
 
