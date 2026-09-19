@@ -32,3 +32,7 @@ bt-ab/
 # Unitatea netconsole propusa pentru opririle spontane si refuzata explicit;
 # tine de ISSUE_opriri_spontane.md, la fel de local ca el.
 netconsole-macbook.service
+
+# Lucrul Codex (16-18 sep 2026) pe facetimehd / PipeWire: audituri, rapoarte, scripturi, surse.
+# Depozit git LOCAL, fara remote, ca pipewire-5363: istoria se pastreaza, nimic nu pleaca spre GitHub.
+facetimehd-codex/
