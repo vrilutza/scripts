@@ -1,4 +1,5 @@
 # TODO — plan tehnic & stare reală
+> **STARE** · singurul document de aici care spune „acum"; secțiunea [0.1](#01-rapoarte-trimise-upstream--tablou) e tabloul upstream, verificat prin API la data scrisă în rânduri. Restul secțiunilor sunt datate și se citesc ca istorie.
 
 Fișier unic: **ce e rezolvat**, **ce e deschis și se poate repara**, **ce e won't-fix** și **ce s-a respins tehnic**
 (cu dovada, ca să nu fie repropus). Înlocuiește și absoarbe fostele `ANALIZA_TEHNICA_UNIFICATA.md`,

@@ -1,4 +1,5 @@
 # scripts
+> **CONVENȚII** · ce e în depozitul ăsta și cum se folosește. Starea reală a lucrului e în [TODO.md](TODO.md).
 
 Setup scripts for **MacBook Pro 13" 2017 (A1708)** running **Debian Testing**.
 
