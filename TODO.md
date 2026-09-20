@@ -1882,6 +1882,17 @@ pleacă până nu sunt acoperite joburile CI, efectul asupra audio și ramura 1.
   11 fișiere) sunt gata **local**, netrimise.
 - **Cele 9 PR-uri facetimehd, testate separat pe hardware:** fiecare face doar ce spune descrierea. 11 reîncărcări,
   fără cădere.
+- **20 sep — patch-ul `0x248` trimis** ca #348 și secțiunea de wiki publicată (commit wiki `050e214`).
+- **20 sep — firul dungilor, închis cu răspuns.** Patru capturi de câte 400 de cadre (obiectiv acoperit, foi pe
+  ecran, câmp plat luminos ×2): camera **are** un tipar fix pe coloane, dar de 0,08–0,29 unități de luma, dovedit
+  prin două montaje fără nicio legătură (corelație +0,845, +0,907 după scoaterea alternanței pare/impare). Structura
+  mare de pe scenele luminate (0,22) **nu e a camerei**. O captură a fost respinsă automat fiindcă scena s-a mișcat —
+  verificarea de stabilitate a intrat în banc.
+- **20 sep — firul „ce face Apple", închis.** Din binarul lui `AppleCamera.sys` (85 KB de cod): Apple trimite doar
+  **șase** comenzi pe care driverul Linux nu le trimite, toate acționate din setările utilizatorului. Măsurate pe
+  hardware: claritatea (0xa09) și saturația de culoare (0xa01) **nu fac nimic**; corecția de expunere (0x204) are
+  efect puternic, dar nu e timp de expunere și nu e ținta AE, iar maparea în EV cerută de V4L2 nu e stabilită.
+  **Nu se trimite nimic din firul ăsta.** Reglajul care conta stătea în fișierul de calibrare, deci în #348.
 - **Issue-ul Range×Range** e refăcut cu o reproducere C verificată și **trimis ca #5481** (întrebare de politică, fără patch).
 - **`facetimehd-codex/`** a devenit depozit git local, ca `pipewire-5363`, și e ignorat aici.
 
@@ -3277,7 +3288,10 @@ ambele kernele. Preferința lui Vik — controlul aprins — stă **în afara dr
 - [x] rescris descrierile celor trei pe structura Problem/Reproduction/Changes/Fix/Impact
 - [x] trimis, **câte o aprobare separată pe fiecare** — #343, #344; al treilea aruncat
 - [x] corectat încadrarea din #340 — **abia pe 13 sep**, descrierea editată, fără comentariu nou
-- [ ] investigat dungajul vertical de pe perete (zgomot de tipar) și tenta verzuie (balans de alb)
+- [x] investigat dungajul vertical și tenta — **închis pe 20 sep**. Tenta: lipsa calibrării, reparată prin
+      [#348](https://github.com/patjak/facetimehd/pull/348). Dungile: **nu sunt un tipar de senzor** — tiparul
+      real al camerei e de 0,08–0,29 unități de luma (dovedit pe două montaje fără legătură, corelație +0,85),
+      adică sub pragul vizibil. Detalii: `pipewire-5363/fthd-masuratori/rezultate/dungi-cadre-negre-20sep/`
 
 Jurnal: `pipewire-5363/fthd-masuratori/rezultate/JURNAL-3sep-review-si-decupare.md`, §47–56.
 
