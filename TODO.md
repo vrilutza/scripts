@@ -3281,12 +3281,17 @@ Jurnal: `pipewire-5363/fthd-masuratori/rezultate/JURNAL-3sep-review-si-decupare.
 
 ### 3.3n 🟡 De reluat, în ordine (5 septembrie)
 
+> **Stare la 20 sep:** punctul 3 e **făcut** — testul de calibrare din 19 sep (rezultatul în [0.1](#01-rapoarte-trimise-upstream--tablou)
+> și în `pipewire-5363/fthd-masuratori/rezultate/calibrare-1571-19sep/`), iar patch-ul `0x248` și nota de wiki
+> sunt gata local, netrimise. **Toate cele cinci puncte sunt închise.**
+>
 > **Stare la 18 sep:** punctul 3 (calibrarea `1571`) se face în weekendul 19–20 sep, la lumina zilei, cu
 > Lenovo alături ca referință — `pipewire-5363/fthd-masuratori/descrieri/PLAN-test-calibrare-1571.md`.
 > Restul lucrului de weekend (joburile CI, A/B audio, ramura 1.6) e în `PLAN-weekend-19-20sep.md`, același director.
 >
 > **Stare la 13 sep:** 1 ✅ (#343, #344, al treilea aruncat); 2 ✅ (cauza găsită în aceeași zi, reparată
-> de !2935, acceptat pe 7 sep); 4 ✅ (descrierea #340 corectată pe 13 sep); 5 ✅ (harta publicată pe 13 sep ca pagina
+> de !2935, acceptat pe 7 sep); 4 ✅ (corectura descrierii #340 a rămas fără obiect: descrierea a fost **rescrisă** la republicarea din 17 sep
+> și spune acum explicit că patch-ul nu stabilește că blocările sunt rezolvate — verificat pe 20 sep); 5 ✅ (harta publicată pe 13 sep ca pagina
 > [Firmware](https://github.com/patjak/facetimehd/wiki/Firmware) din wiki, care exista ca link fără pagină); **rămâne deschis 3.**
 >
 > **3, 14 sep:** driverul rulează fără calibrarea senzorului (id `0005 0248`, pe care nu-l are în tabel); fișierul `1571_01XX.dat` a fost găsit și extras din driverul Windows Boot Camp. **Testul A/B e planificat pentru 14 sep** — plan în `pipewire-5363/fthd-masuratori/descrieri/PLAN-test-calibrare-1571.md`, context în `pipewire-5363/JURNAL.md` §3.10.
