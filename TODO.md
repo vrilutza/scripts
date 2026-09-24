@@ -1324,7 +1324,7 @@ senzorul nostru nemapat), `set file facetimehd/1571_01XX.dat is missing` (cu #34
 `loaded set file facetimehd/1571_01XX.dat` (fișierul la locul lui). Captură de 5 cadre după, zero
 erori noi. Dovezi: `fthd-masuratori/rezultate/setfile-mesaje-24sep/`.
 
-**Unealtă — ramura `setfiles` în `facetimehd-firmware`, `b2905b4` + `d62a31a`. NETRIMISE. Zero constatări shellcheck noi față de upstream, ba chiar patru rezolvate.**
+**Unealtă — ramura `setfiles` în `facetimehd-firmware`, `7edfb6d` + `530858f`. NETRIMISE. Zero constatări shellcheck noi față de upstream, ba chiar patru rezolvate.**
 Corecție importantă: **upstream extrage deja toate cele 11 set file-uri** (`60ee212`, PR #12), din
 `AppleCameraAssistant` de pe macOS 10.12.6 — copia noastră locală era veche și m-a făcut să afirm
 contrariul. Ce am adăugat: driverul Boot Camp 041-89042 ca **a doua sursă** (le are pe toate 11, nu
