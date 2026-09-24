@@ -787,6 +787,18 @@ zice „nu reproduc", și va avea dreptate despre simptom, greșit despre defect
 > DKMS: intrarea moartă `v4l2loopback/0.15.3, 7.2.5-kasan` scoasă; v4l2loopback e construit și pentru
 > `7.2.7-kasan`.
 >
+> **Pornire curățată (24 sep):** userspace **124 s → 79 s**, SSH utilizabil de la **93 s → ~70 s**.
+> Dezactivate, nu dezinstalate: `e2scrub_reap`+timer, `apport`, `blueman-mechanism`, `ModemManager`,
+> `cups`+`cups-browsed`, `avahi-daemon`, `networkd-dispatcher` (dispecer pentru `systemd-networkd`, care
+> e oprit — rețeaua o ține NetworkManager) și `apache2` (zero cereri din 22 iunie). Bluetooth lăsat
+> pornit: are mouse-ul `MX Anywhere 2S` împerecheat. Ce a rămas e structural (squashfs-urile snapurilor,
+> profilele AppArmor ale celor 5 snapuri de desktop ≈ 57 s în snapd). Măsurătorile în JURNAL §31.2.
+>
+> **Netconsole merge în ambele sensuri** (dovedit: raportul KASAN de pe Lenovo a ajuns pe MacBook la
+> 07:47:59). Reparate două goluri de persistență: `loginctl enable-linger vik` pe MacBook (receptorul e
+> unitate de utilizator și murea fără sesiune) și rotirea la miezul nopții în `netconsole-asculta`
+> (scria în fișierul zilei trecute). Adăugat `/etc/logrotate.d/netconsole` pe Lenovo.
+>
 > Versiunea din septembrie, pentru context. **Refăcut pe 12 septembrie 2026:** `7.1.8-kasan` a fost șters și înlocuit cu **`7.2.5-kasan`**
 > (stable, lansat 11 sep, sha256 verificat față de kernel.org), cu aceleași opțiuni plus altele
 > noi: `KASAN_INLINE`, `KASAN_VMALLOC` (tampoanele `vivid` sunt vmalloc, deci erau **invizibile**
