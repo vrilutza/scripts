@@ -36,7 +36,7 @@ Fișier unic: **ce e rezolvat**, **ce e deschis și se poate repara**, **ce e wo
 | 5 | Suspend / s2idle | 🟡 opțional | experiment reversibil, dacă chiar vrei suspend | [5](#5--suspend--s2idle) |
 | 6 | Zgomot de log (DMAR / ACPI / SGX / nvme0n2) | 🔴 | nimic — vezi de ce „fix-ul fără dezactivarea IOMMU" nu funcționează | [6](#6--zgomot-de-log) |
 | 7 | Tot ce e deja închis (NVRAM, audio, RAPL, rfkill, kernel…) | ✅ | nimic | [7](#7--rezolvate-arhivă-tehnică) |
-| **8** | **Opriri spontane, fără urmă în jurnal** | 🟠 **recidivă pe 24 sep** | **prima moarte cu punct fixat**, prin netconsole: la `Virtual VTT enabled`, în bringup-ul DDR40, încărcând modulul **stock**. 15 încărcări în ziua aia, una fatală. De decis dacă se urmărește firul DDR40 | [8](#8--opriri-spontane--cauză-nedeterminată) |
+| **8** | **Opriri spontane, fără urmă în jurnal** | 🟠 **recidivă ×2 pe 24 sep; pistă hardware** | **prima moarte cu punct fixat**, prin netconsole: la `Virtual VTT enabled`, în bringup-ul DDR40, încărcând modulul **stock**. 15 încărcări în ziua aia, una fatală. A doua moarte, în altă etapă (pornirea firmware ISP), **cu #340 încărcat** — deci patch-ul nu le închide. **`pstore` e gol la fiecare moarte ⇒ niciun panic**, zero MCE, zero termic: mașina nu se prăbușește, se oprește. Trei din cele cinci morți vechi au fost **noaptea, cu mașina inactivă**, deci camera nu e explicația generală. **Pistă nouă: bateria — 1446 de cicluri, 62 % din capacitatea de proiect.** Dacă ține, nu există patch, e înlocuire de piesă. Proba care decide: eșantionare `voltage_now` la 100 ms în timpul încărcărilor. JURNAL §46 | [8](#8--opriri-spontane--cauză-nedeterminată) |
 
 **Ordinea recomandată:**
 
