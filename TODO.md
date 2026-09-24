@@ -747,7 +747,26 @@ zice „nu reproduc", și va avea dreptate despre simptom, greșit despre defect
 
 ### 3.2f 🔵 Kernel de depanare pe Lenovo — KASAN, lockdep, KFENCE
 
-> **Refăcut pe 12 septembrie 2026.** `7.1.8-kasan` a fost șters și înlocuit cu **`7.2.5-kasan`**
+> **Refăcut pe 24 septembrie 2026: `7.2.7-kasan`.** `7.2.5-kasan` a fost șters complet (kernel, initrd,
+> `System.map`, config și cele 986 MB de module), iar în locul lui a fost compilat **7.2.7** (stable,
+> lansat 21 sep, sha256 verificat față de kernel.org), cu **același config** — toate opțiunile de
+> depanare verificate una câte una după `olddefconfig`. Compilare 72 de minute pe 4 nuclee, 139 de
+> module, zero erori.
+>
+> **Ordinea din GRUB, reparată definitiv.** Intrarea de sus „Ubuntu" arăta mereu spre kernelul cu
+> versiunea cea mai mare, adică spre cel de depanare (7.2.x > 7.0.0); de aceea `GRUB_DEFAULT` fusese
+> pinuit pe `7.0.0-31`, care între timp nici nu mai era kernelul Ubuntu cel nou. Acum kernelul de
+> depanare stă în **`/boot/kasan/`**, în afara zonei pe care GRUB o scanează automat, deci lista
+> generată conține numai kerneluri Ubuntu, iar `GRUB_DEFAULT=0` pornește mereu **cel mai nou kernel
+> Ubuntu** — inclusiv după viitoarele actualizări. Cel de depanare rămâne selectabil din intrarea
+> `DEPANARE: Linux 7.2.7-kasan + ramoops + log verbos`. Verificat în `grub.cfg`: intrarea implicită
+> pornește `/boot/vmlinuz-7.0.0-34-generic`, o singură intrare DEPANARE, zero referințe la 7.2.5.
+>
+> **Capcană plătită aici:** copia de siguranță a lui `40_custom` lăsată în `/etc/grub.d/` a fost
+> **executată** de `grub-mkconfig` (orice fișier executabil de acolo rulează), deci a generat a doua
+> oară intrarea veche. Copiile se țin în afara directorului.
+>
+> Versiunea din septembrie, pentru context. **Refăcut pe 12 septembrie 2026:** `7.1.8-kasan` a fost șters și înlocuit cu **`7.2.5-kasan`**
 > (stable, lansat 11 sep, sha256 verificat față de kernel.org), cu aceleași opțiuni plus altele
 > noi: `KASAN_INLINE`, `KASAN_VMALLOC` (tampoanele `vivid` sunt vmalloc, deci erau **invizibile**
 > pentru KASAN), injecție de erori, `netconsole`, `pstore-ram`, `usbmon`, `VIDEO_ADV_DEBUG`, BTF,
