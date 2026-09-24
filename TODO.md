@@ -1346,6 +1346,15 @@ Matricea de probe a uneltei rulată integral din nou: 5/5.
 **Issue #349 închis pe 24 sep de raportor**, cu mulțumiri. Are **MacBookAir6,2** — singura cale de a
 testa patch-ul DMI pe hardware real.
 
+**Poarta de dinainte de trimitere** — `pipewire-5363/fthd-masuratori/banc/poarta/verifica-trimitere.sh`:
+bază = `origin/master` după `fetch`, se aplică pe master curat, compilează fără avertismente,
+`checkpatch --strict` pe **fiecare** commit, nicio linie peste 100 de coloane, niciun rest de nume
+vechi în tot depozitul, `bash -n` + `shellcheck` comparat cu fișierul dinainte, **textul** de `--help`
+fără substituenți orfani, plus probele funcționale (11 fișiere cu md5 corecte, binar necunoscut
+refuzat, offset deplasat prins, `make install`). Validată în ambele sensuri: `proba-poarta.sh` pe
+intrări cunoscute și `proba-poarta-negativ.sh`, care sparge intenționat patru lucruri și cere porții
+să se facă roșie — 4/4. **Acum: 39 PASS, cod de ieșire 0.** Nu mai spun „gata de trimis" fără ea.
+
 **Greșelile mele din ziua asta, adunate** (JURNAL §36, memorie `feedback-lista-inainte-de-trimitere`):
 copie veche de pe disc luată drept stare upstream · checkpatch rulat abia la a doua trecere · `--help`
 testat ca **cod de ieșire**, nu ca text, deci un fragment orfan a supraviețuit până la a cincea trecere ·
