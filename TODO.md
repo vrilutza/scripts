@@ -766,6 +766,27 @@ zice „nu reproduc", și va avea dreptate despre simptom, greșit despre defect
 > **executată** de `grub-mkconfig` (orice fișier executabil de acolo rulează), deci a generat a doua
 > oară intrarea veche. Copiile se țin în afara directorului.
 >
+> **Probat pe hardware în aceeași seară, trei porniri:** implicit → `7.0.0-34-generic` (209 s);
+> `grub-reboot "DEPANARE: …"` → `7.2.7-kasan` (164 s); implicit, fără să cer nimic → iar
+> `7.0.0-34-generic`, cu `next_entry=` gol în grubenv, deci one-shot-ul nu rămâne lipit. Pe kernelul
+> de depanare: KASAN inițializat, `/proc/lockdep` 16035 de linii, pstore + ramoops montate, 6650 MB
+> memorie utilizabilă față de 7799. `KFENCE` e compilat dar oprit (`sample_interval=0`), se pornește
+> la nevoie cu `kfence.sample_interval=100`.
+>
+> **Instrumentul validat, nu doar compilat:** `kasantest.ko` rămăsese cu vermagic 7.2.5 (nu s-ar fi
+> încărcat). Reconstruit și **încărcat** pe 7.2.7-kasan → `BUG: KASAN: slab-out-of-bounds in
+> kasantest_init`. Detectorul chiar raportează pe acest build.
+>
+> **Atenție la numerotare:** pe kernelul de depanare `CONFIG_VIDEO_VIVID=y` ocupă `/dev/video0..3`, deci
+> webcam-ul UVC ajunge la **`/dev/video4`** (pe kernelul Ubuntu e `/dev/video0`). Scripturile de banc
+> iau nodul după nume, nu după număr.
+>
+> Cele două avertismente de boot (DMA-debug i915, lockdep nouveau/ttm) reapar identic pe 7.2.7 și sunt
+> aceleași consemnate în august — străine de camera noastră.
+>
+> DKMS: intrarea moartă `v4l2loopback/0.15.3, 7.2.5-kasan` scoasă; v4l2loopback e construit și pentru
+> `7.2.7-kasan`.
+>
 > Versiunea din septembrie, pentru context. **Refăcut pe 12 septembrie 2026:** `7.1.8-kasan` a fost șters și înlocuit cu **`7.2.5-kasan`**
 > (stable, lansat 11 sep, sha256 verificat față de kernel.org), cu aceleași opțiuni plus altele
 > noi: `KASAN_INLINE`, `KASAN_VMALLOC` (tampoanele `vivid` sunt vmalloc, deci erau **invizibile**
