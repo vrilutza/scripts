@@ -1346,6 +1346,13 @@ Matricea de probe a uneltei rulată integral din nou: 5/5.
 **Issue #349 închis pe 24 sep de raportor**, cu mulțumiri. Are **MacBookAir6,2** — singura cale de a
 testa patch-ul DMI pe hardware real.
 
+**Greșelile mele din ziua asta, adunate** (JURNAL §36, memorie `feedback-lista-inainte-de-trimitere`):
+copie veche de pe disc luată drept stare upstream · checkpatch rulat abia la a doua trecere · `--help`
+testat ca **cod de ieșire**, nu ca text, deci un fragment orfan a supraviețuit până la a cincea trecere ·
+redenumire incompletă · ramură implicită lipsă · ghilimele lipsă în cod nou · hamul de test omorât de
+SIGPIPE. Niciuna de raționament — toate de disciplină, fiecare prinsă de o comandă de zece secunde
+rulată **la construire**, nu la revizuire.
+
 **A cincea trecere, cu `shellcheck` instalat:** fișierul de la upstream are **16 constatări** proprii,
 dintre care **două sunt defecte reale** — mesajul de nepotrivire tipărește `${firm_hash}` în loc de
 `fw_hash`, deci iese **fără hash** (dovedit pe viu), și un „then" rămas ca argument în plus. Ramura
