@@ -1312,6 +1312,30 @@ patch. Diferență reală a existat totuși, în altă parte: exportul local `pa
 `1.092 s` la #334), nu cifrele publicate pe 23 aug. Live era corect, local era vechi. Reexportat;
 acum toate șapte sunt identice cu live, ignorând linia de semnătură a lui `git`.
 
+### 3.3s 🟡 24 septembrie — două patch-uri ținute local: mesajele pentru set file și a doua sursă din unealtă
+
+**Driver — `setfile-diagnostic`, commit `179bd7a` pe master `c5c7fac`, +8/−2. NETRIMIS.**
+Când fișierul de calibrare lipsește, driverul tăcea complet (doar `pr_debug`, invizibil fără dynamic
+debug): camera merge, culorile sunt greșite, utilizatorul nu află nici că lipsește ceva, nici cum se
+cheamă fișierul. Acum ambele căi care renunță sunt `dev_info`, iar calea care reușește spune ce a
+încărcat. Rulează o singură dată, din `fthd_pci_probe`.
+Probat pe hardware în trei variante separate: `no set file known for sensor 0005 0248` (master curat,
+senzorul nostru nemapat), `set file facetimehd/1571_01XX.dat is missing` (cu #348, fișierul mutat),
+`loaded set file facetimehd/1571_01XX.dat` (fișierul la locul lui). Captură de 5 cadre după, zero
+erori noi. Dovezi: `fthd-masuratori/rezultate/setfile-mesaje-24sep/`.
+
+**Unealtă — ramura `setfiles` în `facetimehd-firmware`, `8e17c1b` + `32da99f`. NETRIMISE.**
+Corecție importantă: **upstream extrage deja toate cele 11 set file-uri** (`60ee212`, PR #12), din
+`AppleCameraAssistant` de pe macOS 10.12.6 — copia noastră locală era veche și m-a făcut să afirm
+contrariul. Ce am adăugat: driverul Boot Camp 041-89042 ca **a doua sursă** (le are pe toate 11, nu
+patru ca pachetul vechi), plus ștergerea fișierelor pe jumătate extrase la un hash greșit, ca
+`make install` să nu copieze nevalidate. Cele 11 sha256 ale noastre ies identice cu tabelul lor,
+dintr-un binar complet diferit — sursele se validează reciproc.
+Probe: sursa reală 11/11, calea macOS neatinsă 11/11 pe binar sintetic, binar necunoscut refuzat,
+offset deplasat cu un octet prins, `make install DESTDIR=…` corect. Dovezi:
+`fthd-masuratori/rezultate/setfiles-unealta-24sep/`.
+
+
 ### 3.3f 🔵 24 august — curățenie: ce a intrat upstream nu mai stă local, și bancul mutat pe master-ul de azi
 
 Odată ce !2954, !2964 și !2965 au intrat în master, copiile locale nu mai puteau decât să inducă în
