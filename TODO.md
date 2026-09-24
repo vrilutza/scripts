@@ -1324,7 +1324,7 @@ senzorul nostru nemapat), `set file facetimehd/1571_01XX.dat is missing` (cu #34
 `loaded set file facetimehd/1571_01XX.dat` (fișierul la locul lui). Captură de 5 cadre după, zero
 erori noi. Dovezi: `fthd-masuratori/rezultate/setfile-mesaje-24sep/`.
 
-**Unealtă — ramura `setfiles` în `facetimehd-firmware`, `0531f5e` + `1011eed`. NETRIMISE. Zero constatari shellcheck noi fata de upstream.**
+**Unealtă — ramura `setfiles` în `facetimehd-firmware`, `b2905b4` + `d62a31a`. NETRIMISE. Zero constatări shellcheck noi față de upstream, ba chiar patru rezolvate.**
 Corecție importantă: **upstream extrage deja toate cele 11 set file-uri** (`60ee212`, PR #12), din
 `AppleCameraAssistant` de pe macOS 10.12.6 — copia noastră locală era veche și m-a făcut să afirm
 contrariul. Ce am adăugat: driverul Boot Camp 041-89042 ca **a doua sursă** (le are pe toate 11, nu
@@ -1345,6 +1345,13 @@ Matricea de probe a uneltei rulată integral din nou: 5/5.
 
 **Issue #349 închis pe 24 sep de raportor**, cu mulțumiri. Are **MacBookAir6,2** — singura cale de a
 testa patch-ul DMI pe hardware real.
+
+**A cincea trecere, cu `shellcheck` instalat:** fișierul de la upstream are **16 constatări** proprii,
+dintre care **două sunt defecte reale** — mesajul de nepotrivire tipărește `${firm_hash}` în loc de
+`fw_hash`, deci iese **fără hash** (dovedit pe viu), și un „then" rămas ca argument în plus. Ramura
+separată `shellcheck-cleanup` (`026ac9b` + `1814328`, **netrimisă**) le repară, plus ghilimele, `-gt`
+și `|| exit` la `cd`; zero constatări după. Dovedit că nu schimbă comportamentul: aceleași intrări,
+ieșiri identice octet cu octet, singura diferență fiind chiar mesajul reparat.
 
 #### De făcut: versiunea de firmware — 1.43.0 vs 5.60.0 pe MacBookPro14,1
 
