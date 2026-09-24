@@ -1346,6 +1346,27 @@ Matricea de probe a uneltei rulată integral din nou: 5/5.
 **Issue #349 închis pe 24 sep de raportor**, cu mulțumiri. Are **MacBookAir6,2** — singura cale de a
 testa patch-ul DMI pe hardware real.
 
+#### De făcut: versiunea de firmware — 1.43.0 vs 5.60.0 pe MacBookPro14,1
+
+Criteriul **nu e vechimea**, ci ce acceptă ISP-ul. Textul upstream: *„For most Macs only the version
+1.43.0 of the firmware from OS X works"*; excepția e MacBook-ul de 12 inci, care are nevoie de 5.60.0
+fiindcă tabelele de senzori din 1.43.0 sunt anterioare acelor mașini. La noi rulează **1.43.0**
+(`sha256 e3e6034a…`, din OS X 10.11.5), și **toate măsurătorile din ultimele luni s-au făcut pe el**.
+
+**Ipoteză, nu concluzie:** MacBookPro14,1 e din iunie 2017, iar 1.43.0 vine din mai 2016 — aceeași
+situație de „firmware anterior mașinii" care a impus 5.60.0 la cel de 12 inci. La noi camera merge, dar
+„merge" nu înseamnă „optim". Ar merita încercat 5.60.0 și văzut dacă schimbă ceva **măsurabil**,
+inclusiv eroarea veche `Failed to lock S2 PLL`.
+
+Costul e mic: uneltea aduce 5.60.0 prin cereri cu interval, nu tot pachetul; se păstrează
+`firmware.bin` cu 1.43.0 și se pune la loc. **Dar e o schimbare la baza de măsurare**, deci se face
+doar ca experiment separat, cu revenire imediat după.
+
+**Ce nu se știe:** dacă Ventura mai conține un `AppleCameraInterface` folosibil, ce versiune duce și
+dacă facetimehd merge cu ea. N-avem niciun binar de Ventura și niciun raport. Hash-ul lui n-ar fi în
+tabelul uneltei, deci offseturile ar trebui determinate de noi, ca la Boot Camp 6 — fezabil, dar are
+sens doar dacă apare un motiv să credem că aduce ceva.
+
 
 ### 3.3f 🔵 24 august — curățenie: ce a intrat upstream nu mai stă local, și bancul mutat pe master-ul de azi
 
