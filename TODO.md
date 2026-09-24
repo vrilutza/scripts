@@ -36,7 +36,7 @@ Fișier unic: **ce e rezolvat**, **ce e deschis și se poate repara**, **ce e wo
 | 5 | Suspend / s2idle | 🟡 opțional | experiment reversibil, dacă chiar vrei suspend | [5](#5--suspend--s2idle) |
 | 6 | Zgomot de log (DMAR / ACPI / SGX / nvme0n2) | 🔴 | nimic — vezi de ce „fix-ul fără dezactivarea IOMMU" nu funcționează | [6](#6--zgomot-de-log) |
 | 7 | Tot ce e deja închis (NVRAM, audio, RAPL, rfkill, kernel…) | ✅ | nimic | [7](#7--rezolvate-arhivă-tehnică) |
-| **8** | **Opriri spontane, fără urmă în jurnal** | 🟡 **fără urmărire activă** | nimic — nicio recidivă din 5 aug (25 de zile), instrumentarea nu s-a confirmat necesară | [8](#8--opriri-spontane--cauză-nedeterminată) |
+| **8** | **Opriri spontane, fără urmă în jurnal** | 🟠 **recidivă pe 24 sep** | **prima moarte cu punct fixat**, prin netconsole: la `Virtual VTT enabled`, în bringup-ul DDR40, încărcând modulul **stock**. 15 încărcări în ziua aia, una fatală. De decis dacă se urmărește firul DDR40 | [8](#8--opriri-spontane--cauză-nedeterminată) |
 
 **Ordinea recomandată:**
 
@@ -3848,6 +3848,15 @@ sursa distribuției. Până se acceptă, pasul manual de mai sus rămâne obliga
 > e în `pipewire-5363/documente-locale/ISSUE_opriri_spontane.md` — **numai local pe laptop**,
 > fiindcă e specifică acestei mașini și conține extrase brute de jurnal. *(Mutat acolo pe 12
 > septembrie, din rădăcina proiectului; directorul acela e sub git local, fără remote.)*
+
+> **Recidivă pe 24 septembrie 2026, ora 11:48:34 — și de data asta avem punctul de moarte.**
+> Netconsole (MacBook → Lenovo) a dus mai departe decât a apucat discul: jurnalul local se oprește la
+> 11:48:32.180, log-ul primit merge până la 11:48:34.690. Ultima linie: `facetimehd: Virtual VTT
+> enabled`. Pe o pornire sănătoasă urmează în ~20 ms `S2 DRAM memory address`, `Rewrite DDR mode
+> registers succeeded`, `Full memory verification succeeded` — **deci a murit în bringup-ul DDR40**,
+> după `Failed to lock S2 PLL` și `DDR40 PHY PLL locked on safe settings`. Modulul care se încărca era
+> cel **stock 0.7.2 din DKMS**, nu un build de probă. Expunere măsurată: 15 încărcări de modul în ziua
+> aia, o moarte. Detalii în JURNAL §38.
 
 **Cinci opriri abrupte între 26 iulie și 5 august**, fără ca laptopul să fie oprit de utilizator și
 **fără nicio urmă în jurnal** — journald se oprește odată cu mașina, deci ultimul lucru scris e o
