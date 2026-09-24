@@ -10,7 +10,7 @@ Fișier unic: **ce e rezolvat**, **ce e deschis și se poate repara**, **ce e wo
 | **Hardware** | MacBookPro14,1 (A1708), i5-7360U 2C/4T, Iris 640, 8 GB RAM, Apple S3X NVMe, BCM4350C0 (WiFi PCIe + BT UART), FaceTime HD, CS8409/CS42L83 |
 | **Software** | Debian testing/forky, kernel `7.1.13+deb14-amd64` (+ `7.1.12` păstrat ca rezervă, DKMS construit pe ambele), pipewire 1.6.8-1, wireplumber 0.5.17-1, GNOME/Wayland. Driver cameră: DKMS `facetimehd/0.7.2`. *(Verificat pe mașină pe 12 sep 2026; pachetele PipeWire/WirePlumber reverificate cu `dpkg` pe 18 sep.)* |
 | **Verificat pe viu** | Cifrele de BT/WiFi: **8 august 2026**, pe **196 de boot-uri** (19 mai → 8 aug); anterior 27 iulie, 173 de boot-uri. Starea upstream și cea a mașinii: **12 septembrie 2026**, prin API și direct pe mașini. Ce nu s-a putut reverifica e marcat explicit `⏳ neconfirmat`. |
-| **Stare de bază** | Hardware-ul e funcțional. Margini: 2 probleme cronice (BT, WiFi), 1 **nediagnosticată** (opriri spontane), 1 la upstream (cameră), 1 fizică (termic). La upstream, verificat prin API pe 18 sep: **douăsprezece MR-uri PipeWire acceptate** (trei dintre ele și în ramura `1.6`), **cinci PR-uri de driver integrate**, un MR (!2951) și nouă PR-uri încă deschise — toate nouă revizuite și republicate pe 17 sep. 2 laptopuri de test. Tabloul complet: [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou). |
+| **Stare de bază** | Hardware-ul e funcțional. Margini: 2 probleme cronice (BT, WiFi), 1 **nediagnosticată** (opriri spontane), 1 la upstream (cameră), 1 fizică (termic). La upstream, verificat prin API pe 24 sep: **treisprezece MR-uri PipeWire acceptate** (ultimul !3013, integrat pe 22 sep; trei dintre ele și în ramura `1.6`), **cinci PR-uri de driver integrate**, un MR (!2951) plus issue-ul #5481 și **zece PR-uri de driver** încă deschise. 2 laptopuri de test. Tabloul complet: [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou). |
 
 **Legendă:**
 
@@ -31,7 +31,7 @@ Fișier unic: **ce e rezolvat**, **ce e deschis și se poate repara**, **ce e wo
 |---|---|---|---|---|
 | 1 | Bluetooth mort la ~14% din boot-uri (`-110`) | 🟡 activ | experiment de 3 linii care separă „warm vs cold"; SMC reset ca remediu | [1](#1--bluetooth-bcm4350c0--init-eșuat-la-14-din-boot-uri) |
 | 2 | WiFi BCM4350 — desincronizare ring, risc de panică | 🟡 activ | raport upstream cu dovezile din pstore; monitorizare cu prag | [2](#2--wifi-bcm4350--desincronizare-ring-msgbuf) |
-| 3 | Cameră — partajare de buffere fără `SPA_META_Busy` (aplicațiile îngheață) | 🔵 upstream | **douăsprezece patch-uri PipeWire + cinci de driver acceptate în master** (trei dintre cele PipeWire și în ramura `1.6`); un PipeWire (!2951) + nouă driver încă deschise *(verificat prin API, 18 sep)* | [3](#3--camera-facetime-hd--partajare-de-buffere-nesigură) |
+| 3 | Cameră — partajare de buffere fără `SPA_META_Busy` (aplicațiile îngheață) | 🔵 upstream | **treisprezece patch-uri PipeWire + cinci de driver acceptate în master** (trei dintre cele PipeWire și în ramura `1.6`); un PipeWire (!2951), issue-ul #5481 și zece PR-uri de driver încă deschise *(verificat prin API, 24 sep)* | [3](#3--camera-facetime-hd--partajare-de-buffere-nesigură) |
 | 4 | Sacadare cu 2 browsere + saturație termică | 🟢 | curățare fizică + tab-ul Chrome; abia apoi eventual daemon de ventilator | [4](#4--termic--sacadare) |
 | 5 | Suspend / s2idle | 🟡 opțional | experiment reversibil, dacă chiar vrei suspend | [5](#5--suspend--s2idle) |
 | 6 | Zgomot de log (DMAR / ACPI / SGX / nvme0n2) | 🔴 | nimic — vezi de ce „fix-ul fără dezactivarea IOMMU" nu funcționează | [6](#6--zgomot-de-log) |
@@ -85,7 +85,7 @@ pachete. De reținut înainte de a-i spune cuiva că „are deja" vreuna dintre 
 | [pipewire !2980](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2980) | numărul de tampoane oferit de sursa v4l2 | ⛔ **închis de noi** (7 sep): !2985 a rezolvat central partea care conta, iar `wtaymans` și `pobrn` au spus amândoi că un client fără preferință trebuie să primească ceva conservator. Cifrele de memorie din descriere susțineau poziția lor |
 | [pipewire !2951](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951) | `pipewiresrc` repornea fluxul la renegocieri care nu cereau nimic | 🔵 deschis din 15 aug, **zero comentarii din afară**, neatins din 12 sep. Remăsurat pe 12 sep pe GStreamer 1.28.4: 240 de cadre cu 4 pauze de ~1,25 s, față de 387 fără nicio pauză. Pe 16 sep, în Snapshot pe master cu !2998, pauzele de ~0,55 s au venit exact din renegocierile pe care le repară !2951. **19 sep: A/B în Snapshot făcut**: cu o cameră cu formate discrete, nicio diferență; cu una care anunță un interval, 7 reporniri → 0, +95 de cadre, fără saltul de luminozitate din înregistrări. Apoi rebase pe `decc0d2ef` (commit neschimbat, CI 62/62) și **comentariu cu măsurătoarea** (primul de pe MR); „degetul în sus” al lui `rmader` e din 17 sep. **20 sep, verificat prin API:** niciun răspuns nou — o singură notă (a noastră), `mergeable`, CI verde |
 | [pipewire !2998](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2998) | enumerarea v4l2 rescrisă: `enumerate all + spa_pod_filter()`, **+23/−287** | ✅ **acceptat** `a7eb57adb` (16 sep, 08:34 UTC), doar în master. **A închis issue-ul #4842**, cerut de `pobrn` în 2025 și de `wtaymans` pe 8 sep |
-| [pipewire !3013](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/3013) | `mmap_read()` folosea fără verificare indexul de la `VIDIOC_DQBUF`; un driver neconform (v4l2loopback) dărâma daemonul | 🔵 **deschis 19 sep**, CI 62/62. **două review-uri de la `pobrn`**, amândouă cu răspuns în firul lor. Primul (19 sep): comentariul din cod să spună că e un ocol pentru un driver neconform. Al doilea (20 sep): „de ce repunem tamponul în coadă?” — A/B măsurat pe v4l2loopback 0.15.4, diferență **0,7%** (1,612 s față de 1,624 s pentru 30 de cadre), deci logica rămâne; comentariul și mesajul explică acum și de ce (`4db456468`). Motivul, din surse: 0.15.4 nu consultă coada cititorului, PR-ul lor #659 o consultă (și atunci ramura nu se mai execută), iar `videobuf2` impune regula pentru orice driver din kernel — `v4l2loopback` nu folosește `vb2` deloc. **20 sep, verificat prin API:** nimic nou după răspunsul nostru (2 note), `mergeable`, CI verde |
+| [pipewire !3013](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/3013) | `mmap_read()` folosea fără verificare indexul de la `VIDIOC_DQBUF`; un driver neconform (v4l2loopback) dărâma daemonul | ✅ **acceptat** `682932a6f` (22 sep, 08:21 UTC), în master, **nu** și în `1.6`. `wtaymans` l-a rebazat el însuși peste șase commit-uri de master și l-a integrat. Înainte, **două review-uri de la `pobrn`**, amândouă cu răspuns în firul lor: (1) comentariul din cod să spună că e un ocol pentru un driver neconform; (2) „de ce repunem tamponul în coadă?” — A/B măsurat pe v4l2loopback 0.15.4, diferență **0,7%** (1,612 s față de 1,624 s pentru 30 de cadre), deci logica a rămas, iar comentariul și mesajul explică acum și de ce. Motivul, din surse: 0.15.4 nu consultă coada cititorului, PR-ul lor #659 o consultă (și atunci ramura nu se mai execută), iar `videobuf2` impune regula pentru orice driver din kernel — `v4l2loopback` nu folosește `vb2` deloc |
 | [v4l2loopback #659](https://github.com/v4l2loopback/v4l2loopback/pull/659) | PR-ul lor: DQBUF conform V4L2 | 💬 comentariul nostru din 19 sep: head-ul lor testat; căderea PipeWire dispare cu el. **20 sep:** fără răspuns — 3 comentarii, ultimul al nostru |
 | [pipewire #5481](https://gitlab.freedesktop.org/pipewire/pipewire/-/work_items/5481) | Range×Range: consumatorul cere 16, dispozitivul dă 8, rezultatul cade la 4 în loc de 8 | 🔵 **deschis 19 sep**, întrebare de politică, cu reproducere în C; fără patch. **20 sep:** zero comentarii, fără etichetă, fără responsabil |
 | [facetimehd #348](https://github.com/patjak/facetimehd/pull/348) | senzorul `0x248` n-avea caz în `fthd_isp_cmd_set_loadfile()`, deci camera mergea fără calibrare | 🔵 **deschis 20 sep**, `MERGEABLE`, un commit, +10 rânduri. Commit-ul exact a fost încărcat pe hardware în aceeași zi (firmware-ul acceptă fișierul, `size 18652`); efectul pe imagine e măsurat pe 19 sep (tentă −46%, dungaj −10%). Calea 1575 rămâne netestată. Pe wiki, secțiunea cu pachetul Boot Camp 041-89042 (11 fișiere) a fost publicată tot atunci, commit `050e214` |
@@ -481,7 +481,7 @@ retras: trata simptomul, iar ca patch upstream ar fi fost respins pe bună drept
 
 `FTHD_BUFFERS` e azi **4**, valoarea upstream *(verificat 8 aug: `fthd_drv.h:30`)*.
 
-### 3.2 🔵 PipeWire — douăsprezece patch-uri acceptate, unul în review
+### 3.2 🔵 PipeWire — treisprezece patch-uri acceptate, unul în review
 
 Vezi tabloul complet din [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou). Pe scurt:
 
@@ -803,7 +803,7 @@ că se aplică și toate împreună, fără conflict, pe `master`-ul de azi (`54
 
 Driverul instalat pe mașină e **exact** suma lor *(verificat prin `diff -rq` pe 8 aug)*, construit
 pentru ambele kerneluri. Scriptul de instalare/revenire e local, în
-`pipewire-5363/camera-fix/install-pr333.sh` (nu e publicat — vezi nota din [secțiunea 3.2](#32--pipewire--douăsprezece-patch-uri-acceptate-unul-în-review)).
+`pipewire-5363/camera-fix/install-pr333.sh` (nu e publicat — vezi nota din [secțiunea 3.2](#32--pipewire--treisprezece-patch-uri-acceptate-unul-în-review)).
 
 ### 3.3a 🔵 17 august — fiecare patch verificat prin măsurătoare
 
@@ -1895,6 +1895,29 @@ pleacă până nu sunt acoperite joburile CI, efectul asupra audio și ramura 1.
   **Nu se trimite nimic din firul ăsta.** Reglajul care conta stătea în fișierul de calibrare, deci în #348.
 - **Issue-ul Range×Range** e refăcut cu o reproducere C verificată și **trimis ca #5481** (întrebare de politică, fără patch).
 - **`facetimehd-codex/`** a devenit depozit git local, ca `pipewire-5363`, și e ignorat aici.
+
+**21–24 sep — ce s-a întâmplat de atunci:**
+- ✅ **!3013 e integrat în PipeWire master** — `682932a6f`, pe 22 sep la 08:21 UTC. `wtaymans` l-a rebazat el
+  însuși peste șase commit-uri de master și l-a fuzionat, fără să ne ceară nimic; exact motivul pentru care nu
+  rebazăm după fiecare commit străin. **Al treisprezecelea** patch PipeWire acceptat. **Nu** e cules în `1.6`,
+  iar acolo ar avea nevoie și de !2934 ca să folosească la ceva.
+- **`!2951` și `#5481` neatinse** — o notă, respectiv zero, ultima mișcare din 19 sep. Cele **zece** PR-uri
+  facetimehd, neatinse din 17 sep (#348 din 20 sep); master-ul lui `patjak` e tot `c5c7fac`, din 5 sep.
+- **facetimehd #349** (MacBookAir6,2, raportat de `rsramkis`): i-am arătat pe 21 sep că urma din kernel vine de la
+  `wl`, nu de la facetimehd, iar căderea din Snapshot e în Mesa. A confirmat pe 22 sep: `broadcom-wl-dkms` fusese
+  actualizat chiar în ziua aceea. A rămas deschis: el instalează `facetimehd-data`, dar tot vede
+  `1871_01XX.dat (-2)`. Pachetul AUR chiar instalează fișierul (verificat în PKGBUILD), deci fie modulul a fost
+  încărcat înainte de instalare, fie e altceva. Separat, **am găsit un bug vechi din 2015**: verificarea pentru
+  MacBook Air compară `DMI_BOARD_NAME` cu „MacBookAir", dar pe firmware-ul Apple acolo stă identificatorul de
+  placă (`Mac-…`), deci Air-urile cer `1871` în loc de `1771`. Ar trebui `DMI_PRODUCT_NAME`. **Netrimis.**
+- 🖥️ **Kernel 7.2.6+deb14** instalat pe 23 sep la 06:12, cu `linux-source-7.2` pus în aceeași tranzacție —
+  regula din [secțiunea 6](#6--upgrade-de-kernel) a ținut. Toate cele trei module DKMS (facetimehd,
+  snd_hda_macbookpro, v4l2loopback) construite pentru el; camera merge. Rulăm pe el din 23 sep 06:20.
+  156 de pachete actualizate din 20 sep, între care PipeWire `1.6.9-1` și GNOME Shell/mutter 50.5.
+- 📶 **Al doilea boot cu Bluetooth mort prins de detector**, pe 21 sep 08:45 (`bt-ab/la-110/`): aceeași semnătură
+  (`0xfc18` timeout, `Reset failed (-110)`, adresă zero) și **din nou rebind-ul l-a readus**, fără power-cycle.
+  Acum **n = 2**. Restul boot-urilor, sănătoase.
+- 📶 **WiFi:** doar **2** evenimente `Invalid packet id` în patru zile — trendul în scădere ține.
 
 **Tot pe 16 sep:** a opta moarte a MacBook-ului la reîncărcarea driverului ([8.2](#82-stare-de-fapt)) și
 uneltele noi de depanare ([8.1](#81-instrumentarea-netconsole-panic-on-lockup-test-cu-blacklist--scoasă-de-pe-listă-30-august)).
