@@ -1359,6 +1359,17 @@ Matricea de probe a uneltei rulată integral din nou: 5/5.
 **Issue #349 închis pe 24 sep de raportor**, cu mulțumiri. Are **MacBookAir6,2** — singura cale de a
 testa patch-ul DMI pe hardware real.
 
+**Ordinea convenită cu Vik pe 24 sep, după trimiteri:**
+
+1. **Firul PLL/DDR40** — acum. `patjak` cere verificarea polarității bitului de lock pe hardware; e
+   întrebarea care ține #340 în loc, iar oprirea spontană de azi a dat primul punct de moarte exact.
+   Analiza fără hardware e făcută (JURNAL §41); rămâne măsurătoarea cu build de depanare.
+2. **Experimentul firmware 5.60.0 vs 1.43.0** — după aceea, ca experiment separat, cu revenire la
+   1.43.0.
+3. **Retestarea tuturor combinațiilor** — patch-urile facetimehd în combinații diferite, plus
+   PipeWire cu WirePlumber în combinații diferite; n-a mai fost făcută de mult. **Seara, după ora 21**,
+   Vik dă semnalul.
+
 **Decis pe 24 sep, nu se mai întreabă:** pe Lenovo se **păstrează** și arborele `~/kernel` (12 G, fără
 el nu se mai pot compila module pentru kernelul de depanare), și `linux-image-7.0.0-31-generic` ca
 rezervă. Nu mai sunt întrebări deschise.
