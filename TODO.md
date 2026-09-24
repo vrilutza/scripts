@@ -1366,7 +1366,12 @@ testa patch-ul DMI pe hardware real.
    Analiza fără hardware e făcută (JURNAL §41); rămâne măsurătoarea cu build de depanare.
 2. **Experimentul firmware 5.60.0 vs 1.43.0** — după aceea, ca experiment separat, cu revenire la
    1.43.0.
-3. **Retestarea tuturor combinațiilor** — patch-urile facetimehd în combinații diferite, plus
+3. ✅ **FĂCUT pe 24 sep, 17:53:** toate cele 12 PR-uri deschise retestate pe hardware, fiecare în
+   build-ul lui, din worktree verificat că e exact la capul PR-ului. **Toate conform descrierii**;
+   cifre: #331 `Stepwise 320x240-1296x736` vs `Discrete`, #342 compliance 47/48 vs 45/48, #345 acordă
+   8 tampoane vs 4, #334 primul cadru în 490 ms. Rămâne de făcut partea cu **PipeWire × WirePlumber**
+   în combinații. Detalii: `rezultate/retest-toate-24sep/`, JURNAL §48.
+4. **Retestarea combinațiilor** — patch-urile facetimehd în combinații diferite, plus
    PipeWire cu WirePlumber în combinații diferite; n-a mai fost făcută de mult. **Seara, după ora 21**,
    Vik dă semnalul.
 
