@@ -1314,7 +1314,7 @@ acum toate șapte sunt identice cu live, ignorând linia de semnătură a lui `g
 
 ### 3.3s 🟡 24 septembrie — două patch-uri ținute local: mesajele pentru set file și a doua sursă din unealtă
 
-**Driver — `setfile-diagnostic`, commit `040b3af` pe master `c5c7fac`, +8/−2. NETRIMIS.**
+**Driver — `setfile-diagnostic`, commit `b316e7d` pe master `c5c7fac`, +8/−2. NETRIMIS.**
 Când fișierul de calibrare lipsește, driverul tăcea complet (doar `pr_debug`, invizibil fără dynamic
 debug): camera merge, culorile sunt greșite, utilizatorul nu află nici că lipsește ceva, nici cum se
 cheamă fișierul. Acum ambele căi care renunță sunt `dev_info`, iar calea care reușește spune ce a
@@ -1337,7 +1337,7 @@ offset deplasat cu un octet prins, `make install DESTDIR=…` corect. Dovezi:
 
 **A doua trecere (cerută înainte de trimitere) a găsit lucruri reale:** mesajul din driver era la 100
 de coloane, fix pe limita checkpatch — scurtat, commit amendat, **modulul reconstruit și cele trei
-variante reverificate**; patch-ul DMI amendat pentru un `sizeof(...) - 1` (SHA nou **`f866bee`**);
+variante reverificate**; patch-ul DMI amendat pentru un `sizeof(...) - 1` (SHA nou **`4506ac6`**);
 uneltei îi lipsea ramura implicită pentru o sursă fără tabel de offseturi, avea un
 `rm -f $(for …)` neîncadrat și o afirmație prea tare în `--help`. Toate trei patch-urile de driver
 trec `checkpatch --strict` curat, se aplică **împreună** pe `c5c7fac` și compilează fără avertismente.
@@ -1345,6 +1345,13 @@ Matricea de probe a uneltei rulată integral din nou: 5/5.
 
 **Issue #349 închis pe 24 sep de raportor**, cu mulțumiri. Are **MacBookAir6,2** — singura cale de a
 testa patch-ul DMI pe hardware real.
+
+**A șasea trecere (efort ridicat, după crash) a găsit două defecte de conținut** — exact ce poarta nu
+poate prinde: mesajul „loaded set file" era tipărit **înaintea** comenzii care încarcă fișierul în ISP,
+deci jurnalul s-ar fi contrazis cu `set file load failed` (mutat pe ramura de succes, `b316e7d`); și
+„orice Air cere 1871" era imprecis — cu `sensor_id0 == 4` cere **1874** (corectat în commit `4506ac6`,
+în descriere și în comentariul pentru #349). Plus trei afirmații prea tari înmuiate în texte și calea
+`--dmg` declarată explicit ca neprobată.
 
 **Poarta de dinainte de trimitere** — `pipewire-5363/fthd-masuratori/banc/poarta/verifica-trimitere.sh`:
 bază = `origin/master` după `fetch`, se aplică pe master curat, compilează fără avertismente,
