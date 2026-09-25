@@ -1381,8 +1381,14 @@ testa patch-ul DMI pe hardware real.
    Dovezi: `rezultate/pll-polaritate-24sep/`, JURNAL §41–43.
 2. 🟡 **PARȚIAL FĂCUT pe 25 sep, 06:00:** 5.60.0 (care se prezintă ca `S2ISP-01.57.00`) **pornește pe
    MacBookPro14,1**, păstrează formatele, dimensiunile, captura și **calibrarea 1571**; `Failed to lock
-   S2 PLL` neschimbat. Pe scenă neagră: Y 1,10 → 2,62 și zgomot −27 %. **Rămâne testul la lumină de
-   zi** — tenta și dungajul nu se pot compara pe întuneric. Firmware-ul e la `~/.cache/fw560/`,
+   S2 PLL` neschimbat. Pe scenă neagră: Y 1,10 → 2,62 și zgomot −27 %. **Testul care rămâne NU e cel la lumină de zi.**
+   La lumină, 1.43.0 se comportă deja bine, iar dungajul a fost măsurat **la nivelul zgomotului**
+   (0,087–0,136 față de un prag de 0,093) — deci un A/B la geam ar reproduce cel mai probabil „nicio
+   diferență". Singurul semnal real e în **lumină slabă**, care e și cazul de folosire adevărat.
+   **Protocol, cu criteriu de oprire scris înainte:** scenă de interior cu structură fină cunoscută,
+   30 de cadre per firmware, alternate; se măsoară **zgomotul ȘI detaliul împreună** — dacă zgomotul
+   scade dar scade și detaliul, e doar netezire, nu câștig. Dacă diferența nu iese peste zgomot,
+   **se închide firul și rămânem pe 1.43.0**. Firmware-ul e la `~/.cache/fw560/`,
    cu hash verificat. Dovezi: `rezultate/firmware-560-25sep/`, JURNAL §51.
 3. ✅ **FĂCUT pe 24 sep, 17:53:** toate cele 12 PR-uri deschise retestate pe hardware, fiecare în
    build-ul lui, din worktree verificat că e exact la capul PR-ului. **Toate conform descrierii**; iar **seria completă (17 commit-uri, zero conflicte) duce `v4l2-compliance` de la 6 eșecuri pe stock la 57/57 fără avertismente** — 48/48 fără `-s`;
