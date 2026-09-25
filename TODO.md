@@ -111,13 +111,20 @@ pachete. De reținut înainte de a-i spune cuiva că „are deja" vreuna dintre 
 
 | | |
 |---|---|
-| `vrilutza/facetimehd` | ramura **`all-patches`**: cele 12 PR-uri, 17 commit-uri, fără conflicte |
-| `vrilutza/facetimehd-firmware` | ramura **`all-patches`**: a doua sursă + curățenia shellcheck (conflictul rezolvat) |
+| `vrilutza/facetimehd` | ramura **`all-patches`**, acum **ramură implicită**: cele 12 PR-uri ale noastre **plus #346**, 18 commit-uri; `master` rămâne oglindă a upstream-ului. README care spune ce conține |
+| `vrilutza/facetimehd-firmware` | ramura **`all-patches`**, **ramură implicită**: a doua sursă + curățenia shellcheck, cu README |
 | remote-uri locale | **`origin` = fork-ul lui Vik**, `upstream` = `patjak` |
-| driver instalat | DKMS `facetimehd/0.7.2+all-25sep2026`, **ambele kerneluri**, sursă curată cu SHA-ul în `COMMIT` |
+| driver instalat | DKMS `facetimehd/0.7.2+all-25sep2026`, **ambele kerneluri**, din commit-ul `19489dd`, notat în `COMMIT` |
 | firmware | **5.60.0** implicit (`S2ISP-01.57.00`); ambele versiuni pe disc cu nume explicite |
 | verificat | `S2 PLL is locked after 10 us` · `loaded set file 1571_01XX.dat` · **`v4l2-compliance -s`: 57/57** |
 | **întoarcere** | **`sudo facetimehd-revino`** — o comandă, pune la loc 0.7.2 și firmware 1.43.0 |
+
+**#346 verificat înainte de a fi inclus.** E bun — dar descrierea lui greșește cauza. Măsurat aici:
+YVYU **nu** livrează date invalide, ci **cadrul corect decalat cu exact un octet** (citit cu decalaj 1
+e identic cu YUYV; cu decalaj 3 are U/V inversate, adică YVYU corect). Îl includem fiindcă driverul
+n-are nicio manetă de offset — tratează cele două formate identic, diferă doar valoarea trimisă
+ISP-ului — deci formatul nu poate fi livrat corect azi. **De trimis pe #346:** măsurătoarea, ca
+autorul și `patjak` să aibă cauza corectă. Netrimisă, așteaptă acordul.
 
 **Consecință:** regula „driverul de zi cu zi = upstream curat, ca bază de măsurare" **nu mai e
 valabilă**. Orice comparație cu upstream se construiește explicit (`pr-separat/master` e la `c5c7fac`,
