@@ -1379,7 +1379,13 @@ testa patch-ul DMI pe hardware real.
    15 încărcări, zero tranziții inverse); A/B alternat, 13 perechi: master 11 eșecuri, #340 13/13.
    **Răspuns trimis** în firul de review al lui `patjak`. Rămâne doar să vedem ce zice.
    Dovezi: `rezultate/pll-polaritate-24sep/`, JURNAL §41–43.
-2. 🟡 **PARȚIAL FĂCUT pe 25 sep, 06:00:** 5.60.0 (care se prezintă ca `S2ISP-01.57.00`) **pornește pe
+2. ✅ **FĂCUT COMPLET pe 25 sep.** Partea funcțională dimineața, apoi **testul în lumină slabă** (care
+   era testul care conta, nu cel la lumină de zi): estimatoare noi, validate pe cinci cazuri sintetice;
+   3 runde alternate, 160 de cadre pe braț. **5.60.0: zgomot −58 %, dar detaliu −33 %** — alt compromis,
+   nu un câștig. Raportul detaliu/zgomot îl favorizează cu 60 %. **Decizia e a lui Vik**, uitându-se la
+   `comparatie.png`. Rămas pe 1.43.0. Detalii mai jos și în JURNAL §52.
+
+   Partea funcțională, pe scurt: 5.60.0 (care se prezintă ca `S2ISP-01.57.00`) **pornește pe
    MacBookPro14,1**, păstrează formatele, dimensiunile, captura și **calibrarea 1571**; `Failed to lock
    S2 PLL` neschimbat. Pe scenă neagră: Y 1,10 → 2,62 și zgomot −27 %. **Testul care rămâne NU e cel la lumină de zi.**
    La lumină, 1.43.0 se comportă deja bine, iar dungajul a fost măsurat **la nivelul zgomotului**
