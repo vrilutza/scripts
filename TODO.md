@@ -118,6 +118,8 @@ pachete. De reținut înainte de a-i spune cuiva că „are deja" vreuna dintre 
 | firmware | **5.60.0** implicit (`S2ISP-01.57.00`); ambele versiuni pe disc cu nume explicite. **Binarul NU e în depozit** (e al Apple) — unealta îl extrage, iar README-urile spun ce ia implicit, cum se ia cealaltă versiune și care e compromisul măsurat |
 | verificat | `S2 PLL is locked after 10 us` · `loaded set file 1571_01XX.dat` · **`v4l2-compliance -s`: 57/57** |
 | **întoarcere** | **`sudo facetimehd-revino`** — o comandă, pune la loc 0.7.2 și firmware 1.43.0 |
+| folosibil de străini | **da, probat cu clonă proaspătă**: vine pe `all-patches`, compilează cu zero avertismente; README-urile au acum și **instrucțiuni de instalare** (pachete, firmware întâi, driver simplu sau DKMS, cum verifici) |
+| conținut față de upstream | **0 commit-uri lipsă, 0 fișiere șterse** în ambele depozite — strict upstream + patch-urile noastre |
 
 **#346 verificat înainte de a fi inclus.** E bun — dar descrierea lui greșește cauza. Măsurat aici:
 YVYU **nu** livrează date invalide, ci **cadrul corect decalat cu exact un octet** (citit cu decalaj 1
