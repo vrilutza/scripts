@@ -1367,7 +1367,7 @@ testa patch-ul DMI pe hardware real.
 2. **Experimentul firmware 5.60.0 vs 1.43.0** — după aceea, ca experiment separat, cu revenire la
    1.43.0.
 3. ✅ **FĂCUT pe 24 sep, 17:53:** toate cele 12 PR-uri deschise retestate pe hardware, fiecare în
-   build-ul lui, din worktree verificat că e exact la capul PR-ului. **Toate conform descrierii**;
+   build-ul lui, din worktree verificat că e exact la capul PR-ului. **Toate conform descrierii**; iar **seria completă (17 commit-uri, zero conflicte) duce `v4l2-compliance` de la 6 eșecuri pe stock la 57/57 fără avertismente** — 48/48 fără `-s`;
    cifre: #331 `Stepwise 320x240-1296x736` vs `Discrete`, #342 compliance 47/48 vs 45/48, #345 acordă
    8 tampoane vs 4, #334 primul cadru în 490 ms. Rămâne de făcut partea cu **PipeWire × WirePlumber**
    în combinații. Detalii: `rezultate/retest-toate-24sep/`, JURNAL §48.
