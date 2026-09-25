@@ -1375,9 +1375,10 @@ testa patch-ul DMI pe hardware real.
 
 **Ordinea convenită cu Vik pe 24 sep, după trimiteri:**
 
-1. **Firul PLL/DDR40** — acum. `patjak` cere verificarea polarității bitului de lock pe hardware; e
-   întrebarea care ține #340 în loc, iar oprirea spontană de azi a dat primul punct de moarte exact.
-   Analiza fără hardware e făcută (JURNAL §41); rămâne măsurătoarea cu build de depanare.
+1. ✅ **FĂCUT pe 24 sep, 16:20–17:05:** bitul face **0 → 1 la 16–18 µs** (banc v2, 1 µs pe citire,
+   15 încărcări, zero tranziții inverse); A/B alternat, 13 perechi: master 11 eșecuri, #340 13/13.
+   **Răspuns trimis** în firul de review al lui `patjak`. Rămâne doar să vedem ce zice.
+   Dovezi: `rezultate/pll-polaritate-24sep/`, JURNAL §41–43.
 2. **Experimentul firmware 5.60.0 vs 1.43.0** — după aceea, ca experiment separat, cu revenire la
    1.43.0.
 3. ✅ **FĂCUT pe 24 sep, 17:53:** toate cele 12 PR-uri deschise retestate pe hardware, fiecare în
