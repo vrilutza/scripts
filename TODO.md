@@ -115,7 +115,7 @@ pachete. De reținut înainte de a-i spune cuiva că „are deja" vreuna dintre 
 | `vrilutza/facetimehd-firmware` | ramura **`all-patches`**, **ramură implicită**: a doua sursă + curățenia shellcheck, cu README |
 | remote-uri locale | **`origin` = fork-ul lui Vik**, `upstream` = `patjak` |
 | driver instalat | DKMS `facetimehd/0.7.2+all-25sep2026`, **ambele kerneluri**, din commit-ul `19489dd`, notat în `COMMIT` |
-| firmware | **5.60.0** implicit (`S2ISP-01.57.00`); ambele versiuni pe disc cu nume explicite |
+| firmware | **5.60.0** implicit (`S2ISP-01.57.00`); ambele versiuni pe disc cu nume explicite. **Binarul NU e în depozit** (e al Apple) — unealta îl extrage, iar README-urile spun ce ia implicit, cum se ia cealaltă versiune și care e compromisul măsurat |
 | verificat | `S2 PLL is locked after 10 us` · `loaded set file 1571_01XX.dat` · **`v4l2-compliance -s`: 57/57** |
 | **întoarcere** | **`sudo facetimehd-revino`** — o comandă, pune la loc 0.7.2 și firmware 1.43.0 |
 
