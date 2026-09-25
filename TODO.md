@@ -125,8 +125,8 @@ pachete. De reținut înainte de a-i spune cuiva că „are deja" vreuna dintre 
 YVYU **nu** livrează date invalide, ci **cadrul corect decalat cu exact un octet** (citit cu decalaj 1
 e identic cu YUYV; cu decalaj 3 are U/V inversate, adică YVYU corect). Îl includem fiindcă driverul
 n-are nicio manetă de offset — tratează cele două formate identic, diferă doar valoarea trimisă
-ISP-ului — deci formatul nu poate fi livrat corect azi. **De trimis pe #346:** măsurătoarea, ca
-autorul și `patjak` să aibă cauza corectă. Netrimisă, așteaptă acordul.
+ISP-ului — deci formatul nu poate fi livrat corect azi. **Măsurătoarea NU se trimite pe #346** — decizia lui Vik pe 25 sep: nu are
+importanță. Rămâne doar în jurnalul nostru, ca dovadă a ce am verificat înainte de a include PR-ul.
 
 **Consecință:** regula „driverul de zi cu zi = upstream curat, ca bază de măsurare" **nu mai e
 valabilă**. Orice comparație cu upstream se construiește explicit (`pr-separat/master` e la `c5c7fac`,
