@@ -1379,8 +1379,11 @@ testa patch-ul DMI pe hardware real.
    15 încărcări, zero tranziții inverse); A/B alternat, 13 perechi: master 11 eșecuri, #340 13/13.
    **Răspuns trimis** în firul de review al lui `patjak`. Rămâne doar să vedem ce zice.
    Dovezi: `rezultate/pll-polaritate-24sep/`, JURNAL §41–43.
-2. **Experimentul firmware 5.60.0 vs 1.43.0** — după aceea, ca experiment separat, cu revenire la
-   1.43.0.
+2. 🟡 **PARȚIAL FĂCUT pe 25 sep, 06:00:** 5.60.0 (care se prezintă ca `S2ISP-01.57.00`) **pornește pe
+   MacBookPro14,1**, păstrează formatele, dimensiunile, captura și **calibrarea 1571**; `Failed to lock
+   S2 PLL` neschimbat. Pe scenă neagră: Y 1,10 → 2,62 și zgomot −27 %. **Rămâne testul la lumină de
+   zi** — tenta și dungajul nu se pot compara pe întuneric. Firmware-ul e la `~/.cache/fw560/`,
+   cu hash verificat. Dovezi: `rezultate/firmware-560-25sep/`, JURNAL §51.
 3. ✅ **FĂCUT pe 24 sep, 17:53:** toate cele 12 PR-uri deschise retestate pe hardware, fiecare în
    build-ul lui, din worktree verificat că e exact la capul PR-ului. **Toate conform descrierii**; iar **seria completă (17 commit-uri, zero conflicte) duce `v4l2-compliance` de la 6 eșecuri pe stock la 57/57 fără avertismente** — 48/48 fără `-s`;
    cifre: #331 `Stepwise 320x240-1296x736` vs `Discrete`, #342 compliance 47/48 vs 45/48, #345 acordă
