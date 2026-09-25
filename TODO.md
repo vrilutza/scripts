@@ -105,6 +105,20 @@ pachete. De reținut înainte de a-i spune cuiva că „are deja" vreuna dintre 
 | [snd_hda_macbookpro #187](https://github.com/davidjo/snd_hda_macbookpro/issues/187) | `install.cirrus.driver.sh` pică pe Debian (`.tar.xz`) și pe kerneluri `-rc` (404 la kernel.org) | 🔵 deschis, 7 comentarii |
 | [snd_hda_macbookpro #189](https://github.com/davidjo/snd_hda_macbookpro/pull/189) | fix: folosește sursa de kernel instalată local | 🔵 deschis, 1 comentariu |
 
+**Verificat prin API pe 25 sep — trei corecții la ce aveam notat:**
+
+1. **v4l2loopback #659 ne-a răspuns pe 20 sep** — `stephematician` spune că nu a uitat PR-ul, că
+   refactorizează pentru concurență și cazuri-limită și că e aproape de a-l împinge, dar are timp
+   puțin. **Nu cere nimic de la noi.** Notasem „fără răspuns".
+2. **`patjak` nu e tăcut din 4 septembrie** — apare la ~10 zile: 5 sep (a integrat #337), 14 sep
+   (răspuns pe issue-ul nostru #341), 24 sep (review pe #340).
+3. **Wiki-ul:** el a scris pe 14 sep că e deschis oricui, dar `git push` e refuzat pe SSH **și** pe
+   HTTPS (403), reprobat azi. Setarea se aplică editării **din browser**; accesul git cere drept de
+   scriere. Ambele sunt adevărate — lipitul din browser rămâne singura cale.
+
+Toate cele 12 PR-uri ale noastre: **deschise și `mergeable`**. Cele trei pagini de wiki ale noastre
+sunt ultimele modificări din wiki; nimeni nu le-a atins.
+
 **Patru bug-uri deschise ale altora**, la care am contribuit fără să le revendicăm.
 
 | Unde | Ce | Ce am adus |
