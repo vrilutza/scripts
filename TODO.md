@@ -62,6 +62,32 @@ de kernel. Stă în [secțiunea 7](#7--rezolvate-arhivă-tehnică) fiindcă acol
 Toate raportate de aici. Ține-le într-un singur loc: patru s-au și rezolvat, iar despre restul e ușor
 să uiți că există. Stare verificată prin API pe **18 septembrie 2026**.
 
+> ### ⚠️ Stare reală la **29 septembrie 2026** (verificată prin API) — are precedență asupra rândurilor de mai jos
+>
+> **facetimehd: 12 integrate, 8 deschise ale noastre.** Master e `e370ec3`.
+>
+> Integrate între timp, deci rândurile lor de mai jos sunt depășite: **#334, #338, #340, #348,
+> #351, #352, #354**.
+>
+> Deschise: **#331, #342, #343, #344, #345, #347, #350, #353**. (#346 e al lui `kurobeats`, nu al
+> nostru.)
+>
+> Noi, trimise după 18 sep:
+> - **#352** — refuză ferestrele de crop pe care interfața senzorului nu le acceptă. Integrat 26 sep.
+> - **#353** — curăță după un `start_streaming()` eșuat. Deschis. **Nu repară blocajul camerei**:
+>   vb2 recuperează singur tampoanele; blocajul real e ISP-ul care se oprește tăcut la o fereastră
+>   invalidă acceptată de firmware, și se reface cu unbind/bind pe PCI.
+> - **#354** — declară cele 11 set file-uri cu `MODULE_FIRMWARE()`, ca generatoarele de initramfs
+>   să le copieze. Din issue-ul #349. Trimis 03:55, **integrat 05:00** în aceeași zi.
+>
+> Descrieri corectate pe GitHub pe 29 sep, prin **editare**, nu prin comentarii noi:
+> - **#334** — conținea două afirmații false despre luminozitatea primului cadru, amândouă din
+>   aceeași metrică viciată. Vezi punctul 1 din secțiunea 3 de mai jos.
+> - **#350** — completată cu ce a costat #349, și `@patjak` tăguit.
+>
+> Pe #349 prima mea explicație a fost greșită (am spus că-i lipsește pachetul `facetimehd-data`);
+> corectată public cu cauza reală — modulul se încarcă din initramfs, înainte de montarea rootfs-ului.
+
 ⚠️ **Trei dintre patch-urile acceptate au ajuns în ramura stabilă, restul sunt doar în master.**
 Verificat cu `git merge-base --is-ancestor` pe ramura `1.6`: !2950 (`bcf371452`), !2963
 (`458b8b183`) și !2986 (`e78eb993c`) sunt acolo și vin cu **1.6.9**; celelalte nouă rămân în
@@ -613,8 +639,15 @@ Descompunerea pornirii lui GNOME Snapshot, din jurnalul `pipewiresrc`:
 Trei cauze, măsurate separat, **niciuna cauza celeilalte** (plan factorial complet, 2×2):
 
 1. **Driverul doarme o secundă la fiecare `STREAMON`** — `fthd_isp.c`, `msleep(1000)` „Needed to
-   settle AE", din commit-ul de bring-up din 2015. Măsurat cu parametru de modul: la 100 ms primul
-   cadru e deja corect, la 50 ms vine negru. Trimis ca [#334](https://github.com/patjak/facetimehd/pull/334) cu 200 ms.
+   settle AE", din commit-ul de bring-up din 2015. Trimis ca
+   [#334](https://github.com/patjak/facetimehd/pull/334) cu 200 ms, **integrat pe 26 sep**.
+   ⚠️ **Afirmația de aici, „la 100 ms primul cadru e deja corect", era GREȘITĂ** și a fost scoasă
+   pe 29 sep. Metrica de atunci compara primul cadru cu ultimul din aceeași captură scurtă, iar
+   expunerea încă urca acolo. Remăsurat corect, cu referința luată înainte de schimbare: la 200 ms
+   primul cadru e cu **13 % sub**, la 150 ms cu **22 % sub**, iar **imaginea corectă vine la ~1,3 s
+   indiferent de așteptare**. Așteptarea nu câștigă timp, doar ține partea greșită a curbei departe
+   de aplicație. 200 ms rămâne o alegere bună; descrierea lui #334 a fost corectată pe GitHub.
+   Detalii: `pipewire-5363/fthd-masuratori/rezultate/ae-lumina-29sep/sesiune2-birou/REZULTAT.md`.
 2. **`pipewiresrc` repornea fluxul degeaba.** Scurtătura care exista deja upstream compara caps-uri
    fixate cu caps-uri care încă au intervale, deci nu se declanșa niciodată. Trimis ca
    [!2951](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951).
