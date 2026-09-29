@@ -64,12 +64,12 @@ să uiți că există. Stare verificată prin API pe **18 septembrie 2026**.
 
 > ### ⚠️ Stare reală la **29 septembrie 2026** (verificată prin API) — are precedență asupra rândurilor de mai jos
 >
-> **facetimehd: 12 integrate, 8 deschise ale noastre.** Master e `e370ec3`.
+> **facetimehd: 13 integrate, 7 deschise ale noastre.** Master e `1f52306`.
 >
 > Integrate între timp, deci rândurile lor de mai jos sunt depășite: **#334, #338, #340, #348,
-> #351, #352, #354**.
+> #350, #351, #352, #354**.
 >
-> Deschise: **#331, #342, #343, #344, #345, #347, #350, #353**. (#346 e al lui `kurobeats`, nu al
+> Deschise: **#331, #342, #343, #344, #345, #347, #353**. (#346 e al lui `kurobeats`, nu al
 > nostru.)
 >
 > Noi, trimise după 18 sep:
@@ -83,7 +83,10 @@ să uiți că există. Stare verificată prin API pe **18 septembrie 2026**.
 > Descrieri corectate pe GitHub pe 29 sep, prin **editare**, nu prin comentarii noi:
 > - **#334** — conținea două afirmații false despre luminozitatea primului cadru, amândouă din
 >   aceeași metrică viciată. Vezi punctul 1 din secțiunea 3 de mai jos.
-> - **#350** — completată cu ce a costat #349, și `@patjak` tăguit.
+> - **#350** — completată cu ce a costat #349, și `@patjak` tăguit la 06:53.
+>   **Integrat la 07:14**, adică 21 de minute mai târziu, după ce stătuse deschis din 24 sep.
+>   Nu e dovadă că GitHub notifică pentru un `@mention` adăugat prin editare, dar e singura
+>   intervenție dintre deschidere și integrare.
 >
 > Pe #349 prima mea explicație a fost greșită (am spus că-i lipsește pachetul `facetimehd-data`);
 > corectată public cu cauza reală — modulul se încarcă din initramfs, înainte de montarea rootfs-ului.
