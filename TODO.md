@@ -3717,6 +3717,7 @@ Raport complet: `pipewire-5363/results/VIVID-CAUZA-17aug.md`. Draft de răspuns,
    driverul nu-l atinge niciodată). Câmpul e pe 16 biți; interval util 256–65535.
 
 **Cele trei patch-uri**, în `~/.cache/pipewire-5363/fthd-live-4sep`, pe `master` (`5c34206`):
+(11 oct: clona a fost ștearsă. Versiunile ei — `frame-rate-units` `d05ec83`, `exposure-auto-priority` `fa2c54e`, `ae-gain-cap` `3dca740` — sunt în `pipewire-5363/fthd-masuratori/arhiva-curatenie-11oct/toate-autonome.bundle`; pe fork primele două au fost rescrise ulterior.)
 
 | ramură | ce e |
 |---|---|
