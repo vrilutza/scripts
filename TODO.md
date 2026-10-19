@@ -1,5 +1,5 @@
 # TODO — plan tehnic & stare reală
-> **STARE** · singurul document de aici care spune „acum"; secțiunea [0.1](#01-rapoarte-trimise-upstream--tablou) e tabloul upstream, actualizat pe **16 octombrie 2026** prin API și arhive publice. Restul secțiunilor sunt datate și se citesc ca istorie.
+> **STARE** · singurul document de aici care spune „acum"; secțiunea [0.1](#01-rapoarte-trimise-upstream--tablou) e tabloul upstream, actualizat pe **19 octombrie 2026** prin API și arhive publice. Restul secțiunilor sunt datate și se citesc ca istorie.
 
 Fișier unic: **ce e rezolvat**, **ce e deschis și se poate repara**, **ce e won't-fix** și **ce s-a respins tehnic**
 (cu dovada, ca să nu fie repropus). Înlocuiește și absoarbe fostele `ANALIZA_TEHNICA_UNIFICATA.md`,
@@ -10,7 +10,7 @@ Fișier unic: **ce e rezolvat**, **ce e deschis și se poate repara**, **ce e wo
 | **Hardware** | MacBookPro14,1 (A1708), i5-7360U 2C/4T, Iris 640, 8 GB RAM, Apple S3X NVMe, BCM4350C0 (WiFi PCIe + BT UART), FaceTime HD, CS8409/CS42L83 |
 | **Software** | Debian testing/forky, kernel `7.1.13+deb14-amd64` (+ `7.1.12` păstrat ca rezervă, DKMS construit pe ambele), pipewire 1.6.8-1, wireplumber 0.5.17-1, GNOME/Wayland. Driver cameră: DKMS `facetimehd/0.7.2`. *(Verificat pe mașină pe 12 sep 2026; pachetele PipeWire/WirePlumber reverificate cu `dpkg` pe 18 sep.)* |
 | **Verificat pe viu** | Cifrele de BT/WiFi: **8 august 2026**, pe **196 de boot-uri** (19 mai → 8 aug); anterior 27 iulie, 173 de boot-uri. Starea upstream și cea a mașinii: **12 septembrie 2026**, prin API și direct pe mașini. Ce nu s-a putut reverifica e marcat explicit `⏳ neconfirmat`. |
-| **Stare de bază** | Problemele hardware și configurația de mai sus sunt consemnări datate. **Upstream, verificat pe 16 oct:** 20 PR-uri facetimehd și **15 MR-uri PipeWire integrate** (+!3044, !3045 pe 13 oct); !3046 închis, înlocuit de commit-ul lui Wim care trimite la el; deschise: PipeWire !2951, facetimehd #356 (Draft), firmware #14, audio #189, Debian dkms !8. **Nou: facetimehd #358 atribuie lui #343 al nostru o regresie pe PipeWire < 1.4.10 (Debian 13); #359 al altui autor o repară.** Cele două patch-uri kernel KMSAN: publice, fără răspuns. Tabloul complet: [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou). |
+| **Stare de bază** | Problemele hardware și configurația de mai sus sunt consemnări datate. **Upstream, verificat pe 19 oct:** **20 PR-uri facetimehd și 15 MR-uri PipeWire integrate**; deschise: PipeWire !2951, facetimehd #356 (Draft) și #360, firmware #14 și #16, audio #189, Debian dkms !8. **Nou:** autorul lui #357 a modificat codul după observațiile noastre (de reverificat); #359 a preluat comentariul propus, dar rămâne deschis; #336 este închis de raportor, cu mulțumiri. Cele două patch-uri kernel KMSAN sunt publice, fără răspuns. Tabloul complet: [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou). |
 
 **Legendă:**
 
@@ -31,7 +31,7 @@ Fișier unic: **ce e rezolvat**, **ce e deschis și se poate repara**, **ce e wo
 |---|---|---|---|---|
 | 1 | Bluetooth mort la ~14% din boot-uri (`-110`) | 🟡 activ | experiment de 3 linii care separă „warm vs cold"; SMC reset ca remediu | [1](#1--bluetooth-bcm4350c0--init-eșuat-la-14-din-boot-uri) |
 | 2 | WiFi BCM4350 — desincronizare ring, risc de panică | 🟡 activ | raport upstream cu dovezile din pstore; monitorizare cu prag | [2](#2--wifi-bcm4350--desincronizare-ring-msgbuf) |
-| 3 | Cameră — partajare de buffere fără `SPA_META_Busy` (aplicațiile îngheață) | 🔵 upstream | **15 MR-uri PipeWire și 20 PR-uri facetimehd integrate**; regresiile din cache-ul de negociere (#5517, #5523) reparate prin !3044 (13 oct). Rămân: P3 (ParamBegin la clienții vechi — Firefox/Chromium snap) și P4 (rata camerei), testate, netrimise, **încă necesare pe master `6c3d3be2c` (16 oct, MacBook și Lenovo: Firefox/Chromium snap W 0/3 → W34 3/3; libcamera W new rate 3/3 → 0/3); master acum `e86cffd0e`, arbori recalculați**; **facetimehd #358: regresie reală din #343 pe PipeWire < 1.4.10; #359 o repară, testat 16 oct pe modulul real (martor 6dc8cd8: 0–1 cadre, cu #359: ~290); 7 issue-uri + recenzii #357/#359 postate; **driverul zilnic din 17 oct 12:20 = master 6dc8cd8 + PR #359 + PR #360 (DKMS `0.7.2-6dc8cd8-pr359-pr360`, build-id `b50cac8a…`, pe 7.2.9 și 7.2.8; testat: G_PARM 30/1, 7 rate și în PipeWire, 30,17 fps prin pipewiresrc, v4l2-compliance 57/57; stabilitate: `pipewire-5363/scripts/verifica-fthd-zilnic.sh`)**; wiki actualizat 17 oct (Home `78e1e28`, Installation `2415136`, Get-Started `54c72e6`, auditate 3 runde), răspunsuri pe #336 și #299 (mkdeb/mkdsc), issue #361 (dkms.conf 0.7.0.1 în 0.7.0.3/0.7.2), descrierea firmware #14 corectată; **#356 (warmup, ciornă; `aa14a73` = v2, cu oprirea sigură) rămâne pe mai târziu, după ce se stabilizează upstream-ul PipeWire — decizia lui Viorel, 17 oct; combinat cu master + #359 + #360 se compilează curat, dar n-a rulat pe cameră lângă #353**; **17 oct, după acceptul auditorului (6 runde) și OK-ul lui Viorel: [PR #360](https://github.com/patjak/facetimehd/pull/360) (rate FPS, `ef167b8`) și [firmware PR #16](https://github.com/patjak/facetimehd-firmware/pull/16) (#11, calea make/1.43.0, `63eb6e0`) deschise; comentariul nostru de pe #359 editat (comentariul de cod propus, fără Debian); fork vrilutza/facetimehd: README actualizat (`0ed8a3f`), master = `6dc8cd8`; patch-ul --dmg (`cff5678`) rămâne local**; garda audio v4 (oprire verificată, capcana EXIT păstrează eșecurile; runda 5) pentru daemonii de test (`pipewire-5363/scripts/garda-audio.sh`) pusă în proba-358, de adoptat în suita P3/P4 înainte de următoarea rulare** — `pipewire-5363/rezultate/facetimehd-16oct/`. PipeWire !2951 deschis. Starea completă, la 16 oct: [0.1](#01-rapoarte-trimise-upstream--tablou) | [3](#3--camera-facetime-hd--partajare-de-buffere-nesigură) |
+| 3 | Cameră — partajare de buffere fără `SPA_META_Busy` (aplicațiile îngheață) | 🔵 upstream | **Starea curentă (19 oct) și pașii rămași: [0.1](#01-rapoarte-trimise-upstream--tablou). Detaliile de mai jos consemnează etapele din 16–17 oct.** **15 MR-uri PipeWire și 20 PR-uri facetimehd integrate**; regresiile din cache-ul de negociere (#5517, #5523) reparate prin !3044 (13 oct). Rămân: P3 (ParamBegin la clienții vechi — Firefox/Chromium snap) și P4 (rata camerei), testate, netrimise, **încă necesare pe master `6c3d3be2c` (16 oct, MacBook și Lenovo: Firefox/Chromium snap W 0/3 → W34 3/3; libcamera W new rate 3/3 → 0/3); master acum `e86cffd0e`, arbori recalculați**; **facetimehd #358: regresie reală din #343 pe PipeWire < 1.4.10; #359 o repară, testat 16 oct pe modulul real (martor 6dc8cd8: 0–1 cadre, cu #359: ~290); 7 issue-uri + recenzii #357/#359 postate; **driverul zilnic din 17 oct 12:20 = master 6dc8cd8 + PR #359 + PR #360 (DKMS `0.7.2-6dc8cd8-pr359-pr360`, build-id `b50cac8a…`, pe 7.2.9 și 7.2.8; testat: G_PARM 30/1, 7 rate și în PipeWire, 30,17 fps prin pipewiresrc, v4l2-compliance 57/57; stabilitate: `pipewire-5363/scripts/verifica-fthd-zilnic.sh`)**; wiki actualizat 17 oct (Home `78e1e28`, Installation `2415136`, Get-Started `54c72e6`, auditate 3 runde), răspunsuri pe #336 și #299 (mkdeb/mkdsc), issue #361 (dkms.conf 0.7.0.1 în 0.7.0.3/0.7.2), descrierea firmware #14 corectată; **#356 (warmup, ciornă; `aa14a73` = v2, cu oprirea sigură) rămâne pe mai târziu, după ce se stabilizează upstream-ul PipeWire — decizia lui Viorel, 17 oct; combinat cu master + #359 + #360 se compilează curat, dar n-a rulat pe cameră lângă #353**; **17 oct, după acceptul auditorului (6 runde) și OK-ul lui Viorel: [PR #360](https://github.com/patjak/facetimehd/pull/360) (rate FPS, `ef167b8`) și [firmware PR #16](https://github.com/patjak/facetimehd-firmware/pull/16) (#11, calea make/1.43.0, `63eb6e0`) deschise; comentariul nostru de pe #359 editat (comentariul de cod propus, fără Debian); fork vrilutza/facetimehd: README actualizat (`0ed8a3f`), master = `6dc8cd8`; patch-ul --dmg (`cff5678`) rămâne local**; **17 oct: REGRESIE A NOASTRĂ — #331 (`fc8e372`, ENUM_FRAMESIZES ca interval, doar pe master) strică Chrome și Chromium (V4L2 și PipeWire) și Firefox pe PipeWire; cu o dimensiune fixă merg toate; Snapshot: 320x240 în loc de 1296x736 (măsurat 19 sep; nerulat 17 oct). Auditul (17 oct 16:29) localizează o parte în pluginul GStreamer al PipeWire 1.6.x (pierde preferința la conversia în caps), reparată pe master de `acea30afa` (al nostru, 22 aug), absent din 1.6. Confirmat independent pe Ubuntu 26.04.1 cu `vivid`. Cauza: Chromium (V4L2) și libwebrtc (PipeWire) nu suportă STEPWISE; V4L2 e corect. Patrik, la integrare (5 oct): „Worst case we must revert this”. Raport pentru auditor: `facetimehd-16oct/browsere-17oct/RAPORT-BROWSERE-pentru-auditor.md`; auditorul recomandă (a): revenirea DOAR a enumerării la dimensiunea nativă DISCRETE (S_FMT acceptă în continuare dimensiunile mai mici); întâi întărirea bancurilor; nimic trimis. Rezoluția pe model e corectă (citită din firmware; tabel pe 8 modele în `rezolutie-17oct/REZULTAT.md` §6); pentru iMac, MacBook Pro 2011–2013 și senzorii 8221/1222/9112 n-avem date: pe viitor, un issue cu instrucțiuni prin care utilizatorii raportează modelul, id-ul senzorului și linia „within [0, 0][W, H]”**; garda audio v4 (oprire verificată, capcana EXIT păstrează eșecurile; runda 5) pentru daemonii de test (`pipewire-5363/scripts/garda-audio.sh`) pusă în proba-358, de adoptat în suita P3/P4 înainte de următoarea rulare** — `pipewire-5363/rezultate/facetimehd-16oct/`. PipeWire !2951 deschis. Starea completă, la 19 oct: [0.1](#01-rapoarte-trimise-upstream--tablou) | [3](#3--camera-facetime-hd--partajare-de-buffere-nesigură) |
 | 4 | Sacadare cu 2 browsere + saturație termică | 🟢 | curățare fizică + tab-ul Chrome; abia apoi eventual daemon de ventilator | [4](#4--termic--sacadare) |
 | 5 | Suspend / s2idle | 🟡 opțional | experiment reversibil, dacă chiar vrei suspend | [5](#5--suspend--s2idle) |
 | 6 | Zgomot de log (DMAR / ACPI / SGX / nvme0n2) | 🔴 | nimic — vezi de ce „fix-ul fără dezactivarea IOMMU" nu funcționează | [6](#6--zgomot-de-log) |
@@ -59,19 +59,48 @@ de kernel. Stă în [secțiunea 7](#7--rezolvate-arhivă-tehnică) fiindcă acol
 
 ## 0.1 Rapoarte trimise upstream — tablou
 
-**Actualizat la 16 octombrie 2026.** Starea de mai jos este verificată pe date publice: API GitHub,
-API GitLab (freedesktop și Salsa), arborii upstream, BTS-ul Debian și lore. „Publicat”, „review favorabil”
-și „integrat” sunt stări distincte.
+**Actualizat la 19 octombrie 2026.** Verificare prin API, cu acces autentificat la GitHub,
+freedesktop, GNOME și Salsa: **51 de fire GitHub și 44 de fire GitLab, în 13 proiecte/repository-uri**,
+inclusiv fire de context și propuneri ale altora. Căutarea include contribuțiile publice descoperite
+din cont, evenimentele de comentare și trimiterile din acest document; nu reprezintă o numărătoare
+de 95 de contribuții proprii. Am citit și arhivele complete ale celor două bug-uri Debian și ale
+seriei KMSAN. „Publicat”, „review favorabil” și „integrat” sunt stări distincte.
+
+### Noutăți și următorii pași — 19 octombrie
+
+| Unde | Ce s-a schimbat | Ce urmează |
+|---|---|---|
+| [facetimehd #357](https://github.com/patjak/facetimehd/pull/357) | **Deschis.** Autorul a adăugat azi `94d44e87a002` (17:46 ora României: aplicarea expunerii manuale la pornire și bias numai în modul automat) și `e99eaf7f27f6` (17:51: payload-ul ratei rămâne pe 16 biți). Mesajele răspund observațiilor noastre din [review-ul de pe 16 oct](https://github.com/patjak/facetimehd/pull/357#issuecomment-6221910309). | Recitirea și testarea noului head `e99eaf7f27f6`. **Actualizarea codului nu este încă o reparație validată de noi pe hardware.** |
+| [facetimehd #359](https://github.com/patjak/facetimehd/pull/359) | **Deschis.** [Autorul a răspuns pe 17 oct](https://github.com/patjak/facetimehd/pull/359#issuecomment-6234114178) și a adăugat comentariul propus în `633c511a673d`, cu `Suggested-by: Viorel Cernateanu`. | Cererea de restaurare a comentariului este satisfăcută; urmărim integrarea PR-ului. |
+| [facetimehd #336](https://github.com/patjak/facetimehd/issues/336) | **Închis de raportor pe 19 oct, 07:58 ora României**, cu [mulțumiri](https://github.com/patjak/facetimehd/issues/336#issuecomment-6260010132), după explicația noastră despre DKMS și wiki. | Fără acțiune rămasă în acest fir. #299 rămâne deschis, fără răspuns nou la comentariul nostru. |
+| [PipeWire !3060](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/3060) → [!3061](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/3061) | După raportarea noastră despre `dont_reconnect`, autorul a trimis !3061; **integrat pe 14 oct, 11:20 UTC**, commit `d25265653e4e`. | Reparație upstream a altui autor, fără patch local suplimentar de trimis și fără a crește numărul MR-urilor noastre integrate. |
+
+**Lanțul camerei, lucru local netrimis:** reparațiile Chromium/V4L2 și libwebrtc/PipeWire au fost
+comparate fără/cu patch în `content_shell` și Chromium 158 construit local, pe camera MacBook-ului.
+Browserele instalate au fost doar martori nereparați; **Firefox construit cu patch nu a fost testat**.
+Pe PipeWire 1.6.9, captura reparată rămâne la 1296×736, iar browserul scalează pentru cererile mai mici;
+nu este o dovadă de accelerare a primului cadru. #331 declanșează incompatibilitatea printr-o enumerare
+V4L2 legitimă; reparațiile urmăresc consumatorii, iar revenirea din driver este o decizie separată.
+Pregătirea trimiterilor și cererile de preluare în 1.6 pentru `cefb4e926` și !2965 rămân de făcut.
+Raportul local: [RAPORT-FINAL-19oct.md](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/RAPORT-FINAL-19oct.md).
+
+**P3/P4:** verificatorul local a fost reparat pe 18 oct; jurnalul consemnează 61 de controale conforme.
+Aceasta nu este o nouă validare hardware a patch-urilor și nu separă efectul fiecăruia în comparația
+W/W34. Copiile de pe Lenovo trebuie verificate înainte de utilizare. Jurnal local:
+`reparatie-banc-p3-p4-18oct/JURNAL.md`.
+
+Pentru celelalte fire urmărite nu am găsit răspunsuri noi care să schimbe pașii de mai jos.
+Acest tur actualizează urmărirea; nu publică patch-uri, comentarii sau răspunsuri noi.
 
 ### Rezumatul contribuțiilor noastre
 
 | Proiect | Integrate | Încă deschise | Închise fără integrare separată |
 |---|---|---|---|
-| `patjak/facetimehd` | **20 PR-uri** | **#356, Draft** | niciuna |
+| `patjak/facetimehd` | **20 PR-uri** | **#356, Draft; #360** | niciuna |
 | PipeWire | **15 MR-uri** (+!3044, !3045, 13 oct) | **!2951**, fără activitate din 4 oct | !2966 absorbit în !2965; !2980 retras; **!3046 închis 13 oct — Wim a integrat propria variantă (`c04bf4fd8`, „See !3046”)** |
-| `patjak/facetimehd-firmware` | niciuna dintre cele două propuneri | **#14** | #15 absorbit în #14, încă neintegrat |
+| `patjak/facetimehd-firmware` | niciuna | **#14 și #16** | #15 absorbit în #14, încă neintegrat |
 | `davidjo/snd_hda_macbookpro` | niciuna | **#189** | — |
-| Linux x86/KMSAN | **0 din cele 2 patch-uri trimise** | seria **v1 0/2–2/2**, publică, fără răspuns la 16 oct | — |
+| Linux x86/KMSAN | **0 din cele 2 patch-uri trimise** | seria **v1 0/2–2/2**, publică, fără răspuns la 19 oct | — |
 | Debian `dkms` (Salsa) | — | **!8** (3.4.4), CI 11/11 verde | — |
 
 Numerele de PR/MR sunt numere de contribuții, nu de commit-uri. #346 și #355 din facetimehd,
@@ -81,15 +110,15 @@ precum și v4l2loopback #659 și Snapshot !464, sunt ale altor autori și sunt u
 
 | Unde | Stare verificată | Ultimul semnal relevant / pas rămas |
 |---|---|---|
-| [PipeWire !2951](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951) | **Deschis**, `need_rebase` (head `b1c1ca538`, **96 de commit-uri în urma** lui master la 16 oct, fără conflicte la merge), pipeline `SUCCESS`; `allow_collaboration` activ | **4 oct, 10:28 UTC:** [rmader spune că schimbarea îi pare corectă](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951#note_3693994). Nimic nou de atunci. **12 oct, decizia lui Viorel:** nu-l rebazăm noi; dezvoltatorii îl pot rebaza singuri. |
-| [Debian dkms !8](https://salsa.debian.org/debian/dkms/-/merge_requests/8) | **Deschis**, `mergeable`, CI 11/11 | **12 oct:** comentariul nostru despre avertismentul lintian NMU (trailer-ul nostru nu e în Uploaders; intrarea rămâne UNRELEASED pentru cel care încarcă). Niciun răspuns al mentenantului (anbe) la 16 oct. Tot pe 12 oct: mail la [#1076269](https://bugs.debian.org/1076269) și [#1035707](https://bugs.debian.org/1035707) — eticheta `fixed-upstream` e înșelătoare (issue-urile GitHub închise ca inactive); înregistrat, fără răspuns. |
+| [PipeWire !2951](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951) | **Deschis**, head `b1c1ca538c4c`; API-ul raportează `unchecked` la 19 oct; `allow_collaboration` activ. Ultimul [pipeline reușit](https://gitlab.freedesktop.org/vrilutza/pipewire/-/pipelines/1749658) este din **19 septembrie**, fără a valida master-ul actual. | **4 oct, 10:28 UTC:** [rmader spune că schimbarea îi pare corectă](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951#note_3693994). Niciun răspuns nou. **12 oct, decizia lui Viorel:** nu-l rebazăm noi; dezvoltatorii îl pot rebaza singuri. |
+| [Debian dkms !8](https://salsa.debian.org/debian/dkms/-/merge_requests/8) | **Deschis**, `mergeable`, head `03eded2e6673`; [CI 11/11 reușit](https://salsa.debian.org/vrilutza/dkms/-/pipelines/1187919), din **11 oct** | **12 oct:** comentariul nostru despre avertismentul lintian NMU (trailer-ul nostru nu e în Uploaders; intrarea rămâne UNRELEASED pentru cel care încarcă). Niciun răspuns al mentenantului (anbe) la **19 oct**. Tot pe 12 oct: mail la [#1076269](https://bugs.debian.org/1076269) și [#1035707](https://bugs.debian.org/1035707) — eticheta `fixed-upstream` e înșelătoare (issue-urile GitHub închise ca inactive); arhivele recitite pe 19 oct nu au răspunsuri ulterioare. |
 | [facetimehd #361](https://github.com/patjak/facetimehd/issues/361) (al nostru, 17 oct) | **Deschis**, 0 comentarii | Tag-ul 0.7.0.2 e pe `846f1c4`, care n-a intrat în master; 0.7.0.3, 0.7.2 și master au `PACKAGE_VERSION=0.7.0.1`. Sugestie: versiunea ridicată pe master înainte de tag. |
 | facetimehd wiki (17 oct) | **Publicat** de Viorel în browser, verificat identic cu ciornele auditate | Home `78e1e28`, Installation `2415136` (o singură secțiune DKMS; mkdeb/mkdsc scoase), Get-Started `54c72e6`; răspunsuri pe [#336](https://github.com/patjak/facetimehd/issues/336#issuecomment-6232092711) și [#299](https://github.com/patjak/facetimehd/issues/299#issuecomment-6232169553). |
 | [facetimehd #360](https://github.com/patjak/facetimehd/pull/360) (al nostru, 17 oct) | **Deschis**, 0 comentarii | ENUM_FRAMEINTERVALS listează 30/25/24/20/15/10/5 fps (S_PARM le acceptă din #343; completează #323); discret, din cauza Chromium V4L2 și libwebrtc; pe PipeWire fără reparațiile din 1.4.10 cere #359. |
 | [facetimehd-firmware #16](https://github.com/patjak/facetimehd-firmware/pull/16) (al nostru, 17 oct) | **Deschis**, 0 comentarii | #11: `make FW_VER=1.43.0` și `--osx-10.11.5` spun când cpio (BusyBox) nu poate scoate driverul; `make` implicit (5.60.0) nu mai folosește cpio din 6411d90. |
-| [facetimehd #358](https://github.com/patjak/facetimehd/issues/358) (IIxauII, 14 oct) | **Deschis**, 0 comentarii | **Regresie atribuită lui #343 al nostru:** `818702f` face G_PARM să raporteze 256/7680 în loc de 1/30 (`25bbe7b`, #327); ceasul pluginului GStreamer din PipeWire < 1.4.10 calculează `GST_SECOND × 256` în `gint` → negativ → „num >= 0” → Snapshot îngheață după primul cadru (Debian 13 are 1.4.2). Verificat în cod (16 oct); reparația PipeWire e `68a57c58b` (Robert Mader, în 1.4.10). **[#359](https://github.com/patjak/facetimehd/pull/359)** (același autor) reduce fracția în G_PARM (`gcd`), 1/30 la aceeași rată. **16 oct, reprodus pe MacBook** (fără reîncărcarea modulului): clientul GStreamer 1.4.2 îngheață la primul cadru cu aserțiunea din raport, 6/6; aceeași stivă 1.4.2 cu fracția redusă la 1/30 (emularea #359 printr-un shim în daemon) merge 12/12; PipeWire 1.4.10 nu e afectat; pe 1.4.2 sunt două defecte declanșate de 256/7680 — ceasul (`68a57c58b`) și latența (`be1677f56`, găsit prin bisect; PipeWire #4957, aceeași fracție la camera Apple Silicon); #359 emulat nu schimbă nimic pe 1.6.9/master (12/12); #359 se compilează curat pe 7.2.9. **`818702f` (#343) a șters comentariul din `25bbe7b` care explica de ce G_PARM raporta 1/30.** Raport pentru auditor: [`pipewire-5363/rezultate/proba-358/RAPORT-358-359-pentru-auditor.md`](pipewire-5363/rezultate/proba-358/RAPORT-358-359-pentru-auditor.md). **Rămâne:** răspunsul lui Viorel pe #358/#359 (textul lui). |
+| [facetimehd #358](https://github.com/patjak/facetimehd/issues/358) (IIxauII, 14 oct) | **Deschis**, 0 comentarii | **Regresie atribuită lui #343 al nostru:** `818702f` face G_PARM să raporteze 256/7680 în loc de 1/30 (`25bbe7b`, #327); ceasul pluginului GStreamer din PipeWire < 1.4.10 calculează `GST_SECOND × 256` în `gint` → negativ → „num >= 0” → Snapshot îngheață după primul cadru (Debian 13 are 1.4.2). Verificat în cod (16 oct); reparația PipeWire e `68a57c58b` (Robert Mader, în 1.4.10). **[#359](https://github.com/patjak/facetimehd/pull/359)** (același autor) reduce fracția în G_PARM (`gcd`), 1/30 la aceeași rată. **16 oct, reprodus pe MacBook** (fără reîncărcarea modulului): clientul GStreamer 1.4.2 îngheață la primul cadru cu aserțiunea din raport, 6/6; aceeași stivă 1.4.2 cu fracția redusă la 1/30 (emularea #359 printr-un shim în daemon) merge 12/12; PipeWire 1.4.10 nu e afectat; pe 1.4.2 sunt două defecte declanșate de 256/7680 — ceasul (`68a57c58b`) și latența (`be1677f56`, găsit prin bisect; PipeWire #4957, aceeași fracție la camera Apple Silicon); #359 emulat nu schimbă nimic pe 1.6.9/master (12/12); #359 se compilează curat pe 7.2.9. **`818702f` (#343) a șters comentariul din `25bbe7b` care explica de ce G_PARM raporta 1/30.** Raport pentru auditor: [`pipewire-5363/rezultate/proba-358/RAPORT-358-359-pentru-auditor.md`](pipewire-5363/rezultate/proba-358/RAPORT-358-359-pentru-auditor.md). **Actualizare 19 oct:** răspunsul nostru este public pe #359 din 16 oct, iar autorul a răspuns pe 17 oct și a restaurat comentariul în `633c511a673d`; PR-ul rămâne deschis. |
 | [facetimehd #356](https://github.com/patjak/facetimehd/pull/356) | **Deschis, Draft**, head `aa14a73` | Trimis **3 oct**; aruncă primele două cadre. Întrebarea despre aplicarea generică sau numai senzorului verificat rămâne în descriere. **0 comentarii, 0 review-uri**. Nu este inclus în `all-patches`. |
-| [facetimehd-firmware #14](https://github.com/patjak/facetimehd-firmware/pull/14) | **Deschis**, head `adebe6e`, **4 commit-uri** | Include corecțiile din fostul #15, sursa Boot Camp și curățarea extracției parțiale. **0 comentarii, 0 review-uri**. Ultima actualizare: 26 sep. |
+| [facetimehd-firmware #14](https://github.com/patjak/facetimehd-firmware/pull/14) | **Deschis**, head `adebe6e`, **4 commit-uri** | Include corecțiile din fostul #15, sursa Boot Camp și curățarea extracției parțiale. **0 comentarii, 0 review-uri** la 19 oct. Descrierea a fost corectată pe 17 oct; codul este neschimbat. |
 | [snd_hda_macbookpro #189](https://github.com/davidjo/snd_hda_macbookpro/pull/189) | **Deschis**, ultimă actualizare 4 iul | Preferă sursa kernelului instalată local. Un comentariu al nostru, **niciun review extern**. Închiderea issue-ului #187 nu înseamnă integrarea acestui PR. |
 
 ### Propuneri închise fără integrare separată
@@ -131,7 +160,7 @@ Integrarea de la **5 octombrie** a adăugat șapte PR-uri ale noastre: **#331, #
 
 **Comentarii noi care merită păstrate:**
 
-- **#331, 5 oct:** [patjak integrează, dar avertizează despre posibile probleme cu Skype](https://github.com/patjak/facetimehd/pull/331#issuecomment-5994202481). Spune că, în cel mai rău caz, ar trebui revenit asupra schimbării. Este o rezervă explicită de compatibilitate, nu o regresie observată de noi în acest audit.
+- **#331, 5 oct:** [patjak integrează, dar avertizează despre posibile probleme cu Skype](https://github.com/patjak/facetimehd/pull/331#issuecomment-5994202481). Spune că, în cel mai rău caz, ar trebui revenit asupra schimbării. Este o rezervă explicită de compatibilitate; investigația din 17–19 oct a demonstrat ulterior incompatibilitatea consumatorilor cu intervalele, fără să identifice o încălcare a API-ului V4L2.
 - **#347, 5 oct:** [patjak confirmă integrarea lui #347 și #331](https://github.com/patjak/facetimehd/pull/347#issuecomment-5994384048) și cere ca schimbările dependente să fie grupate în același PR la contribuțiile viitoare.
 - Întrebarea veche despre alinierea crop-ului din #338 rămâne în istoric; **PR-ul este integrat** din 26 sep. Integrarea nu dovedește singură restricția hardware discutată.
 
@@ -189,15 +218,17 @@ rescrie antetul `From:` pentru livrare/DMARC; în corpul patch-urilor rămân `F
 explică rescrierea. O probă `--reflect` ajunge numai la autor și nu este publicată; pentru această
 serie, mesajele complete de pe **două arhive publice** confirmă că a fost o trimitere reală.
 
-**16 oct:** firul de pe lore are tot doar cele trei mesaje ale seriei (fiecare listat de două ori, cu expeditorul
-original și cu cel rescris de relay — aceleași Message-ID), **niciun răspuns** după 10 zile.
+**19 oct:** arhiva completă de pe lore are tot doar cele trei mesaje ale seriei (fiecare listat de două ori,
+cu expeditorul original și cu cel rescris de relay — aceleași Message-ID), **niciun răspuns** după 13 zile.
 
-**Codul seriei nu este încă integrat** în fișierul `arch/x86/include/asm/kmsan.h` din mainline,
-`tip/master`, `tip/x86/mm`, `mm-new` sau `linux-next`: calculul vechi al CPU-ului și apelul vechi
-la `pfn_valid()` sunt încă prezente. Publicarea nu este accept upstream. Așteptăm review; ramura
-locală trecută automat de b4 la v2 nu înseamnă că o versiune v2 a fost trimisă.
+**Mainline, reverificat pe 19 oct:** istoricul fișierului `arch/x86/include/asm/kmsan.h` nu are
+integrarea seriei; ultima schimbare a fișierului rămâne `f6564fce` din 26 ianuarie 2024.
+Pentru `tip/master`, `tip/x86/mm`, `mm-new` și `linux-next`, ultima verificare rămâne cea din **16 oct**:
+calculul vechi al CPU-ului și apelul vechi la `pfn_valid()` erau încă prezente. Publicarea nu este
+accept upstream. Așteptăm review; ramura locală trecută automat de b4 la v2 nu înseamnă că o
+versiune v2 a fost trimisă.
 
-Vârfurile verificate: `mainline=47324d3a5b3a`, `tip/master=48437a9ff10d`,
+Vârfurile verificate **pe 16 oct**, păstrate ca istoric: `mainline=47324d3a5b3a`, `tip/master=48437a9ff10d`,
 `tip/x86/mm=d92b5ac5aeba`, `mm-new=a92f009ac1c2`, `linux-next=aac26bee2287`.
 Arhiva locală a trimiterii: `pipewire-5363/fthd-masuratori/rezultate/kernel-729-lenovo-4oct/defect2/TRIMIS.md`.
 Defectul kmemleak/sheaves și candidații nouveau/i915/KHO **nu au patch trimis de noi**; nu intră
@@ -205,10 +236,10 @@ Defectul kmemleak/sheaves și candidații nouveau/i915/KHO **nu au patch trimis 
 
 ### Fire conexe și contribuții ale altor autori
 
-| Unde | Stare verificată la 8 oct | Ce s-a întâmplat |
+| Unde | Stare verificată la 19 oct | Ce s-a întâmplat |
 |---|---|---|
 | [facetimehd #355](https://github.com/patjak/facetimehd/pull/355), pschatzmann | **Integrat 14 oct de patjak** (+63 −36) | „Support buffers that start inside a page (fixes PipeWire), don't hang on stop”. Tratează regresia din #333 al nostru (vezi tabelul de mai sus). |
-| facetimehd [#357](https://github.com/patjak/facetimehd/pull/357) (jerrinot), [#359](https://github.com/patjak/facetimehd/pull/359) (IIxauII) | **Deschise**, 14 oct | #357: controale manuale de expunere, gain și bias. #359: fracția din G_PARM redusă — repară #358 (vezi mai sus). Nu sunt ale noastre. |
+| facetimehd [#357](https://github.com/patjak/facetimehd/pull/357) (jerrinot), [#359](https://github.com/patjak/facetimehd/pull/359) (IIxauII) | **Deschise**, heads `e99eaf7f27f6` / `633c511a673d` | #357: două commit-uri noi pe 19 oct după review-ul nostru; de reverificat. #359: autorul a preluat pe 17 oct comentariul propus. Detalii și pași rămași la începutul secțiunii 0.1. Nu sunt PR-urile noastre. |
 | PipeWire [#5522](https://gitlab.freedesktop.org/pipewire/pipewire/-/work_items/5522) (Radwolf83) | **Închis 13 oct de wtaymans** | EIO la `VIDIOC_G_CTRL` pe un control simplu blocha enumerarea `Props`. Era deja reparat de !2963 al nostru (`919de4c52`, master) și de backport-ul `458b8b183` din **1.6.9**; Viorel a răspuns pe 13 oct. Probat cu interceptare EIO pe Lenovo: ramura 1.4 reproduce, 1.6/master nu (`pipewire-5363/rezultate/p3-p4-12oct/proba-5522/CONCLUZIE.md`). |
 | PipeWire [#5519](https://gitlab.freedesktop.org/pipewire/pipewire/-/work_items/5519) (moj) | **Deschis**, fără comentarii | Regresie confirmată de noi (ramurile 1.4/1.6 trec, master pică), de la `823dcd884` după raportor. Nu e a noastră; un comentariu cu datele ar fi opțional. |
 | [Debian user-setup !1](https://salsa.debian.org/installer-team/user-setup/-/merge_requests/1) (fsateler) | **Deschis** | 11 oct: comentariul nostru cu cazul „Dummy Output” (grupul `audio` + linger). Fără răspuns. |
@@ -223,15 +254,20 @@ Defectul kmemleak/sheaves și candidații nouveau/i915/KHO **nu au patch trimis 
 | [WirePlumber #972](https://gitlab.freedesktop.org/pipewire/wireplumber/-/work_items/972), [#986](https://gitlab.freedesktop.org/pipewire/wireplumber/-/work_items/986) și [Snapshot #367](https://gitlab.gnome.org/GNOME/snapshot/-/work_items/367) | **Închise** | #986 a fost mutat în PipeWire #5431. Nu sunt PR-uri suplimentare ale noastre. |
 | PipeWire [#4797](https://gitlab.freedesktop.org/pipewire/pipewire/-/work_items/4797), [#2489](https://gitlab.freedesktop.org/pipewire/pipewire/-/work_items/2489), [#4174](https://gitlab.freedesktop.org/pipewire/pipewire/-/work_items/4174), [#4863](https://gitlab.freedesktop.org/pipewire/pipewire/-/work_items/4863) | **Deschise** | Sunt rapoarte ale altora, la care am adăugat probe sau context; nu le declarăm rezolvate doar pentru că un patch înrudit a fost integrat. |
 
-**Forkurile, sincronizate pe 6 oct:** `vrilutza/facetimehd` are upstream + #355, iar
-`vrilutza/facetimehd-firmware` are upstream + #14. Starea GitHub a forkului și starea driverului
-instalat sunt lucruri separate; auditul de azi nu schimbă modulele instalate.
+**Forkurile, citite prin API pe 19 oct:** `vrilutza/facetimehd` are `master=6dc8cd85e879`
+(identic cu upstream) și `all-patches=0ed8a3fd1f65`; ramurile #356 și #360 sunt la
+`aa14a73eff0a` și `ef167b8fb439`. `vrilutza/facetimehd-firmware` are
+`master=60ee21228d9c` (identic cu upstream), `all-patches=087a67746919`, #14 la
+`adebe6ee1cb0` și #16 la `63eb6e052699`. **PipeWire master este `c5d2671e944a`** la această citire;
+nu am rebazat ramurile locale și nu am retestat patch-urile pe acest vârf în acest tur.
+Starea GitHub a forkului și starea driverului instalat sunt lucruri separate; această actualizare
+nu schimbă modulele instalate.
 
 <details>
 <summary>Istoric — tabloul anterior, cu consemnări din august–29 septembrie 2026</summary>
 
 > Copie păstrată pentru probele și discuțiile consemnate atunci. Conține stări intermediare și
-> afirmații ulterior corectate; nu este tabloul curent. Stările din 8 octombrie de mai sus au
+> afirmații ulterior corectate; nu este tabloul curent. Stările din 19 octombrie de mai sus au
 > precedență asupra acestui text, inclusiv pentru #355, #356, !2951 și numărul PR-urilor integrate.
 
 Toate raportate de aici. Ține-le într-un singur loc: patru s-au și rezolvat, iar despre restul e ușor
