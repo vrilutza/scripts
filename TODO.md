@@ -1,4 +1,718 @@
+## Stare upstream verificată — 6 noiembrie 2026, 13:47 EET
+
+Citire live prin API (doar GET), toate proiectele: GitHub 58 de fire (+ notificările de la 31 oct, toate acoperite),
+GitLab freedesktop 41, GNOME 2, Salsa 2, Gerrit 4 (owner/commentby/reviewer/cc), Mozilla 2, BTS 2, lore (seria v2 și
+căutare după expeditor/destinatar). „Nou” = după 31 oct 20:58 (ultima actualizare a acestui fișier).
+[Raport cu dovezi](/home/vik/scripts/pipewire-5363/rezultate/urmarire-pr-6nov-1345/RAPORT.md).
+
+**Integrat de la 31 octombrie:**
+- [x] **PipeWire !2951** (al nostru) — integrat **6 nov 08:55 UTC** de wtaymans (`97699d70`), după rebazarea de azi
+  dimineață (vezi „Notă”).
+- [x] **PipeWire !3097** (al nostru) — integrat 3 nov (`c5cf6fad`, `44d824ef`); **!3098** ([1.6]) — integrat 3 nov,
+  9 commituri pe ramura 1.6.
+- [x] **WirePlumber !895** (julian) — integrat 3 nov 12:50 UTC; fixul nostru preluat de julian („looks correct”, 2 nov),
+  pe master ca `74e49995`.
+- [x] **facetimehd-firmware #14** (al nostru) — integrat **6 nov 11:03 UTC** (`8464f0b6`).
+- [x] **facetimehd #359** (IIxauII) — integrat 3 nov: repară regresia din #343-ul nostru; #358 închis.
+  #366 (debugfs) integrat 3 nov; master `4e588ae9`.
+- [x] **WebRTC 511160** — integrat 3 nov, PS6 (main@{#49131}). **Toate cele 4 CL-uri Gerrit sunt integrate.**
+- [x] PipeWire: **Wim a integrat refcount-ul** (`e5d3471d`, 6 nov: mod `refcounted`, un buffer în plus, reciclarea
+  imediată a ultimului buffer când toate celelalte sunt în uz); **!3066 (Simon) închis** („I pushed my version now”).
+  Tot azi, Wim a închis cu `e5d3471d` și **#4174** („now an optional feature”) și **#4863** („fixed now”) — fire unde
+  am pus măsurători pe 16 aug. #4797, #2489, #4665 (comentariile noastre din aug) rămân deschise, fără noutăți.
+- [x] PipeWire #5519 (moj, regresia „corked”): închis 26 oct — Wim a reparat pe master, raportorul a confirmat.
+
+**Total:** PipeWire **21 de MR-uri** integrate, niciunul deschis; WirePlumber 1 (!934) + fixul din !895; facetimehd
+20 de PR-uri; facetimehd-firmware 1 (#14); Gerrit 4 CL-uri.
+
+**Deschise / de urmărit:**
+- [ ] **facetimehd #364** (regresia #331 în Chromium): patjak (4 nov) revine la #331 acum și îl readuce după ce
+  Chrome/Firefox publice au reparația; vrea o versiune nouă și apoi driverul trimis upstream. Viorel (4 nov): fără
+  obiecții. **Revenirea nu e făcută încă** pe master. De urmărit: revert, versiunea nouă (#361: master tot 0.7.0.1).
+- [ ] facetimehd #360 (FPS) și firmware #16 — 0 comentarii din 17 oct. #356 Draft, amânat.
+- [ ] **KMSAN v2**: Acked-by pe 3/4 de la David Hildenbrand și Mike Rapoport (1 nov); fără răspuns x86/KMSAN.
+  (Dubla apariție în lore = același Message-ID în B4 Relay și LKML, nu o trimitere dublă.)
+- [ ] Mozilla 2085509: UNCONFIRMED, needinfo pe jib de la BugBot (2 nov), fără răspuns.
+- [ ] Debian dkms !8 și BTS #1076269/#1035707: neschimbate din 12 oct. PipeWire #5481: neschimbat din 19 sep.
+- [ ] MacBookPro14.1 #3 (Weirdlogic): fără răspuns din 6 oct. #5 (audio CS8409, kernel 7.0/GCC 15) și #7 (libinput
+  DWT) de la jonasfh integrate de Viorel pe 5 și 6 nov (confirmat de el).
+- [ ] Bancul !3066 pe master-ul nou (`e5d3471d`): V4L2 K5/N8, producători client, reliable — cu predicții, seara.
+
+**Notă:** rebazarea !2951 de azi, 07:59:54 EET (push forțat peste `f1069be3`, patch-id/mesaj/autor neschimbate,
+0 comentarii) — Viorel: „ok așa cum este” (6 nov). Integrat apoi de Wim.
+
+---
+
+## Lenovo disponibil și dovezi arhivate — 29 octombrie, 17:40 EET
+
+- [x] Lenovo accesibil de la 17:17; 6 amprente principale ale runtime-urilor ps2/r26-final corespund. Checkout-ul lui nu a fost modificat; nu s-au pornit probe și nu s-a schimbat configurația.
+- [x] Snapshot înghețat al dovezilor: 649 intrări, zero diferențe pe ambele mașini. Jurnalele active ale compilării sunt excluse. Prima verificare prematură (39 fișiere încă absente) este păstrată și respinsă; verificarea finală după transfer este conformă.
+- [ ] Compilarea H.264 continuă pe MacBook, în h264/reluare-oom/. Estimarea prudentă de la 17:17: aproximativ 22:00–01:30, apoi testele MacBook și transferul pentru Lenovo; intervalul este orientativ.
+- [ ] După build: validarea codec-urilor/Discord pe MacBook și probele pe Lenovo. Nu există încă un rezultat H.264 validat.
+
+[Pregătirea și snapshotul](/home/vik/scripts/pipewire-5363/rezultate/discord-extins-20261029-0743/sincronizare-lenovo-1717/RAPORT.md).
+
+---
+
+## H.264 — oprire OOM și reluare, 29 octombrie, 16:34 EET
+
+- [x] Cauza opririi primei rulări confirmată: systemd-oomd, 16:16:48, presiune de memorie; nu este consemnată o eroare C++ drept cauză. Zero teste H.264 pornite sau acceptate.
+- [x] Clasificarea terminală din supraveghetor corectată. 4 controale de proces/OOM și 1 de PSI simulate sunt conforme; 3 controale de alegere a build-ului sunt conforme.
+- [x] Reluare incrementală activă pe MacBook, același output, aceleași surse/GN, amprentă identică. Siso are opțiuni Go de memorie și limite de grup ajustate; nu s-a dezactivat protecția sistemului.
+- [ ] Build și apoi probele automate. Estimarea precedentă nu mai este valabilă; nu există încă rezultat H.264 validat.
+- [x] Starea activă se citește din h264/BUILD-ACTIV.json; logurile noi sunt în h264/reluare-oom/. Prima încercare și rapoartele sale sunt păstrate separat.
+- [ ] Lenovo rămâne pentru după 17:30; nu a fost accesat. Nicio modificare a patch-urilor sau publicare.
+
+[Raportul opririi și reluării](/home/vik/scripts/pipewire-5363/rezultate/discord-extins-20261029-0743/h264/OPRIRE-SI-RELUARE.md).
+
+---
+
+## Automatizarea confirmată cu ecranul blocat — 29 octombrie, 13:35 EET
+
+- [x] Proba locală VP8 a trecut cu LockedHint=yes înainte și după; fluxul automat ține doar un inhibitor temporar al suspendării.
+- [x] Două diagnostice Discord headless, canvas/microfon sintetic: 78 și 74 cadre VP8 codate, oprire confirmată, fără procese rămase. Viewportul desktop 1280×900 este acum implicit; prima încercare fără acesta rămâne respinsă.
+- [x] Criteriul de mișcare întărit: marcajul trebuie să-și schimbe poziția; zgomotul numeric pe o imagine fixă este respins. Pilot nou: 79 cadre VP8 decodate, 15/14/13 poziții distincte pe faze.
+- [ ] H.264 încă se compilează. După build sunt pregătite probele automate; raportul detaliat va fi generat la final.
+- [ ] Desktopul real/portalul, al doilea cont și Lenovo rămân distincte. Nu este necesară prezența utilizatorului acum.
+
+[Raport curent și dovezi](/home/vik/scripts/pipewire-5363/rezultate/discord-extins-20261029-0743/h264/RAPORT.md).
+
+---
+
+## Testare automată cu sesiunea blocată — 29 octombrie, 13:20 EET
+
+- [x] Fluxul după build rulează sub inhibitor temporar de suspendare; blocarea ecranului și parola rămân funcționale.
+- [ ] Build H.264 în curs, nemodificat. După el: 6 probe H.264 CB (3×packetization-mode 0, 3×mode 1) și 2 martori VP8, toate headless.
+- [ ] Apoi 4 diagnostice Discord cu imagine/microfon sintetic, vechi/nou/nou/vechi; fără cameră sau captură de desktop.
+- [x] 12 controale noi conforme: flux automat, selecție profil/mode și logger SDP/RTP. Controalele simulate nu demonstrează transmisie H.264.
+- [ ] Raport detaliat generat automat la final. Probele cu ferestre/portal real, al doilea cont și Lenovo rămân distincte și neefectuate acum.
+- [x] Pentru pașii automați nu este necesară prezența utilizatorului. Orice intervenție necesară va fi explicată înaintea probei dependente.
+
+[Raport și protocol actual](/home/vik/scripts/pipewire-5363/rezultate/discord-extins-20261029-0743/h264/RAPORT.md).
+
+---
+
+## Discord/H.264 — reluare 29 octombrie, 11:30 EET
+
+- [ ] Compilarea separată continuă; estimarea inițială de 1–2 ore este retrasă. Outputul original este păstrat.
+- [x] Căderea reprodusă fără cameră/PipeWire: negociere Discord H.264, apoi Stop/inactive și codec_settings.
+- [x] Evaluatorul codec: martor VP8 și opt controale conforme. Verificarea automată după build este pornită.
+- [ ] Probe H.264 efective, Discord cu H.264, al doilea cont; Lenovo după 17:30.
+
+[Raport actual](/home/vik/scripts/pipewire-5363/rezultate/discord-extins-20261029-0743/h264/RAPORT.md).
+
+---
+
+## Discord și H.264 — reluare 29 octombrie, 10:18 EET
+
+- [x] Encoderul H.264 lipsește din browserul existent; decoderul este anunțat.
+- [x] Martor VP8: transmisie/recepție, imagini și redimensionare confirmate; testul H.264 lipsește justificat și este respins.
+- [ ] Build H.264 separat în curs; originalele sunt păstrate. Apoi verificare reală a codării/decodării și Discord.
+- [ ] Cauza căderii Discord: investigație în curs; nicio atribuire definitivă patch-urilor sau H.264.
+- [ ] Al doilea cont Discord; Lenovo și sincronizarea după 17:30.
+
+[Starea și dovezile](/home/vik/scripts/pipewire-5363/rezultate/discord-extins-20261029-0743/ACTUALIZARE-H264.md).
+
+---
+
+## Discord extins — starea la plecare, 29 octombrie 2026
+
+- [x] Mic Test: 2/2 rulări repetate, 4 cicluri cu audio decodat nenul.
+- [ ] Partajare: crash codec_settings reprodus pe r26, ps2 și browser fără patchuri; cauza și influența observatorului încă în investigare. Nicio rulare completă de ecran acceptată.
+- [ ] Apel cu al doilea cont: după ce utilizatorul îl configurează la muncă.
+- [ ] Lenovo și sincronizarea noutăților: după 17:30.
+- [x] Probele live oprite la cererea utilizatorului; procese zero, camera liberă, permisiuni/daemonii/pachetele neschimbate.
+
+[Raport](/home/vik/scripts/pipewire-5363/rezultate/discord-extins-20261029-0743/RAPORT-LA-PAUZA.md).
+
+---
+
+## Discord — apel cap-coadă amânat, 29 octombrie 2026
+
+- [ ] Al doilea cont Discord; utilizatorul îl va crea/configura când este posibil.
+- [ ] Recepție video/audio și partajare măsurate între două conturi; actuala campanie rămâne locală.
+- Lenovo: după 17:30.
+
+[Restanțe](/home/vik/scripts/pipewire-5363/rezultate/discord-extins-20261029-0743/RESTANTE.md).
+
+---
+
+## Probe Discord și Jitsi — 2026-10-29T07:33:55+02:00
+
+- [x] Discord Web Test Video: 12/12 probe principale (3 pentru fiecare stivă pe fiecare laptop), camerele fizice FaceTime/UVC, backend PipeWire și componente identificate în procesul capturii.
+- [x] Jitsi prejoin: 4/4 (1 pentru fiecare stivă/gazdă), fără apăsarea Join. joined:null rămâne necunoscut.
+- [x] 24 de controale ale bancului plus 10 ale reevaluării finale conforme; toate cele 16 probe recalculate din datele brute. Cei 5.359 de fișiere per runtime sunt identici între laptopuri și neschimbați înainte/după.
+- [x] Lenovo: permisiunea host pentru cameră și AppArmor temporar restaurate; pachete/daemoni neschimbați, camera liberă. Pe MacBook permisiunile/pachetele/daemonii sunt neschimbați, camera liberă. Profilurile Discord dedicate rămân private, în afara arhivei.
+- [x] Ritmul UVC ~7,7 cadre/s apare și direct V4L2 în YUYV 640×480 (~7,683). Formatul și parametrii inițiali recitiți identic după control; cauza fizică detaliată nu este atribuită fără măsurătoare.
+- Domeniu: runtime-ps2 versus runtime-r26-final (cod funcțional 511160 PS3, identic PS4; nu build nou din main PS4). Fără regresie funcțională reprodusă aici; nu sunt testate apelurile/microfonul/partajarea Discord sau Electron. Patch-urile și publicările rămân neschimbate.
+
+[Raport și date](/home/vik/scripts/pipewire-5363/rezultate/aplicatii-web-20261029-063628/RAPORT.md).
+
+---
+
+## Reverificare live WebRTC511160 — 2026-10-29T06:22:31.244387+02:00
+
+- [x] PS4 este în continuare8af5a513; opt fișiere și mesaj identice cu varianta auditată. Autorul, Change-Id-ul și ramura sunt corecte.
+- [x] Toate cele opt fișiere au recenzenți eligibili deja adăugați, inclusiv jleconte pentru modules/BUILD.gn. Răspunsul către Jan este unic și identic textului aprobat; zero fire nerezolvate și zero drafturi ale contului.
+- [x] Schimbarea este publică și nu este WIP; mergeable=true. Fără mesaje sau voturi noi de aseară; ultima actualizare rămâne28oct22:27:41EET. Așteptăm aprobările șiCQ, fără acțiune de retrimitere necesară acum.
+- [x] Manifestele finalizării și dovezilor (35+460fișiere) reconfirmate atât peMacBook, cât și peLenovo:zero diferențe. Nu am modificat codul și nu am publicat nimic.
+
+[Raport și dovezi](pipewire-5363/rezultate/reverificare-live-511160-20261029-061501/RAPORT.md).
+
+---
+
+## Finalizare WebRTC 511160 PS4 — 2026-10-28T22:38:12.512593+02:00
+
+- [x] PS4 este publicat pe 511160: `8af5a513`, exact commitul auditat; cele opt fișiere și mesajul sunt confirmate independent pe server.
+- [x] Jleconte este reviewer. Răspunsul aprobat către Jan este postat pe firul corect; zero fire nerezolvate, zero drafturi; mergeable=true.
+- [x] Nu mai este necesar un push sau un răspuns din partea noastră pentru această cerere. Am evitat duplicarea acțiunilor deja executate.
+- În așteptare externă: aprobările pentru PS4 și acoperirea OWNERS, apoi CQ. Voturile PS3 au fost retrase; nu există un eșec de test demonstrat prin aceste cerințe de review nesatisfăcute.
+
+[Gerrit](https://webrtc-review.googlesource.com/c/src/+/511160/4) · [Raportul final](pipewire-5363/rezultate/finalizare-511160-ps4-20261028-223145/RAPORT.md).
+
+---
+
+## Audit PS4 WebRTC511160 — 2026-10-28T22:24:10.289367+02:00
+
+- [x] Candidat final 8af5a513, bază17c172fc, verificat: test mutat identic, aceleași modificări funcționale caPS3, GN corect și trei rânduri goale cerute de formatter. Patch-ul exportat și mesajul coincid exact cu commitul.
+- [x] Datele brute confirmă pe fiecare laptop:30/30,15/15 selectate și10×4 screencast. Auditorul a repetat separat pe fiecare30/30+15/15+4/4, cu trasarea bibliotecii PipeWire private, fără cameră și fără monitorizare hardware.
+- [x]223 de fișiere verificate peambele mașini:zero nepotriviri. Verificatorul oficial de înregistrare GN rerulat cu succes pentru Audit șiNoPw; ținta există numai cuPipeWire.6 controale de agregare conforme, inclusiv test care afișează totalul și iese23.
+- [x] Accept tehnic pentru upload/review, fără constatări blocante. Jleconte este owner eligibil pentru modules/BUILD.gn. Un singur commit candidat, Change-Id corect pentru511160, origin corect.
+- [x] Publicarea și adăugarea recenzentului rămân decizia utilizatorului. După upload:SHA/PS/owner,aprobări șiCQ. Main a avansat lac4b9e0fe cu un commit CodecParameterMap, fără suprapunere în fișierele PS4; baza testată rămâne17c172fc. **Închis prin PS4 publicat la 22:27 EET; vezi starea curentă de mai sus.**
+- [x] Arhivă sincronizată peLenovo:464 fișiere,zero nepotriviriSHA256. Sursele/ramurile și configurația sistemelor nu au fost modificate de auditor.
+
+[Raport și dovezi](pipewire-5363/rezultate/audit-ps4-511160-20261028-215926/RAPORT.md).
+
+---
+
+## A doua trecere upstream — 2026-10-28T17:48:15.016131+02:00
+
+- [x] Starea live a celor patru CL-uri este neschimbată față de prima trecere. Comparația întregului patch, autorului și mesajului confirmă integrarea identică; nicio cale suplimentară. AUTHORS redundant dispare numai din diff-ul lui 511141.
+- [x] Completare nouă pentru PS4 al lui 511160: actualii recenzenți nu acoperă modules/BUILD.gn. API-ul code-owners confirmă lipsa acoperirii, deși pe PS3 cerința era îndeplinită. Pentru înregistrarea testului în modules_unittests trebuie un owner eligibil, de exemplu mbonadei@webrtc.org sau jleconte@google.com. Nu am adăugat recenzenți. **Închis prin PS4 publicat la 22:27 EET; vezi starea curentă de mai sus.**
+- [x] După mutare: verificatorul validate_test_registration, GN/metadate, 30 de cazuri efectiv executate, configurația fără PipeWire și celelalte verificări deja cerute. Mutarea/compilarea produsului nu au fost făcute de auditor. **Închis prin PS4 publicat la 22:27 EET; vezi starea curentă de mai sus.**
+- [x] Prima arhivă: 67 de fișiere, zero nepotriviri. A doua arhivă sincronizată pe Lenovo: 79 de fișiere, zero nepotriviri. Nicio schimbare de produs, cameră, servicii sau publicare; execuțiile individuale LUCI rămân neauditate.
+
+[Raport și dovezi](pipewire-5363/rezultate/reaudit-upstream-20261028-174027/RAPORT.md).
+
+---
+
+## Audit independent upstream — 2026-10-28T17:37:25.456289+02:00
+
+- [x] Verificate separat API-urile live: WebRTC511140 integrat90148194b9,511141 integrata28232fd46; codul fișierelor identic versiunilor trimise și ambele commituri în main17c172fc. Kron a votat după integrare; numele utilizatorului este înAUTHORS o dată.
+- [x] WebRTC511160: PS3,1 fir Jan nerezolvat,mergeable=false. Direcția corectă: mutarea celor30 de cazuri înmodules/portal, țintăGN înmodules_unittests,rebase și validarea înregistrării/rulării efective. Auditul nu a implementat mutarea sau recompilat produsul. **Închis prin PS4 publicat la 22:27 EET; vezi starea curentă de mai sus.**
+- [x] Chromium8648509: PS2,+1 ilnik,0 fire nerezolvate;așteaptă al doilea committer. !3078 integrat;tag1.6.11 absent;Mozilla/#331 fără răspuns nou. !2951 rămâne la mentenanți.
+- [x] Aplicarea patch-ului PS3 verificată pe7/7 fișiere dinmain într-o copie izolată,fără aplicare efectivă. Prima comandă care sărea fișierele a fost respinsă și păstrată; controlul valabil verifică numărul de fișiere. Regula exactă de copiere a voturilor pePS4 rămâne neverificată, endpoint403.
+- [x] Audit și dovezi sincronizate peLenovo:67 fișiere,0 nepotriviriSHA256. Numai arhivare/verificare peLenovo, fără testehardware/cameră/servicii/publicare.
+
+[Raport și date](pipewire-5363/rezultate/audit-independent-upstream-20261028-172856/RAPORT.md).
+
+---
+
+## Audit ARHITECTURA v2 — 2026-10-28T08:02:36.374473+02:00
+
+- [x] Cele5 corecturi de fond sunt integrate în v2. V1 păstrată identic copiei auditate; helperul numeric neschimbat. Planul este rezonabil pentru cercetare și discuție cu mentenanții, nu specificație gata de implementare.
+- [x]11 probe ale helperului real +5 verificări de listă GST, fără cameră. Exemplele citate dau≈+25,269879%/−20,172351%; nu sunt plafoane:1/UINT32_MAX≈+100%,UINT32_MAX/1≈−50%. Semnul nu depinde universal numai de termenul mai mare.
+- [ ] Precizări în document: procentele sunt exemple, nu limite; GStreamer poate reprezenta exact grila deplasată prin listă (limita este un singur interval compact); „nativ” în helperul V4L2 înseamnă euristică crop bounds cu fallback minim.
+- [x] Backportul rămâne în forma testată. Probele libcamera/vimc și verificarea separată libwebrtc pot avansa ca cercetare, cu dovada backendului și limite declarate. Nicio captură/recompilare browser cerută de acest audit.
+
+[Raport și date](pipewire-5363/rezultate/audit-arhitectura-v2-20261028-075723/RAPORT.md). Nu am modificat documentul autorului, codul, ramurile sau configurația și nu am publicat nimic.
+
+---
+
+## Audit document ARHITECTURA.md — 2026-10-28T07:50:45.867818+02:00
+
+- [x] Cele5 rezultate ale filtrului autorului recompilate independent, identice.3 cazuri ale funcției reale v4l2_set_format în montaj cu ioctl simulat confirmă exact−22/NEAREST1+dimensiuni reale/potrivire0.4 probe ale helperului real de fracții confirmă rotunjiri în ambele direcții;6 proprietăți de control conforme.
+- [ ] Documentul necesită corecții înainte de implementare/comunicare: WebRTC folosește PipeWire direct, nu puntea GST; refuzul fărăNEAREST nu este singur bug, calea de propagare există; nu schimbăm global semantica SPA ca și cum ar fi contractV4L2; afirmația „libcamera minim” este iar prea largă.
+- [ ] De precizat: aproximarea fracțiilor depinde de rolul limitei/valorii fixe; o submulțime finită nu garantează orice cerere exactă. Problema originii grilei, intersecțiile și reprezentarea GST sunt lucrări distincte; corectarea documentului precede decizia de contract.
+- [x] Backportul1.6 rămâne în forma testată. Nu există patch nou și nu s-au activat dispozitive/module/servicii. Testele acestei runde sunt pure/simulate pe MacBook; prima montare greșită a simulării ioctl a fost respinsă, păstrată și corectată numai în bancul auditului.
+
+[Raport și dovezi](pipewire-5363/rezultate/audit-arhitectura-20261028-074125/RAPORT.md). Nicio publicare sau modificare a implementărilor/ramurilor de auditor.
+
+---
+
+## Audit generalizare camere V4L2/libcamera — 2026-10-28T07:34:22.727259+02:00
+
+- [x] F1 script analiză închis: v1 cu gcc23→0 și3 executabile vechi, v2→1 și0 executabile, control pe copii izolate.
+- [x] Bibliotecă libcamera0.7.2 + SPA reale: grila321/329/337 acceptată de libcamera este respinsă de SPA Step, care acceptă328/336. Nepotrivire semantică înainte de GStreamer; nicio cameră deschisă.
+- [x] Filtru SPA localizat și reprodus pe1.6/master: None641 respins, Range[641,641] acceptat cu641 în afara grilei. Lucrarea generală trebuie să acopere intrarea în SPA, filtrarea și GStreamer, nu doar ultimul convertor.
+- [x] Refutată afirmația „toate camerele libcamera pornesc la minim”: calea listelor alege apropiat de640×480, inclusiv pentru range-uri din care sizes() produce moduri uzuale. UVC discret→None separat; nu orice UVC exercită bugul SPA Enum.
+- [x]28 încercări Lenovo recalculate:16 rc0+EOS,6 refuzuri exacte așteptate,5 timeout,1 eroare interval cu plugin1.6.73 fișiere locale identice remoto; proveniență inițială/finală verificată;4 sesiuni restaurate, vivid scos,0 procese de test.
+- [x] Precizare de bază: montajul Lenovo folosește checkoutmaster04d6a2bc, nu10c6ec627. A comparat pluginurile master/1.6, fără candidatul1.6 separat; nu izolează cauza erorii−22.
+- [ ] Backportul păstrează acceptul tehnic în domeniul probat. Nepotrivirea originii grilei și pierderea Step/Range sunt demonstrate și rămân necorectate în această sarcină de audit. Următoarea lucrare necesită contract/modele pe toate granițele, fără excepții FaceTime.
+
+[Raport și probe](pipewire-5363/rezultate/audit-generalizare-camere-20261028-072331/RAPORT.md). Auditorul nu a activat dispozitive, schimbat servicii/ramuri/cod sau publicat nimic. Pe Lenovo: numai citire.
+
+---
+
+## Audit răspuns conversie SPA/GST — 2026-10-28T07:10:46.623406+02:00
+
+- [x] Recompilate independent cele3 variante55a35bf6/4b06d7a86/10c6ec627 cu programul autorului: ieșiri identice originale,3 CRITICAL pe1.6 pentru intervalul FPS sintetic,0 pe candidat/master. Surse originale neschimbate.
+- [ ] F1 în NOUL script de analiză `pipewire-28oct/analiza-conversie/construieste.sh`: compilator simulat exit23→script0,3×ESEC, executabile vechi rămase. Demonstrat pe copie izolată. De reparat înainte de refolosire automată; nu invalidează datele reproduse independent.
+- [x] Precizări: pod modelat după FaceTime nu este probă de eșec fizic; regula despre observații nu cere obligatoriu hardware; seria schimbă și perechile Enum/conversia inversă, nu doar preferința/FPS. Comparatorul după arie este în SPA, nu în kernelul Linux.
+- [x] Verificate limitele v4l2loopback0.15.4 din sursa instalată: FPS1/UINT32_MAX..1000/1. Caz suplimentar reproduce pierderea câmpului pe1.6 și corecția pe candidat/master; fără încărcarea modulului/dispozitiv.
+- [ ] Backportul rămâne pregătit tehnic în domeniul verificat. Sunt de acord cu investigarea prioritară a pasului prin probă funcțională separată, autorizată; nicio captură nouă în acest audit. Validarea numerică rămâne subiect separat demonstrat în convertor, nu condiționat universal de hardware.
+
+[Raport și reproduceri](pipewire-5363/rezultate/audit-analiza-conversie-20261028-070548/RAPORT.md). Auditorul nu a reparat implementări, scripturi originale sau ramuri și nu a publicat nimic.
+
+---
+
+## Reaudit INT_MAX / politică de conversie — 2026-10-28T06:54:11.303880+02:00
+
+- [x] Motivul protecției confirmat din !3055 și istoric. Comentariile pobrn/autorul sunt aceleași; nicio aprobare publică a reproiectării generale propuse de auditor.
+- [x] Master actual 10c6ec62; gstpipewireformat.c identic celui de ieri. 1.4 d0c07860, 1.6 55a35bf6, candidat 4b06d7a86 neschimbate.
+- [x] Cele 40 de observații vechi rerulate, zero diferențe. 68 observații noi / 17 cazuri × 4 implementări; 7 controale ale bancului conforme. Nu sunt „108 teste trecute”: includ contraexemple intenționate.
+- [x] Demonstrată pierderea pasului pe sensul SPA→GST (641×480 acceptat pentru pas8×1), existentă în toate variantele. Documentate grilele după clamp, intervalele degenerate/minime nereprezentabile și fracțiile None/Enum neacoperite de helper.
+- [x] Precizare arhitecturală: comparatorul SPA ordonează Rectangle după arie, GST după axe; politica propusă nu este o implementare deja complet proiectată. Un câmp lipsă poate lărgi oferta, deci eroarea trebuie propagată explicit.
+- [ ] Backportul rămâne pregătit tehnic în domeniul verificat: păstrăm INT_MAX, fără motiv nou demonstrat de recompilare/captură. Publicare manuală după revizuirea utilizatorului. Eventuala validare numerică, păstrarea Step și fracțiile sunt lucrări separate pe master, neimplementate.
+
+[Raport detaliat și dovezi](pipewire-5363/rezultate/reaudit-intmax-20261028-064418/RAPORT.md). Fără modificări ale implementărilor/ramurilor/serviciilor, fără cameră și fără publicare. Probele au rulat numai pe MacBook.
+
+---
+
+## Cercetare INT_MAX / conversia SPA→GStreamer — 2026-10-27T19:00:13.739302+02:00
+
+- [x] Motiv confirmat din !3055 și istoric: maxim unsigned UINT32_MAX ajunge negativ în câmpurile GStreamer cu semn. Wim generalizează13–14oct la orice maxim>INT_MAX; backport1.6 integrat19oct.
+- [x] Surse actuale verificate:1.4 d0c07860 fără protecție;1.6 55a35bf6 cu protecție, fără preferință; master b58c7129 și candidat4b06d7a86 cu ambele. Tag1.6.9 nu conține protecția,1.6.10 da.
+- [x]40 probe native de conversie, fără cameră/daemon. Reprodus defectul vechi și cazul ratat de prima reparație.8K păstrat; candidat și master identice în toate8 cazurile. Nu se raportează drept40 teste „trecute”: unele demonstrează rezultate incorecte existente.
+- [x] Documentată separat validarea incompletă pentru valori fixe/Enum/minime>INT_MAX: poate produce dimensiuni negative și în codul vechi. Propunere de arhitectură, nu patch nou: conversie verificată pe fiecare formă, fără inventarea modurilor.
+- [ ] Publicarea manuală a backportului rămâne planul curent. Păstrăm INT_MAX și rezolvarea combinată; această cercetare nu demonstrează o regresie care să retragă acceptul candidatului. Eventuala uniformizare a validării este o lucrare separată, neimplementată.
+
+[Istoric, surse și cele40 observații](pipewire-5363/rezultate/research-intmax-20261027-184246/RAPORT.md). Nicio modificare a implementărilor/ramurilor/serviciilor sau publicare de către auditor.
+
+---
+
+## Închidere audit cititori GST1.6 — 2026-10-27T18:32:13.784212+02:00
+
+- [x] `stiva16.sh` v3: citirea core eșuată→73, zero probe pornite, sesiunea simulată oprită; citirea finală eșuată→72 chiar după text valid.8/8 controale independente conforme.
+- [x] Închise constatările rămase despre codurile cititorilor Python. Snapshot v4 și datele celor6 probe hardware sunt neschimbate prin SHA; ramura4b06d7a86 este aceeași.
+- [ ] Revizuire și publicare manuală în fork, MR către1.6; recomand păstrarea `cherry picked from` și atașarea jurnalelor originale. Nu cer alte recompilări/capturi pentru aceste reparații.
+- [ ] !2951: așteptăm mentenanții; păstrăm decizia să nu îl mai rebazăm noi.
+
+[Raport și cele8 controale](pipewire-5363/rezultate/audit-final-cititori-gst16-20261027-182933/RAPORT.md). Audit fără modificări ale implementărilor/ramurilor/configurației și fără publicare. Secțiunile mai vechi consemnează constatările înaintea reparațiilor.
+
+---
+
+## Backport GST1.6: reparații confirmate și verificare finală — 2026-10-27T18:19:03.637681+02:00
+
+- [x] Cele3 reproduceri precedente sunt reparate: propagarea codurilor probelor/sesiunii, ieșirea spontană0 la final, identitatea SPA.22 controale ale autorului/auditorului rerulate independent, conforme;3 controale suplimentare trec.
+- [ ] Mai rămâne aceeași clasă de eroare la2 citiri Python din `stiva16.sh`: `core` și `ref`. Text valid urmat de exit23→campanie0, demonstrat izolat pentru ambele. De propagat explicit codurile cititorilor; fără cameră/recompilare.
+- [x] `backport-1.6-gst-caps`=4b06d7a86, exact commitul și tree-ul testat,3 commituri peste55a35bf6;1.6 live încă55a35bf6. Cele6 probe reale și starea sesiunii sunt neschimbate prin SHA.
+- [ ] Publicare manuală în fork, MR către1.6; `origin` din clona pregătită este upstream, nu fork-ul. Recomand păstrarea `cherry picked from`. Candidatul rămâne pregătit tehnic pentru review.
+- [x] Documentație: secțiunea despre lumină este restaurată, e286061df descris corect. Pentru MR se atașează logul original, nu fragmentul cu puncte de suspensie. !2951 rămâne la mentenanți, conform deciziei12oct.
+
+[Raport și controale](pipewire-5363/rezultate/audit-inchidere-gst16-20261027-180938/RAPORT.md).27 cazuri logice:25 conforme,2 contraexemple la cititorii Python, nu eșecuri PipeWire. Auditorul nu a modificat implementări/ramuri/servicii și nu a publicat nimic.
+
+---
+
+## Decizie !2951 reconfirmată — 2026-10-27T17:03:56.952106+02:00
+
+- [x] API live: MR și ramura publică încă b1c1ca53, fără activitate după4oct; allow_collaboration=true. Rebase0e559c149 peste d5e60e55 există numai local; range-diff neschimbat, fără validare nouă la rulare.
+- [ ] !2951: așteptăm mentenanții. **Nu-l mai rebazăm noi și nu propunem rebase/push al nostru.** Vechea intrare „Rebase !2951 rămâne” este depășită de această decizie.
+- [ ] Backport GST1.6: MR de pregătit/publicat de utilizator;0 MR-uri1.6 deschise la verificare. Restanțele locale ale bancului din auditul v3 rămân distincte și nu sunt reparate prin rebase.
+
+[Audit și dovezi](pipewire-5363/rezultate/audit-decizie-2951-20261027-170108/RAPORT.md). Nu am modificat ramuri sau publicat nimic.
+
+---
+
+## Reaudit backport GST 1.6 / runner v3 — 2026-10-27T15:09:16.015058+02:00
+
+- [x] Proba lipsă a întregii stive confirmată independent: daemon/SPA55a35bf6 cu !3078,6 rulări/72 eșantioane; C16=320x240, C16E=1296x736+12 critical/rulare, C16F=1296x736 fără critical. Identități și restaurare confirmate.
+- [x] Cele6 controale ale autorului trec și la auditor. Cazul vechi exit23→0 este reparat. Candidatul și bibliotecile au SHA-256 identice auditului anterior.
+- [ ] `stiva16.sh` pierde erorile: probe83 sau sesiune17→campanie0, demonstrat izolat.
+- [ ] `snapshot.sh` acceptă ieșire spontană0 în ultima pauză, deși TERM eșuează: reprodus3/3.
+- [ ] SPA este consemnat, dar nu impus automat: absent→0 în control cu executabilul așteptat. În toate cele71 eșantioane reale ocupate, SPA corect este dovedit independent.
+
+[Raport și controale](pipewire-5363/rezultate/audit-backport-gst16-v3-20261027-145538/RAPORT.md). Datele reale rămân susținute; nu cer recompilare sau repetarea lor. Acceptul tehnic al candidatului rămâne. Implementarea corecțiilor uneltelor este o sarcină separată; auditorul nu a reparat sau publicat nimic.
+
+---
+
+## Audit backport GST 1.6 — 2026-10-27T08:26:37.930541+02:00
+
+- [x] Candidat 69be8ea0a+d86cea59c+4b06d7a86 verificat; rezolvarea conflictului păstrează INT_MAX și corespunde master. Jurnale Meson:50/50,50/50,69/69;19 teste GST rerulate independent, toate trecute.
+- [x]10 probe Snapshot/120 eșantioane recalculate: C16=320x240; C16E=1296x736+critical; C16F=1296x736 fără critical. Corecția ecranului alb confirmată din930 cadre salvate: Y≈13→77–79→20 după închiderea reală08:10.
+- [ ] Runner Snapshot: demonstrat izolat exit23 al aplicației→exit0 al scriptului, cu identitate lipsă. De reparat înainte de refolosire; nu invalidează formatele observate.
+- [ ] Restrângere raport: serverul probelor este sistem1.6.9; campania nu demonstrează efectul !3078 activ în daemonul1.6 actual. Pentru această afirmație, probă separată cu daemon/SPA identificate. Concluzia absolută despre întuneric trebuie restrânsă la dovezi.
+
+[Raport și reproducător](pipewire-5363/rezultate/audit-backport-gst16-20261027-081118/RAPORT.md). Niciun defect nou demonstrat în patch-uri; nu este necesară reconstruirea de la zero. Audit fără cameră, reparații de implementare, schimbări de servicii sau publicare. Secțiunile datate de mai jos sunt istorice.
+
+---
+
+## Audit țintit al planului de publicări — 2026-10-27T07:32:30.676382+02:00
+
+- [x] Confirmat: Mozilla nu cere completare acum; textul Chromium#15 este istoric, datat24oct. Acceptul tehnic al CL-urilor rămâne valabil.
+- [ ] Recomandat, neblocant pentru review: PS2/FaceTime pe backend V4L2 direct, cu identitate și formate dovedite. Matricea26oct a fost PipeWire.
+- [ ] Backport GST în1.6: c4309f0e+acea30af+18244c97 lipsesc; pregătire și validare pe1.6 actual înainte de MR separat.
+- [ ] PW2951: feedback favorabil rmader,0 aprobări formale; pipeline din19sept.1 commit propriu/141 în urmă; ff imposibil acum, merge simulat fără conflicte. Păstrăm decizia să nu rebazăm automat; un rebase autorizat cere teste/CI noi.
+- [ ] Opțional: notă facetimehd331 despre3078 integrat în1.6 după1.6.10; nu îl prezentăm drept deja lansat sau garantăm tagul viitor.
+
+[Audit, dovezi și recomandări](pipewire-5363/rezultate/audit-plan-publications-20261027-072336/RAPORT.md). Nu au fost modificate patch-uri sau publicate mesaje. Acesta nu este un nou tur complet al tuturor proiectelor; starea lor rămâne în raportul00:14 de mai jos.
+
+---
+
+## Actualizare contribuții upstream — 2026-10-27T00:26:38.254361+02:00
+
+**Niciun comentariu sau review nou de la alte persoane** față de verificarea26oct18:10; pe Gerrit, nimic nou după ultima verificare a upload-urilor.
+
+- [x] Verificate55 fire GitHub,33 GitLab freedesktop,2 Salsa,2 GNOME,4 CL-uri Gerrit,2 bug-uri Mozilla,2 fire BTS și seria KMSAN; autentificare folosită unde este disponibilă.
+- [x] PipeWire !3077,!3078,!3079 rămân integrate; WP!934 integrat,!936 închis. Total propriu:18 MR-uri PipeWire și20 PR-uri facetimehd integrate.
+- [ ] Review și verificări upstream: Chromium8648509PS2; WebRTC511140PS2,511160PS3,511141PS2. Nicio cerere nouă de modificare.
+- [ ] PR-uri GitHub proprii deschise: facetimehd#356(draft),#360; firmware#14,#16; audio#189(REVIEW_REQUIRED). Fără răspunsuri noi.
+- [ ] PipeWire!2951 deschis; păstrăm decizia12oct să nu facem noi rebase automat. API-ul de acum dă unchecked, nu o confirmare nouă need_rebase.
+- [ ] Salsa dkms!8 și firul user-setup!1: fără răspuns nou. Pregătirea separată a backportului GST1.6 rămâne o restanță cunoscută; niciun MR deschis acum către1.6.
+
+[Starea completă și dovezile](pipewire-5363/rezultate/stare-trimiteri-20261027-001403/STARE.md). Pentru kernel, firul de mail este identic; integrarea în linux-next/mm/tip nu a putut fi reconfirmată, deoarece căutările au expirat. Nicio postare, rebase, commit sau push efectuat în această actualizare. Secțiunile datate de mai jos păstrează istoricul.
+
+---
+
+## Corecție texte GStreamer — 2026-10-23T21:16:53.731547+03:00
+
+- [x] Commitul descrie structuri caps separate pentru perechi, în loc de liste separate pe axe.
+- [x] MR: reproducerea în Snapshot pe1.6 cu !2965 și validarea19/19 pe master73974598 sunt consemnate distinct.
+- [x] Atașamentul `snapshot-original-gdb.log` este identic originalului, fără stiva reconstruită.
+- [x] Commit local `cfc36a7c5021723ab0dd0d95d969adbe46465e45`; tree identic celui testat. Numai mesajul este schimbat; vechiul commit rămâne arhivat.
+- [ ] Încărcarea manuală a MR-ului și a logului original; nimic publicat în această rundă.
+
+[Dovezi și textele curente](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/corectie-texte-gst-20261023-211439/CITESTE.md).
+
+## Commit local GStreamer — 2026-10-23T20:55:11.664013+03:00
+
+- [x] `6cf7f0699e23294e2d6bcbc54ef0cfa9fb76ec46`: mesajul furnizat de Viorel, nume/email corecte,3 fișiere identice candidatului testat, working tree curat.
+- [x] Mesajul/descrierea canonice și atașamentele GDB actualizate. Fără semnături noi și fără schimbare a codului validat.
+- [ ] Publicarea manuală PipeWire și atașarea logului original, separat de acest commit local.
+
+[Commit și dovezi](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/pregatire-commit-gst-20261023-204643/CITESTE.md).
+
+## Commit GStreamer pregătit — 2026-10-23T20:47:41.859149+03:00
+
+- [x] Branch local `review-gst-caps-20261023-204643`,3 fișiere staged; baza și SHA-urile coincid candidatului validat.
+- [x] Log GDB integral și backtrace exact pregătite ca atașamente, cu inventar SHA.
+- [x] Mesajul în engleză furnizat de Viorel și commit local `6cf7f0699e23` creat; publicarea rămâne separată.
+
+[Pregătire și dovezi](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/pregatire-commit-gst-20261023-204643/CITESTE.md).
+
+## Corecție explicație GST — 2026-10-23T20:38:33.501358+03:00
+
+- [x] Confirmat: upstream expune perechi fictive în caps, chiar dacă vechiul roundtrip trece; candidatul final trece ambele pe master/stabil (8 execuții).
+- [x] Note RO/EN corectate și log GDB original păstrat; nicio modificare de patch.
+- [ ] Viorel redactează mesajul public PipeWire;72/72 se citează numai cu configurația aferentă. Timeout-ul separat raportat nu este diagnosticat aici.
+
+[Note și dovezi](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/corectie-explicatie-gst-20261023-203649/TECHNICAL-FACTS-EN.md).
+
+## Mesaje pentru review — 2026-10-23T20:09:54.445121+03:00
+
+- [x]4 mesaje de commit +4 descrieri EN Chromium/WebRTC, cu copii înainte și linii de maximum72 caractere.
+- [x] Clarificată dependența de BUILD.gn: enumerare → chunk; sincronizare independentă, verificată prin5 aplicări izolate.
+- [x] Originalele umane PipeWire și mesajul WP!934 păstrate; patch-urile și rezultatele de testare nu sunt modificate.
+- [ ] Viorel: textul uman pentru GST nou, apoi traducerea; numere reale de bug și review înaintea publicării. P3/P4 rămân separate.
+
+[Texte și jurnal](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/mesaje-review-20261023-200440/CITESTE.md). Nu s-a publicat nimic.
+
+## Reverificarea finală — 2026-10-23T19:05:02.943030+03:00
+
+- [x] Native:53 PW/66 WP pe ambele,264 Chromium,41 WebRTC GN,72 GST și19 ASan/UBSan; toate trec.
+- [x]42 rulări/168 cereri vechi recitite independent, cu DLL/PID/inode inclusiv pentru negative.
+- [x]10 probe fizice noi/40 cereri (8 negative așteptate),44 controale/gazdă; stare restaurată.
+- [x] Nicio schimbare upstream relevantă, nicio modificare de patch necesară; testarea planificată încheiată.
+- [ ] Review Viorel și pregătirea publicărilor autorizate. P3/P4 și observațiile separate păstrează limitele documentate.
+
+[Raport](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/reverificare-finala-20261023-184821/RAPORT.md). Notele de mai jos sunt istorice.
+
+## Închidere Lenovo/Firefox — 2026-10-23T18:37:12.887009+03:00
+
+- [x] GN oficial WebRTC:41/41 (14 selecție+27 chunk); mutant21 eșecuri așteptate, surse restaurate.
+- [x] Lenovo: masterele73974598/ce5d8584,53 PW/66 WP;12 probe/48 cereri prin UVC/libcamera.
+- [x] Protecția chunk: componentă din sursele finale identică celei existente;8 probe/32 cereri Lenovo,240 cadre native.
+- [x] Firefox final helper/checker/chunk:16 probe/64 cereri MacBook +2 controale V4L2; UVC/libcamera Lenovo4 probe/16 cereri.
+- [x] GST:72 master,19 ASan/UBSan stabil și120 cadre din provider pe Lenovo; Snapshot MacBook confirmat anterior.
+- [x]25 unelte canonice identice pe fiecare laptop. Jurnale/documente/ciorne actualizate; sincronizare cu chitanțe SHA.
+- [ ] Review Viorel, dubluri/bug WebRTC și numere reale, checkout-uri separate/presubmit/upload autorizat. CLA/conturi deja confirmate anterior.
+- [ ] PipeWire: textele publice sunt redactate de Viorel. WP!934 este deja integrat;!936 închis, nu duplicăm.
+- [ ] P3/P4: review arhitectural și metadate înainte de publicare; matricea factorială48 runde este cea de dimineață, nu o nouă rulare pe739.
+- [ ] Observații separate: producător chunk natural necunoscut, fps WebRTC/Chromium, facetimehd0x0, OBS/aperture, MetaBusy/retenție SPA. Jitsi numai previzualizare.
+
+[Dovezi](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/inchidere-lenovo-20261023-171501/RAPORT.md). Înregistrările următoare sunt istorice.
+
+## Retestare master MacBook — 2026-10-23T16:04:27.860159+03:00
+
+- [x] PW73974598 +WPce5d8584:53/53 și66/66, inclusiv RAOP activat explicit.
+- [x]4PW/WP nou:6 rulări/24 cereri Chrome,240 cadre native în campanie+controale, 12 opriri dedicate curate; stare restaurată.
+- [x] Noul wpctl:5 comenzi read-only, profil/rută/sink/volum neschimbate.
+- [x] Textele de dovezi actualizate; patch-urile și mesajele de commit păstrate.
+- [ ] Diseară Lenovo: sincronizare și confirmări GN/chunk/UVC, GST/libcamera, Firefox.
+
+[Dovezi](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/retestare-master-20261023-153808/RAPORT.md). Rundele anterioare de mai jos rămân istorice.
+
+## Ultima verificare MacBook — 2026-10-23T15:24:01.250433+03:00
+
+- [x] Patch-uri neschimbate;52 unelte instalate identice cu cele validate; aplicare în copii Git izolate și GN27 recalculate exact.
+- [x]72 Meson repetate;144 configurații/56.448 verificări semantice.
+- [x] Verificarea setărilor Snapshot corectată:3+3 probe repetate, stare persistentă citită real și identică înainte/după.
+- [x] Descrieri scurte și ciorne/mesaje actualizate; tabelele curente nu mai amestecă stări istorice. Fără commit/push/publicare.
+- [ ] Lenovo după17:30: sincronizare, GN standalone/chunk/UVC, GStreamer/libcamera, matricea pe vârfurile consemnate și Firefox.
+
+[Raport](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/verificare-finala-macbook-20261023-150653/RAPORT.md). [Descrieri pentru review](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/upstream-ciorne/final/DESCRIERI-PATCHURI.md).
+
+Înregistrările de mai jos sunt istorice.
+
+## Completare verificări PipeWire — 2026-10-23T14:14:01.373022+03:00
+
+- [x] Toate cele72 teste Meson configurate:53 existente+19 noi, fără eșecuri sau skip; surse neschimbate și sesiune verificată. [Dovezi](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/continuare-macbook-20261023-124110/full-meson/RESULT.json).
+- [ ] Lenovo după17:30, GN standalone/chunk/UVC, matricea hardware și Firefox rămân distincte.
+
+## Snapshot și defectul suplimentar GStreamer — 2026-10-23T14:06:47.509194+03:00
+
+[Raport, patch final și pașii de reluare](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/continuare-macbook-20261023-124110/RAPORT.md).
+
+- [x] Snapshot51.0-2 real:3+3 probe originale/candidate,320x240 versus1296x736; vizor, fără înregistrare.
+- [x] GDB: cauza mesajelor GLib în PipeWire GST→SPA, nu atribuită aperture; master73974598 are același cod afectat.
+- [x] Candidat final: păstrează listele cu intervale și perechile discrete. Regresia candidatului meu intermediar este reprodusă, reparată și păstrată în istoric.
+- [x]19/19 teste Meson pe73974598;19+19 ASan/UBSan;9 controale finale preferință/INT_MAX;3+3 Snapshot final cu G_DEBUG=fatal-criticals,0 critice și restaurare confirmată.
+- [x] Artefactul complet cu teste se aplică pe master și după !2965 pe1.6.10; codul rezultat coincide cu cel compilat/testat.
+- [ ] După17:30: sincronizare Lenovo, GN WebRTC standalone, candidat chunk/UVC, noul fix GStreamer pe UVC/libcamera și matricea actuală. Lenovo nu a fost accesat în această continuare.
+- [ ] Firefox cu helper/checker final rămâne separat. Nimic publicat; textele publice PipeWire le scrie Viorel.
+
+Notele datate de mai jos păstrează starea istorică.
+
+## Continuare MacBook — 2026-10-23T12:57:41.451312+03:00
+
+[Raportul și pașii de reluare](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/continuare-macbook-20261023-124110/RAPORT.md).
+
+- [x] GN Chromium:27 teste pentru cadre invalide; mutantul produce21 eșecuri; restaurarea readuce27/27. Punte locală, nu ținta oficială standalone WebRTC.
+- [x] Adaptare !2965 pe1.6.10: păstrează INT_MAX; plugin separat compilat;8 controale original și9 candidat conforme.
+- [x] Proba fizică3+3 GStreamer/deviceprovider:180 cadre, original320x240 versus candidat1296x736. Formatul inițial identic, identitățile și restaurarea confirmate. Nu se declară Snapshot real testat.
+- [ ] Lenovo este indisponibil până după17:30: rămân ținta standalone, candidatul chunk/UVC și sincronizarea acestei runde.
+- [ ] Firefox cu helper/checker final rămâne separat. Nimic publicat.
+
+Notele datate de mai jos sunt istorice.
+
+## Reparații bancuri încheiate — 2026-10-23T07:54:44.772452+03:00
+
+[Raport complet pentru verificarea lui Viorel](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/reparatie-bancuri-20261023-064635/RAPORT.md).
+
+- [x] Reanaliza constatărilor și copiile înainte: toate cele cinci lacune confirmate. Precizare: presentedFrames poate depăși numărul callback-urilor; egalitatea nu este cerută.
+- [x] P3/P4: codul de ieșire real al clientului/observatorului, citirea logurilor, planul strict și identitățile componentelor pe fiecare variantă/rundă.
+- [x] P3: contorul final de ieșire în agregator; eșantionul periodic putea rămâne în urmă. Încercările respinse și controalele sunt păstrate.
+- [x] Garda audio: pidfd și refuz la verificare imposibilă; procesele străine nu sunt oprite și nu sunt declarate curățate.
+- [x] Validatoarele ambelor bancuri: JSON strict, timpi finiți, tipuri și contoare coerente. 24 rulări/96 cereri vechi revalidate pe copii, fără rescrierea originalelor.
+- [x] Verificarea Git izolată, aplicare efectivă; vechile succese prin Skipped patch nu mai sunt acceptate.
+- [x] P3/P4 pe masterele actuale, U/P3/P4/ambele,3 runde fiecare, MacBook și Lenovo;53/53 teste configurate per variantă/gazdă.
+- [x] Ciornele, README-urile, indexul și manifestul bancului actualizate. Uneltele instalate identic pe Lenovo; chitanța pachetului este în SYNC-VERIFIED.json al acestei runde.
+- [ ] Separat: GN27 teste/chunk și candidat Lenovo; Firefox cu helper/checker final; adaptarea !2965 care păstrează INT_MAX. Acestea nu sunt defecte închise de reparația bancurilor.
+
+Nimic publicat, comis sau împins în această rundă. Notele datate de mai jos păstrează starea istorică.
+
+## Audit bancuri — 2026-10-23T06:37:07.892148+03:00
+
+[Raport, dovezi și impact asupra rezultatelor](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/audit-bancuri-20261023-060922/RAPORT.md).
+
+- [x] Recalculare pe ambele laptopuri:921 teste configurate/gazdă,24 rulări/96 cereri,720 cadre native; datele reale respectă verificările suplimentare. Pachetul anterior3613 fișiere:0 diferențe pe ambele înaintea acestor actualizări documentare.
+- [x] Aplicare reală izolată a patch-urilor Chromium/WebRTC/checker/P3/P4; vechea metodă Git avea succes fals prin `Skipped patch`.
+- [ ] P3/P4: propagarea ieșirii clientului, erorilor de citire și verificarea dovezilor/identităților pe fiecare variantă/rundă.
+- [ ] Garda audio shell: citire imposibilă a unui proces viu nu trebuie acceptată ca oprire confirmată.
+- [ ] Validatoarele browser: valori temporale finite/JSON strict și concordanța contoarelor de cadre.
+- [ ] Înlocuirea metodei de verificare Git în uneltele auditate; noua dovadă izolată este deja salvată.
+- [ ] P3/P4: matrice nouă upstream/P3/P4/ambele, cu baze și identități actuale, apoi împachetare finală. Matricea camerei nu activează aceste patch-uri.
+- [ ] Actualizare factuală ciorne WebRTC/CITESTE/facetimehd și README v4.19; propagarea uneltelor lipsă/vechi pe Lenovo înaintea folosirii lor la căile istorice.
+
+Auditul nu a modificat implementări sau patch-uri și nu autorizează publicarea. Restanțele GN/chunk/Firefox/backport !2965 rămân separate. Notele datate de mai jos păstrează starea istorică.
+
+> **Retestare încheiată 2026-10-23T05:56:33.628348+03:00:** MacBook și Lenovo: **921 teste configurate/gazdă, 24 rulări browser /96 cereri, 720 cadre native**, inclusiv libcamera fizică Lenovo. 66 opriri curate și 6 aborturi originale așteptate. PW/WP sunt încă la vârfurile de azi-noapte, confirmat API+Git înainte/după probe. Chromium/WebRTC main au avansat; patch-urile se aplică și fișierele inspectate sunt neschimbate de ieri, fără a pretinde rularea noilor main-uri. **!936 este închis ca nenecesar; Julian anunță includerea fixului în0.5.19.** Ramura0.5 curentă încă nu îl conține. [Raport și dovezi](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/retestare-matrice-20261023-053324/RAPORT.md). Nicio nouă publicare, instalare sau ștergere în rundă. Notele de mai jos sunt istorice.
+
+> **Încheiat 2026-10-22T23:57:08.187744+03:00:** curățarea A a eliberat **10,50 GiB**, fără ștergerea logurilor/proiectelor. Matrice actualizată pe ambele laptopuri: **921 teste configurate/gazdă, 24 rulări browser /96 cereri și 720 cadre native**; **66 opriri curate**, plus **6 aborturi originale așteptate** pe WP0.5/PW1.4. Master PW `110e1a42cefa`, WP `cfd76edb90c3`; PW1.6 =tag1.6.10. !936 are CI trecut, încă neintegrat. Proba GStreamer inițială Lenovo cu negociere JPEG/raw blocată este păstrată; seria nativă V4L2 folosește YUY2@30 explicit. [Raport și limite](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/curatare-si-matrice-20261022-230142/RAPORT.md). Documentele datate de mai jos păstrează starea istorică.
+
+> **2026-10-22T22:50:16.810419+03:00:** [WirePlumber !936](https://gitlab.freedesktop.org/pipewire/wireplumber/-/merge_requests/936) publicat către0.5, 57/57 teste noi și CI trecut. Viorel a revocat amânarea; !917 este deja în0.5.18 și nu se retrimite. [Raport](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/preluare-wp05-si-spatiu-20261022-223253/RAPORT.md). [Analiză spațiu, fără ștergeri](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/preluare-wp05-si-spatiu-20261022-223253/SPATIU-MACBOOK.md): A propus 10,50 GiB. Notele datate de mai jos păstrează starea istorică.
+
+> **2026-10-22T22:17:03.032978+03:00 — sincronizare încheiată pentru materialul de audit verificat:**22,291 fișiere de dovezi și documentele curente, manifeste SHA-256 pe ambele laptopuri. [Raport și acoperire](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/sincronizare-audit-completa-20261022-1824/RAPORT.md). PipeWire1.6.10 este publicat; cele două fixuri pentru cameră lipsesc încă din stabil. Master110e1a42cefa le păstrează, dar noile vârfuri necesită propria confirmare runtime. [Verificarea de cod](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/sincronizare-audit-completa-20261022-1824/PIPEWIRE-1.6.10-SI-MASTER.md).
+
+> **Actualizare 2026-10-22T22:07:29.863269+03:00: WirePlumber !934 integrat pe master**, de Julian Bouzas la20:39 EEST, CI trecut. Ramura0.5/0.5.18 încă nu include fixul; preluarea rămâne amânată. [Index unic pentru auditor](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/INDEX-AUDIT-CURENT.md) · [dovada upstream](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/sincronizare-audit-completa-20261022-1824/INTEGRARE-UPSTREAM.json). Notele datate de mai jos sunt istorice.
+
+> **Stare curentă 2026-10-22T18:27:21.777021+03:00:** [Index unic pentru auditor și reluare](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/INDEX-AUDIT-CURENT.md). WP !934 este publicat, **CI trecut**, review în așteptare;0.5 amânat. Indexul enumeră toate etapele, dovezile, bancurile și restanțele; notele datate de mai jos păstrează starea istorică.
+
 # TODO — plan tehnic & stare reală
+
+> **2026-10-22T17:49:15.965944+03:00 — Prioritățile1 și2 încheiate:** Lenovo/libcamera confirmate (240 cadre native,10 rulări/40 cereri browser), [WirePlumber !934](https://gitlab.freedesktop.org/pipewire/wireplumber/-/merge_requests/934) publicat către master, commit737443255a00. CI în rulare, review în așteptare.0.5 amânat, fără backport publicat. [Raport și chitanțe](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/confirmare-lenovo-wp-libcamera-20261022-172117/RAPORT.md). Celelalte patch-uri/porți rămân separate.
+
+> **WP Lenovo/libcamera 2026-10-22T17:42:09.470359+03:00: prioritatea1 încheiată.**66/57 teste,24 opriri candidate curate vs6 aborturi vechi;240 cadre native și10 rulări browser/40 cereri. [Raport și dovezi](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/confirmare-lenovo-wp-libcamera-20261022-172117/RAPORT.md). MR master în pregătire;0.5 nu se publică acum. Restanțele WebRTC separate nu sunt închise de aceste probe.
+
+> Clarificare WP: !917 este deja în master și0.5.18; candidatul separat WpSpaDevice rămâne local în ambele. [Situația pe ramuri](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/audit-candidat-wp-20261022-140534/SITUATIE-PE-RAMURI.md).
+
+## Audit candidat WP — 2026-10-22T14:18:56.628959+03:00
+
+- [x] Candidatul existent corespunde stivei reproduse; durata contextului și terminarea sincronă verificate. Nicio altă implementare creată.
+- [x]16 controale suplimentare libcamera: manager activat/dezactivat/eliberat, fără camere enumerate; identități și oprire verificate.
+- [x] !917 integrat este precedentul WpImplModule, nu reparația publicată a cazului nostru WpSpaDevice. Ciornă engleză pregătită, netrimisă.
+- [x] Originea chunk-ului gol păstrată ca observație, fără atribuirea unui bug PipeWire.
+- [ ] Lenovo/captură fizică libcamera/browser după17:30; GN pentru testele WebRTC rămâne separat.
+- [Raport și ciornă](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/audit-candidat-wp-20261022-140534/RAPORT.md).
+
+## Pregătire review și CLA — 2026-10-22T13:50:46.263705+03:00
+
+- [x] API autentificat pe Chromium/WebRTC: Viorel Cernateanu, vrilutza@gmail.com. Chromium listează Google CLA semnat; WebRTC `src` nu cere acorduri locale Gerrit. Nu se repetă login/semnare.
+- [x] Enumerarea se aplică pe main-urile curente Chromium e5220e91f1bc / WebRTC b38573bb56e5; producția atinsă este identică cu baza probată. Checkerul se aplică. Nu este afirmată compilarea întregului main nou.
+- [x] Ciorne WebRTC/Mozilla/facetimehd actualizate; checkerul, chunk-ul și WP au mesaje/patch-uri distincte. Artefactele canonice de enumerare rămân neschimbate.
+- [ ] Porțile restante: Lenovo/libcamera după17:30; GN pentru cele27 teste de chunk; Firefox cu ultimele schimbări; checkout-uri curate/presubmit și publicări aprobate. Originea chunk-ului natural rămâne separată.
+- [Tabelul complet de maturitate](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/upstream-ciorne/final/STARE-TRIMITERE.md). [Dovezile verificării](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/pregatire-review-20261022-133726/RAPORT.md).
+
+## Continuare MacBook, Lenovo oprit — 2026-10-22T12:53:44.693005+03:00
+
+- [x] Candidat WirePlumber: master66/66, ramura0.5 57/57; 24 opriri corectate curate vs6 aborturi vechi așteptate pe PW1.4; GDB confirmă ambele callback-uri pe firul proprietar.
+- [x] Candidat WebRTC pentru chunk gol/lipsă/corupt:27 teste ×4 antete PW sub ASan/UBSan;9 controale Chrome (2 aborturi vechi așteptate,5 capturi corectate,2 controale vechi fără fatal); componenta normală264/264 native.
+- [x] Matrice normală MacBook cu noii candidați:8 rulări/32 cereri, oprire curată inclusiv PW1.4; recalculare independentă și identități verificate.
+- [x] Banc libcamera separat:31 observator +14 integrare +77 regresii;40 verdicte reale păstrate. Patru pluginuri SPA construite cu libcamera0.7.2; nu este probă pozitivă în browser.
+- [ ] Lenovo disponibil după17:30: verificare/sincronizare și candidații noi pe el; captură WebRTC pozitivă libcamera/UVC, cu graful și identitatea backendului verificate.
+- [ ] GN pentru cele27 teste noi; Firefox cu ultimele schimbări; originea naturală a chunk-ului size0 și layout-urile brute neacoperite rămân distincte.
+- [Raportul și restanțele exacte](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/extindere-libcamera-si-defecte-20261022-081019/RAPORT.md). Încercările proprii invalide sunt păstrate. Canonicul v4.18.4 și runda anterioară rămân neschimbate; nimic publicat/comis.
+
+## Verificarea combinațiilor — 2026-10-22T07:27:58.459589+03:00
+
+- [x] Patru PipeWire (1.4, tag1.6.9,1.6 după tag,master) × WPmaster/0.5 pe ambele laptopuri; surse fixate, suite Meson complete configurate, identități independente. Vârfurile remote sunt încă cele fixate.
+- [x] Banc v4.18.4: rânduri cameră invalide, bool ca int și semnale fatale utility cu părinte rc0 respinse;264 controale relevante; istoricul validărilor păstrat.
+- [x] Helper WebRTC complet compatibil cu antetele PW1.4;48.000 choice-uri SPA sub ASan/UBSan și14 unitare. Obiect Clang identic, patch final actualizat. *Precizare 24 oct: compatibil e doar helperul; modulul WebRTC nu compilează cu antetele 1.4 (`SpaValueIsType` din `pipewire_session.cc` folosește deja `spa_pod_type_size`), deci mesajul de commit nu mai pretinde compatibilitate cu 1.4.*
+- [x] Candidat separat Start+StopCapture:8 rulări /32 cereri pe fiecare laptop cu bibliotecile client potrivite;264/264 native fiecare; intercalare veche reprodusă și corectată pe ambele. Nu se amestecă cu enumerarea.
+- [ ] WirePlumber/PW1.4: oprire SPA pe alt fir, SIGABRT, reprodus și fără browser pe ambele; nereparat. Direcție: invocare pe firul proprietar, cu auditul ciclului de viață.
+- [ ] Cadru gol către Chromium:0 octeți vs1.907.712 în controlul diagnostic MacBook, înainte de StopCapture; ProcessBuffers neschimbat nu exclude size0. Nereparat, originea producerii rămasă de izolat; rularea INVALIDĂ păstrată.
+- [x] libcamera analizată: minimum Meson0.2.0 pentru PW1.4,0.6.0 pentru1.6/master; MacBook0 camere, Lenovo1 UVC. Control nativ prin SPA libcamera/PWmaster:30 cadre640×480, oprire curată. Browser libcamera netestat; bancul V4L2 nu este generalizat implicit.
+- [ ] Firefox cu layout-ul helper și noua corecție de sincronizare; pașii autorului/CLA și publicări separate. Nu declarăm toate problemele închise.
+- [Raport, dovezi și limite](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/validare-combinatii-20261022-053841/RAPORT.md). Secțiunile mai vechi de mai jos păstrează starea de la data lor. Nimic publicat/comis.
+
+## Reverificare suplimentară cerută — 2026-10-21T20:41:59.032937+03:00
+
+- [x] Repetare pe ambele laptopuri: tag1.6.9, ramura1.6, master; cicluri de redeschidere și diagnostic vechi/corectat, fără schimbarea patch-urilor înghețate. [Plan/stare](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/reverificare-cauza-20261021-203434/STATUS.md).
+- [x] Vârfuri remote reverificate: încăb359cb0a1987 /34f82548a0ce /WP9ac17bbcc7da. Suitele configurate și264teste native au trecut din nou pe ambele. Build RAOP separat53/53 pe ambele; verificator exact după o eroare proprie de numărare. [Raport](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/reverificare-cauza-20261021-203434/RAPORT.md). Standalone18/18 cu fixture local RunLoop, cauza Thread::Current explicată.
+
+## Încheiere pe ambele laptopuri — 2026-10-21T20:09:34.675229+03:00
+
+- [x] Cauza aserțiunii demonstrată în funcțiile reale, pe ambele camere: checker activ după unlock; callback pe alt fir, aceeași adresă, contor1/fail. Corecția mută durata checkerului în lock: release0 înainte de unlock, callback0/OK. [Cauză și patch separat](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/investigatie-concurenta-webrtc-20261021-160840/CAUZA.md).
+- [x] Tag PW1.6.9, vârful1.6 `34f82548a0ce`, master `55cc4f0dec1e` și noul master `b359cb0a1987`, WP `9ac17bbcc7da`, construite/testate pe ambele. Ultimul master:51/51 PW +66/66 WP pe fiecare; două teste RAOP neconfigurate din lipsa libplist, explicate separat.
+- [x] Matrice:23 rulări/68 cereri pe fiecare laptop,16 capturi corectate valide și4 aborturi diagnostice așteptate pe fiecare, plus3 controale normale vechi. Perechea cu trasarea reală este separată.264/264 native pe fiecare,13 dezactivate nerulate. [Raport comun](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/retestare-ambele-20261021-172537/RAPORT.md).
+- [x] Camera/portal/audio restaurate pe ambele, AppArmor/permisiuni temporare Lenovo eliminate/restaurate; sursele și507 artefacte originale neschimbate. Login CLI și numele Viorel Cernateanu confirmate pe ambele Gerrit-uri.
+- [ ] Publicare: revizuirea autorului și CLA, bug/CL-uri separate; corecția nouă de sincronizare se pregătește separat de enumerare. Noul candidat netestat în Firefox; aserțiunea hardware standalone Thread::Current rămâne separată. Nimic publicat/comis.
+- Sincronizarea finală a documentelor este consemnată prin REVIEW-MANIFEST.json/SYNC-FINAL.json în raportul comun; secțiunile datate de mai jos păstrează stările istorice.
+
+## Continuare pe ambele laptopuri — 2026-10-21T17:30:40.369766+03:00
+
+- [x] Mecanismul aserțiunii WebRTC confirmat: ordinea RAII; 3 reproduceri vechi,3 capturi corectate diagnostice,6 normale; 264/264 native cu componenta verificată. Banc FATAL:12 controale;22 verdicte arhivate neschimbate. [Raport](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/investigatie-concurenta-webrtc-20261021-160840/RAPORT.md).
+- [ ] Cererea nouă: Lenovo +MacBook, tag1.6.9, ramura1.6 `34f82548a0ce`, master nou `55cc4f0dec1e`, WP `9ac17bbcc7da`. Construcții/teste și sincronizare în curs. [Plan](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/retestare-ambele-20261021-172537/PLAN.json).
+- [x] Login CLI Gerrit pe ambele servere; Viorel verifică personal numele Google și CLA. Nimic publicat/comis.
+
+## Înainte de drumul acasă — 21 octombrie
+
+- [x] Aserțiunea WebRTC reprodusă 3/3; corecție izolată a ordinii RAII: 3/3 cu întârziere și 6/6 normale stabil/master. Banc FATAL întărit, 12 controale.
+- [ ] Încheiere: recalculare independentă și proveniența componentei din suita nativă, apoi raport final. Observatorul nativ nu urmărea copiii lansatorului; încercarea nu este accept final.
+- [Reluare și dovezi](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/investigatie-concurenta-webrtc-20261021-160840/RELUARE.md). Viorel pleacă; continuăm după revenire.
+
+## Pregătirea trimiterilor — 2026-10-21T15:09:12.206989+03:00
+
+- [x] Alternativa vivid scoasă din reproducătorul WebRTC; pachetele și sursele probate neschimbate.
+- [x] Dubluri/status public verificate: Chromium 249953/40321987 Obsolete; folosim Bug: 40252886 ca raport conex activ pentru cazul STEPWISE. WebRTC: niciun duplicat direct identificat în căutările consultate.
+- [x] Git OAuth pregătit doar local, identitate/global păstrate; helperul declară LOGIN_REQUIRED. Conturile browser/CLA nu sunt declarate inexistente.
+- [x] Apply-check pe main-urile actuale Chromium e40d7b6a1623 /WebRTC 79bb12ff5894, fără rebase sau compilare nouă.
+- [x] Dovezi pentru cererile PipeWire 1.6 pregătite: pasul se aplică; !2965 cere și adaptare care păstrează clamp-ul INT_MAX din stabil. Conflictul nu este trecut drept succes.
+- [x] Ramura PW 1.6 `34f82548a0ce` testată separat de tag: 50/50 PW, 66/66 WP, seria repetată 8 VALID /32 cereri. Pasul și preferința încă defecte; backport adaptat netestat. [Raport](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/test-ramura-1.6-20261021-152542/RAPORT.md).
+- [ ] Constatare nouă: aserțiune WebRTC OnStreamParamChanged `race_checker301` într-o încercare (proces principal Chrome rc0, utility abort, validator INVALID). Repetarea 8/8 nu o anulează. De izolat separat; nu se declară zero crash-uri sau atribuirea la patch.
+- [x] Viorel confirmă conturile Chromium și WebRTC Gerrit create și autentificate în Chrome (21 octombrie).
+- [ ] Viorel: citește codul/textele, confirmă CLA, schimbă numele Google în Viorel Cernateanu și comunică URL-ul noului bug WebRTC după publicarea textului revizuit. Login-ul CLI a reușit pe ambele Gerrit-uri (HTTP 200, email corect).
+- [ ] După pașii personali: actualizarea Bug:webrtc:număr și uploadurile aprobate; Mozilla după URL-urile WebRTC; textele PW sunt ale lui Viorel; facetimehd după legăturile reale.
+- [ ] Sincronizare Lenovo la revenirea accesului.
+- [Instrucțiuni pas cu pas](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/PASI-PENTRU-VIOREL.md) · [Raport pregătire](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/pregatire-trimitere-20261021-144509/RAPORT.md). Nimic publicat sau comis.
+
+## Camera în browsere — încheiere tehnică 2026-10-21T09:46:52.418627+03:00
+
+- [x] Trei lacune în unelte reparate/instalate pe MacBook; 17/17 controale noi și 28/28 controale de manifest trecute.
+- [x] Chrome complet cu helperul final: construit 08:46, confirmare incrementală cu amprenta întărită, 15/15 V4L2 și 264/264 suita activă; 13 dezactivate nerulate.
+- [x] Campanie finală: 12 rulări /48 cereri /241 colectări; 36 capturi reușite și 12 NotFoundError așteptate. Încă 3/3 cereri explicite fără scalare pe master.
+- [x] Jitsi Meet adăugat: 4 cazuri, previzualizare reală pe V4L2/PipeWire cu patch, NotFoundError fără patch. Întâlnire cu transmisie între participanți netestată.
+- [x] PW e0ca5ed944df / WP 9ac17bbcc7da încă vârfurile remote la 09:42, probă fizică pe exact browserul final. Portal/audio restaurate, camera liberă, fără procese de test sau OOM observat.
+- [ ] Propagare Lenovo la revenirea accesului; acolo este încă instalarea anterioară, nu aceste corecții.
+- [ ] Publicare: revizuirea autorului, verificarea statusului/dublurilor, CLA/Gerrit, apoi aprobarea concretă pentru Chromium, WebRTC, Mozilla, cererile PW 1.6 și informarea facetimehd. Nimic comis/publicat aici.
+- [Starea și dovezile](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/START-AICI-21oct.md). Notele datate de mai jos sunt istorice; restanțele tehnice închise aici nu se redeschid prin formularea lor anterioară.
+
+## Corecții și confirmare Chrome — 21 octombrie, 09:26
+
+- [x] Cele trei lacune din unelte sunt reparate pe MacBook: dependențe Git cu diff/fișiere noi, helper indirect fixat și manifest FIFO refuzat fără blocare. 17/17 controale noi și 28/28 controale existente de manifest trecute.
+- [x] Confirmarea incrementală cu uneltele noi: rc=0, 0 pași noi. Testele native pe executabilul final: V4L2 15/15 și suita activă 264/264; 13 teste dezactivate nu au fost rulate.
+- [ ] Campania fizică finală V4L2 / PipeWire 1.6.9 / mastere noi, restaurare și raport final — în curs.
+- [ ] Propagarea noilor unelte/dovezi pe Lenovo, când este disponibil; nu blochează probele MacBook.
+- [Raport, martori și rezultate native](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/inchidere-tehnica-20261020-194159/corectii-unelte-20261021-072252/RAPORT.md). Secțiunile de mai jos păstrează stările istorice la ora lor; nu constituie restanțe noi dacă sunt închise aici.
+
+## Chrome construit — 2026-10-21T08:57:37.546745+03:00
+
+- [x] Compilarea Chrome complet cu helperul final s-a terminat la 08:46, rc=0, 21.633 pași; executabilele chrome și capture_unittests prezente, amprente salvate.
+- [ ] Trei corecții de unelte, confirmare incrementală cu amprenta întărită, teste native și probe fizice. Compilare reușită nu înseamnă încă validare funcțională a acestui browser.
+- [Dovezi](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/inchidere-tehnica-20261020-194159/CHROME-FINAL-CONSTRUIT.json).
+
+## Curățare A aplicată — 2026-10-21T07:18:33.449350+03:00
+
+- [x] Numai A: 12/12 grupuri, **9,87 GiB eliberați**, spațiu disponibil **11,15 → 21,03 GiB**. Versiunile în uz și rezerva păstrate, B/C și /tmp neatinse; compilarea continuă. [Jurnal și rezultat](intretinere-sistem/analiza-spatiu-20261021-064453/aplicare-A-20261021-071704/RAPORT.md).
+- [ ] Cele trei lacune ale uneltelor rămân de reparat: pregătire/testare izolată în timpul compilării, instalare după terminarea ei și confirmare incrementală. [Plan și originale fixate](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/inchidere-tehnica-20261020-194159/corectii-unelte-20261021-072252/PLAN.md). Nu se șterg obiectele compilării.
+
+## Reauditare spațiu — 2026-10-21T07:10:26.075298+03:00
+
+- [x] Categoria A reconfirmată: 89.406 intrări neschimbate; fără utilizări active/în medii, fără erori la verificarea cu sudo; 309 symlink-uri inspectate, fără referințe externe către selecție; indexurile npm și cele 30 arhive APT verificate. **9,87 GiB rămân propuși, nimic șters.** Versiunile curente și rezerva se păstrează.
+- [Raport cu tabelele și dovezile](intretinere-sistem/analiza-spatiu-20261021-064453/a-doua-trecere-20261021-070538/RAPORT.md). Eliminarea așteaptă aprobarea selecției și o reverificare imediat înainte de operație.
+
+## Analiză spațiu MacBook — 2026-10-21T07:00:18.363712+03:00
+
+- [x] Inventar local și clasificare pentru aprobare: **A ~9.87 GiB** (cache-uri și vechi executabile nefolosite, cu versiunile curente/rezerva păstrate), B regenerabile cu efect asupra reinstalării/recompilării, C proiecte/date/dovezi. 89.406 intrări A inventariate; verificarea privilegiată nu a găsit referințe active sau erori. Docker conține baze de date ale proiectelor; Playwright este folosit de cinci instalări.
+- [ ] Curățarea numai după aprobarea selecției. **Nu s-a șters nimic.** /tmp este tmpfs; cei 1.15 GiB de descărcări abandonate de acolo nu se adună la spațiul pe disc.
+- [Raportul și tabelul complet](intretinere-sistem/analiza-spatiu-20261021-064453/RAPORT.md). Compilarea Chrome continuă și nu a fost modificată.
+
+## Verificare KWin — 2026-10-21T05:56:43.141594+03:00
+
+- [x] Pe MacBook nu există pachete KWin/Plasma instalate și nu rulează KWin. Testul `kwin-5523` folosește programe video care imită acel comportament. Bibliotecile KDE sunt necesare inclusiv pentru EasyEffects; simularea autoremove propune 0 eliminări. Nu s-a șters nimic și nu s-a eliberat spațiu prin această verificare. [Dovezi](intretinere-sistem/verificare-kwin-20261021-055643/RAPORT.md).
+
+## Reauditare 2026-10-21T05:46:02.026418+03:00
+
+- [ ] Amprenta surselor: include modificările și fișierele noi din dependențele Git, cu tratarea corectă a arborilor administrați de gclient. Reproducător izolat: hash neschimbat după editare și fișier nou.
+- [ ] Faza Chrome: fixează și utilitarul indirect stare-constructie.sh, nu doar wrapperul. Reproducător izolat: helper schimbat, faza întoarce 0. Utilitarul real corespunde copiei arhivate, fără dovadă de schimbare.
+- [ ] Manifest: deschidere fără blocare și refuz al FIFO-ului pe același descriptor. Reproducătorul actual rămâne în wait_for_partner. Probele reale au fișiere regulate și rămân susținute.
+- Cele 170 depozite Chromium și 61 standalone au fost inspectate. Diferența clang-format din webpagereplay este un pin gclient contabilizat, nu o editare omisă. Testele/rulările existente nu sunt invalidate automat. Nu se schimbă scripturile fixate ale compilării active; după corecțiile uneltelor se face confirmarea incrementală înaintea probelor finale.
+- [Raport și dovezi](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/inchidere-tehnica-20261020-194159/reaudit-21oct-0528/RAPORT.md). În această trecere s-au făcut numai verificări, nu reparații ale implementărilor.
+
+## Camera în browsere — implementare 2026-10-21T04:54:33.756670+03:00
+
+- [x] Banc v4.18: parser strict, pin prealabil și verificarea manifestului la colectare/ieșire; 209 controale MacBook, 3 rulări fizice /12 cereri. Lenovo: sincronizare verificată și 29 controale de manifest trecute.
+- [x] WebRTC standalone oficial: GN video_capture_tests construit, presubmit complet cu 0 erori/0 avertismente, formatter fără diff; 14 teste noi +1 existent trecute. Suita hardware se oprește cu aceeași aserțiune Thread::Current() și fără patch; nu este numărată ca trecută.
+- [ ] Chrome complet cu helperul final: compilare în curs, apoi capture_unittests și probele fizice ale exact acelui executabil. Nu se schimbă sursele compilării active.
+- [x] Mastere PW e0ca5ed944df / WP 9ac17bbcc7da construite și testate: 53/53 PW cu suita principală activată, 66/66 WP. Proba fizică pe această pereche rămâne după compilarea browserului.
+- Cache-ul de obiecte Firefox este arhivat și verificat pe Lenovo înaintea eliberării copiei locale; sursele, variantele, pachetele și logurile sunt păstrate.
+- [Starea curentă și dovezile](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/START-AICI-21oct.md). Secțiunile mai vechi de mai jos consemnează starea la data lor. Nimic nou comis sau publicat.
+
+## Precizări după audit — 2026-10-20T19:27:13.289258+03:00
+
+- Corectură la rezumatul meu: 37/37 PipeWire = 9 pluginuri SPA + 1 SPA UMP + 26 validări JSON + 1 protocol nativ; suita principală era `tests=disabled`. Capturile reale sunt dovezi separate. Nu declarăm suita completă trecută.
+- Bancul principal există: `BANC-CURENT.json` → v4.17 / `banc-v4-20oct`, intrarea `banc-curent.sh`; START-AICI îl indică acum explicit. Parserul de manifest este încă de reparat.
+- Testul diferențial recompilat independent: 300.000 comparații pe fiecare dintre două versiuni SPA, 0 diferențe; mutantul este detectat. GN/presubmit standalone și execuția layout-ului final în browser nu sunt închise de acest test.
+- Cele 507 de manifeste bine formate includ copii/controale, nu 507 probe fizice independente. Probele reale verificate anterior rămân susținute.
+- Textele upstream trebuie scurtate/corectate conform domeniului dovedit; nu au fost editate în această trecere. Nici implementările, bancul sau arhivele originale nu au fost schimbate; nimic șters/publicat.
+- [Răspuns și dovezi](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/raspuns-audit-20261020-192349/RAPORT.md).
+
+
+## Ultimul master PipeWire/WirePlumber — 2026-10-20T19:04:03.468345+03:00
+
+- Verificat pe MacBook: PipeWire `1a83c8211eae` (5 commit-uri noi), WirePlumber `b17b46e84d2c` (neschimbat); **37/37 + 66/66**, patru rulări reale Chrome/Firefox fără/cu patch, **16 cereri și 69 colectări** conforme. Portal/audio restaurate; camera închisă. Manifestele reale verificate strict independent, bancul nu este reparat tacit.
+- Ultimul commit properties inițializează diagnosticul. Am demonstrat separat că wrapperul public raportează încă 0 la obiect invalid, și înainte/după commit. Refactorizarea PulseAudio schimbă Audio/Duplex source→monitor; efectele audio reale rămân neverificate. Nu sunt reparațiile enumerării sau ale bufferelor.
+- **Rămân deschise:** parserul strict al manifestelor în banc; GN/presubmit WebRTC standalone; browser complet coerent pentru layout-ul final WebRTC dacă îl declarăm probat exact; pregătirea conturilor/bug-urilor și aprobările de publicare. Nu pretindem zero regresii în orice proiect.
+- [Punct unic de intrare](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/START-AICI-20oct.md) · [Raportul masterelor](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/retestare-mastere-20261020-185216/RAPORT.md). Documente/dovezi: [sincronizare Lenovo](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/sincronizare-audit-mastere-20261020-190535/RAPORT.md), cu rezultat hash separat; masterele nu sunt declarate testate fizic acolo.
+
+
+## Reauditare camera/banc — 20 octombrie, 18:36+
+
+**Nu este închis totul:** validatorul acceptă greșit un manifest trunchiat sau cu o cale repetată, marcând proveniența „completa”. Cele două contraexemple sunt demonstrate pe copii; datele reale au manifeste complete și distincte și rămân susținute. **Reparația strictă a manifestului este de făcut**, apoi controale și propagare Lenovo. Mai rămân GN/presubmit WebRTC standalone și un browser complet coerent pentru execuția exact a noului layout WebRTC cu helper; probele bune actuale folosesc variantele salvate. 241 controale existente trec, 16 rulări/64 cereri/282 colectări recalculate, 5.323 intrări de manifest intacte. Niciun patch sau banc modificat în această trecere de audit. Nicio publicare nouă.
+
+[Starea unică și navigarea](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/START-AICI-20oct.md) · [Audit](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/audit-inchidere-20261020-183854/RAPORT.md).
+
+
+## Camera în browsere — actualizare 20 octombrie, seara
+
+- **Mastere verificate din nou:** PipeWire `c2fec6c037a1`, WirePlumber `b17b46e84d2c` (câte 4 commit-uri noi față de prânz). Pe MacBook: 37/37 și 66/66 teste; 4 probe fără/cu patch în Chromium/Firefox, 16 cereri și 70 colectări conforme. Portalul și audio restaurate.
+- **Pachet Chromium:** formatat, 6 fișiere, 264 teste și presubmit conforme. SHA-256 `7e2b3eaac2c3961c114102ff45ee3de177252627d1b9c575e24c504d2c0852e1`.
+- **Pachet WebRTC:** 6 fișiere, helper comun și 14 teste SPA reale; 14/14 și control vechi 3/11 conform. SHA-256 `695c556d2ddbc347b22662ffa2cbfd82bdc894622ea2635b7c6c6e80558f2b49`. **Restanță: GN/presubmit complet în mediul WebRTC standalone/CI**, absent din checkout-ul Chromium. Nu este declarat gata tehnic fără această precizare.
+- **Lenovo disponibil:** banc v4.17/controler/P3/P4 copiate, 29 amprente verificate; 123 controale și o probă reală UVC/V4L2 cu 4 capturi conforme. Camera închisă, formatul inițial restaurat. Masterele noi și campania fizică P3/P4 **nu** au fost rulate acolo. Wrapperul P3/P4 necesită căile build-urilor Lenovo înaintea folosirii media.
+- **Încercare neacceptată:** Chrome din out/Release (construit doar parțial pentru țintele mici) iese 127 cu simbol Blink lipsă. Bancul propagă eroarea; nu afectează variantele salvate folosite în probele master valide. Nu pornește o nouă compilare completă în această pregătire.
+- **Ciorne:** Chromium/WebRTC, Mozilla și informare facetimehd pregătite; dovezi PipeWire originale selectate, textele PipeWire rămân ale lui Viorel. CLA/Gerrit, revizuirea autorului, statusul bug-ului/dublurile și aprobările concrete de publicare rămân deschise. **Nimic nou comis sau publicat.**
+- [Plan curent](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/PLAN-TRIMITERE-UPSTREAM-20oct.md) · [Raport și jurnal](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/pregatire-pachete-20261020-132503/RAPORT.md) · [Probe master](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/reverificare-mastere-20261020-173452/RAPORT.md).
+
 > **STARE** · singurul document de aici care spune „acum"; secțiunea [0.1](#01-rapoarte-trimise-upstream--tablou) e tabloul upstream, actualizat pe **19 octombrie 2026** prin API și arhive publice. Restul secțiunilor sunt datate și se citesc ca istorie.
 
 Fișier unic: **ce e rezolvat**, **ce e deschis și se poate repara**, **ce e won't-fix** și **ce s-a respins tehnic**
@@ -10,7 +724,7 @@ Fișier unic: **ce e rezolvat**, **ce e deschis și se poate repara**, **ce e wo
 | **Hardware** | MacBookPro14,1 (A1708), i5-7360U 2C/4T, Iris 640, 8 GB RAM, Apple S3X NVMe, BCM4350C0 (WiFi PCIe + BT UART), FaceTime HD, CS8409/CS42L83 |
 | **Software** | Debian testing/forky, kernel `7.1.13+deb14-amd64` (+ `7.1.12` păstrat ca rezervă, DKMS construit pe ambele), pipewire 1.6.8-1, wireplumber 0.5.17-1, GNOME/Wayland. Driver cameră: DKMS `facetimehd/0.7.2`. *(Verificat pe mașină pe 12 sep 2026; pachetele PipeWire/WirePlumber reverificate cu `dpkg` pe 18 sep.)* |
 | **Verificat pe viu** | Cifrele de BT/WiFi: **8 august 2026**, pe **196 de boot-uri** (19 mai → 8 aug); anterior 27 iulie, 173 de boot-uri. Starea upstream și cea a mașinii: **12 septembrie 2026**, prin API și direct pe mașini. Ce nu s-a putut reverifica e marcat explicit `⏳ neconfirmat`. |
-| **Stare de bază** | Problemele hardware și configurația de mai sus sunt consemnări datate. **Upstream, verificat pe 19 oct:** **20 PR-uri facetimehd și 15 MR-uri PipeWire integrate**; deschise: PipeWire !2951, facetimehd #356 (Draft) și #360, firmware #14 și #16, audio #189, Debian dkms !8. **Nou:** autorul lui #357 a modificat codul după observațiile noastre (de reverificat); #359 a preluat comentariul propus, dar rămâne deschis; #336 este închis de raportor, cu mulțumiri. Cele două patch-uri kernel KMSAN sunt publice, fără răspuns. Tabloul complet: [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou). |
+| **Stare de bază** | Problemele hardware și configurația de mai sus sunt consemnări datate. **Upstream, verificat pe 6 nov:** **20 PR-uri facetimehd, 21 de MR-uri PipeWire, firmware #14 și 4 CL-uri Chromium/WebRTC integrate**; deschise: facetimehd #356 (Draft), #360, #361, firmware #16, audio #189, Debian dkms !8, KMSAN v2 (Acked-by pe 3/4). *(Starea din 19 oct, păstrată:)* deschise atunci: PipeWire !2951, facetimehd #356 (Draft) și #360, firmware #14 și #16, audio #189, Debian dkms !8. **Nou:** autorul lui #357 a modificat codul după observațiile noastre (de reverificat); #359 a preluat comentariul propus, dar rămâne deschis; #336 este închis de raportor, cu mulțumiri. Cele două patch-uri kernel KMSAN sunt publice, fără răspuns. Tabloul complet: [secțiunea 0.1](#01-rapoarte-trimise-upstream--tablou). |
 
 **Legendă:**
 
@@ -59,7 +773,11 @@ de kernel. Stă în [secțiunea 7](#7--rezolvate-arhivă-tehnică) fiindcă acol
 
 ## 0.1 Rapoarte trimise upstream — tablou
 
-**Actualizat la 19 octombrie 2026.** Verificare prin API, cu acces autentificat la GitHub,
+**Stare curentă verificată pe 6 noiembrie 2026, 13:47 EET:** [raport complet](pipewire-5363/rezultate/urmarire-pr-6nov-1345/RAPORT.md) și secțiunea de sus a acestui fișier. 58 de fire GitHub, 36 freedesktop, 2 GNOME, 2 Salsa, 4 CL-uri Gerrit. **21 de MR-uri PipeWire** proprii integrate (niciunul deschis), 20 de PR-uri facetimehd, facetimehd-firmware #14, toate cele 4 CL-uri Chromium/WebRTC. Tabelele de mai jos au rânduri actualizate pe 6 nov acolo unde starea s-a schimbat; restul detaliilor datate 19–20 octombrie sunt arhivă.
+
+*(Verificarea anterioară, 27 octombrie: [raport](pipewire-5363/rezultate/stare-trimiteri-20261027-001403/STARE.md) — 55 fire GitHub, 37 GitLab, 4 CL-uri Gerrit; 20 PR-uri facetimehd și 18 MR-uri PipeWire integrate atunci.)*
+
+**Arhiva verificării din19octombrie2026.** Verificare prin API, cu acces autentificat la GitHub,
 freedesktop, GNOME și Salsa: **51 de fire GitHub și 44 de fire GitLab, în 13 proiecte/repository-uri**,
 inclusiv fire de context și propuneri ale altora. Căutarea include contribuțiile publice descoperite
 din cont, evenimentele de comentare și trimiterile din acest document; nu reprezintă o numărătoare
@@ -71,18 +789,41 @@ seriei KMSAN. „Publicat”, „review favorabil” și „integrat” sunt st�
 | Unde | Ce s-a schimbat | Ce urmează |
 |---|---|---|
 | [facetimehd #357](https://github.com/patjak/facetimehd/pull/357) | **Deschis.** Autorul a adăugat azi `94d44e87a002` (17:46 ora României: aplicarea expunerii manuale la pornire și bias numai în modul automat) și `e99eaf7f27f6` (17:51: payload-ul ratei rămâne pe 16 biți). Mesajele răspund observațiilor noastre din [review-ul de pe 16 oct](https://github.com/patjak/facetimehd/pull/357#issuecomment-6221910309). | Recitirea și testarea noului head `e99eaf7f27f6`. **Actualizarea codului nu este încă o reparație validată de noi pe hardware.** |
-| [facetimehd #359](https://github.com/patjak/facetimehd/pull/359) | **Deschis.** [Autorul a răspuns pe 17 oct](https://github.com/patjak/facetimehd/pull/359#issuecomment-6234114178) și a adăugat comentariul propus în `633c511a673d`, cu `Suggested-by: Viorel Cernateanu`. | Cererea de restaurare a comentariului este satisfăcută; urmărim integrarea PR-ului. |
+| [facetimehd #359](https://github.com/patjak/facetimehd/pull/359) | **✅ Integrat 3 nov 19:19 UTC** de patjak (`41ef3588`); #358 închis. *Arhivă:* deschis; [autorul a răspuns pe 17 oct](https://github.com/patjak/facetimehd/pull/359#issuecomment-6234114178) și a adăugat comentariul propus în `633c511a673d`, cu `Suggested-by: Viorel Cernateanu`. | Cererea de restaurare a comentariului este satisfăcută; urmărim integrarea PR-ului. |
 | [facetimehd #336](https://github.com/patjak/facetimehd/issues/336) | **Închis de raportor pe 19 oct, 07:58 ora României**, cu [mulțumiri](https://github.com/patjak/facetimehd/issues/336#issuecomment-6260010132), după explicația noastră despre DKMS și wiki. | Fără acțiune rămasă în acest fir. #299 rămâne deschis, fără răspuns nou la comentariul nostru. |
 | [PipeWire !3060](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/3060) → [!3061](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/3061) | După raportarea noastră despre `dont_reconnect`, autorul a trimis !3061; **integrat pe 14 oct, 11:20 UTC**, commit `d25265653e4e`. | Reparație upstream a altui autor, fără patch local suplimentar de trimis și fără a crește numărul MR-urilor noastre integrate. |
 
-**Lanțul camerei, lucru local netrimis:** reparațiile Chromium/V4L2 și libwebrtc/PipeWire au fost
-comparate fără/cu patch în `content_shell` și Chromium 158 construit local, pe camera MacBook-ului.
-Browserele instalate au fost doar martori nereparați; **Firefox construit cu patch nu a fost testat**.
-Pe PipeWire 1.6.9, captura reparată rămâne la 1296×736, iar browserul scalează pentru cererile mai mici;
-nu este o dovadă de accelerare a primului cadru. #331 declanșează incompatibilitatea printr-o enumerare
-V4L2 legitimă; reparațiile urmăresc consumatorii, iar revenirea din driver este o decizie separată.
-Pregătirea trimiterilor și cererile de preluare în 1.6 pentru `cefb4e926` și !2965 rămân de făcut.
-Raportul local: [RAPORT-FINAL-19oct.md](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/RAPORT-FINAL-19oct.md).
+**Lanțul camerei, lucru local netrimis:** Chromium/V4L2 și libwebrtc/PipeWire sunt comparate fără/cu patch
+în construcțiile locale. **20 oct: bancul Firefox v4.16 închide pierderea codului de ieșire** (vechi 23→0,
+nou 23→23); 60 de controale trec. Matricea Firefox 158 este repetată integral pe camera MacBook-ului:
+**19 probe noi, 76 de cereri, toate dovezile VALID**, cu coduri -15 după TERM cerut de banc, fără KILL,
+curățare confirmată și supraveghetori/observatori/lansatoare cu 0. Pe PW fără patch rămâne NotFoundError;
+cu patch capturează. V4L2 este identic, inclusiv refuzul cererii 1296×736. PW 1.6.9 păstrează hardware 1296×736;
+master c5d2671e944a permite 640×480 și 1296×736, dar Firefox scalează ieșirea 320×240 din 640×480.
+Mesajele IPC de la oprire sunt reproduse și fără cameră; garda distinge TERM cerut de cel extern.
+Portal restaurat, camera închisă și audio configurat. Nu certificăm viteza, pixelii ori absența universală
+a crash-urilor interne. Datele vechi sunt intacte. Rămân revizuirea autorului, CLA/Gerrit, numărul real
+al bug-ului WebRTC, raportul Mozilla și aprobările separate de publicare. Cererile PipeWire 1.6 pentru
+`cefb4e926` și !2965 sunt separate, cu textele lui Viorel.
+[Raportul reparației și al noilor probe](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/firefox-19oct/reparatie-iesire-20oct/RAPORT.md).
+
+**Audit consolidat 20 octombrie și reparația ulterioară:** auditul a găsit pierderea erorilor
+intermediare ale colectorilor, acceptarea greșită a identității P3/P4 la eroare awk și lipsa verificării
+ieșirii browserului în bancul general. **Toate trei sunt acum corectate:** banc comun v4.17 în
+`browsere-17oct/banc-v4-20oct/`, intrare `banc-curent.sh`; P3/P4 instalat v4. Ultima serie: **241 de
+controale conforme**, plus pornire/oprire Chromium real pe about:blank fără cameră. Codul bancurilor
+vechi și 1.601 intrări de manifest rămân intacte. Nu a fost repetată campania fizică în această
+intervenție; copiile Lenovo se sincronizează/verifică înainte de folosire.
+**Completare ulterioară, 20 oct:** integrarea reală a bancului v4.17 este acum terminată:
+8 rulări Chromium/Firefox pe V4L2 și PW 1.6.9, 32 cereri conforme cu planul, 139 colectări cu 0,
+ieșiri consemnate și curățare confirmată, codul neschimbat față de cele 241 de controale.
+Lenovo rămâne pentru după 18:00; verificarea noilor vârfuri upstream este o etapă separată.
+[Raportul integrării](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/validare-integrare-v4.17-20261020-122923/RAPORT.md).
+**Mastere verificate ulterior:** PipeWire c5d2671e944a (neschimbat), WirePlumber 28fe47bd
+(nou, construit separat); teste 37/37 și 66/66. Încă 4 probe fizice Chromium/Firefox, toate VALID,
+16 cereri conforme și 73 colectări cu 0; portal/audio restaurate și verificate.
+[Raport mastere](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/verificare-mastere-20261020-124136/RAPORT.md).
+[Reparații, martori vechi/noi și rezultate](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/reparatie-trei-bancuri-20261020-120719/RAPORT.md).
 
 **P3/P4:** verificatorul local a fost reparat pe 18 oct; jurnalul consemnează 61 de controale conforme.
 Aceasta nu este o nouă validare hardware a patch-urilor și nu separă efectul fiecăruia în comparația
@@ -92,15 +833,29 @@ W/W34. Copiile de pe Lenovo trebuie verificate înainte de utilizare. Jurnal loc
 Pentru celelalte fire urmărite nu am găsit răspunsuri noi care să schimbe pașii de mai jos.
 Acest tur actualizează urmărirea; nu publică patch-uri, comentarii sau răspunsuri noi.
 
+### Camera în browsere — următorii pași, 20 octombrie
+
+[Plan actualizat pentru trimiterea upstream](pipewire-5363/rezultate/facetimehd-16oct/browsere-17oct/PLAN-TRIMITERE-UPSTREAM-20oct.md).
+Firefox și probele de integrare sunt terminate. **Lenovo este amânat la cererea lui Viorel;
+nu blochează trimiterea.** Pachetul WebRTC actual include numai AUTHORS și pipewire_session.cc;
+recomandăm integrarea testelor de regresie în proiect înainte de presubmit/upload. Urmează
+finalizarea pachetelor, presubmit-uri, revizuirea autorului și verificarea CLA/Gerrit, bug/CL WebRTC,
+CL Chromium, raport Mozilla, două cereri PipeWire 1.6 și informarea lui Patrik cu linkuri.
+Ramura 1.6 a fost actualizată prin fetch la 5aca348d1464: cele două reparații cerute încă lipsesc.
+Upload-urile trebuie urmate de solicitarea review-ului; consemnăm URL-uri, reviewer și CI.
+Nu a fost făcut niciun commit sau upload prin actualizarea planului.
+
 ### Rezumatul contribuțiilor noastre
 
 | Proiect | Integrate | Încă deschise | Închise fără integrare separată |
 |---|---|---|---|
-| `patjak/facetimehd` | **20 PR-uri** | **#356, Draft; #360** | niciuna |
-| PipeWire | **15 MR-uri** (+!3044, !3045, 13 oct) | **!2951**, fără activitate din 4 oct | !2966 absorbit în !2965; !2980 retras; **!3046 închis 13 oct — Wim a integrat propria variantă (`c04bf4fd8`, „See !3046”)** |
-| `patjak/facetimehd-firmware` | niciuna | **#14 și #16** | #15 absorbit în #14, încă neintegrat |
+| `patjak/facetimehd` | **20 PR-uri** | **#356, Draft; #360** (verificat 6 nov) | niciuna |
+| PipeWire | **21 de MR-uri** (6 nov: + !3077, !3078, !3079, !3097, !3098, !2951) | **niciunul** (6 nov) | !2966 absorbit în !2965; !2980 retras; **!3046 închis 13 oct — Wim a integrat propria variantă (`c04bf4fd8`, „See !3046”)** |
+| WirePlumber | **!934** + fixul din !895 (`74e49995`, 3 nov) | niciunul | !936 (0.5) închis |
+| `patjak/facetimehd-firmware` | **#14** (6 nov) | **#16** | #15 absorbit în #14 |
+| Chromium / WebRTC (Gerrit) | **4 CL-uri**: 8648509, 511140, 511141, 511160 (3 nov) | niciunul | — |
 | `davidjo/snd_hda_macbookpro` | niciuna | **#189** | — |
-| Linux x86/KMSAN | **0 din cele 2 patch-uri trimise** | seria **v1 0/2–2/2**, publică, fără răspuns la 19 oct | — |
+| Linux x86/KMSAN | 0 integrate | **v2 (4 patch-uri, 1 nov)**: Acked-by pe 3/4 de la Hildenbrand și Rapoport; fără răspuns x86/KMSAN (6 nov) | v1 (6 oct) înlocuit de v2 |
 | Debian `dkms` (Salsa) | — | **!8** (3.4.4), CI 11/11 verde | — |
 
 Numerele de PR/MR sunt numere de contribuții, nu de commit-uri. #346 și #355 din facetimehd,
@@ -110,15 +865,15 @@ precum și v4l2loopback #659 și Snapshot !464, sunt ale altor autori și sunt u
 
 | Unde | Stare verificată | Ultimul semnal relevant / pas rămas |
 |---|---|---|
-| [PipeWire !2951](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951) | **Deschis**, head `b1c1ca538c4c`; API-ul raportează `unchecked` la 19 oct; `allow_collaboration` activ. Ultimul [pipeline reușit](https://gitlab.freedesktop.org/vrilutza/pipewire/-/pipelines/1749658) este din **19 septembrie**, fără a valida master-ul actual. | **4 oct, 10:28 UTC:** [rmader spune că schimbarea îi pare corectă](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951#note_3693994). Niciun răspuns nou. **12 oct, decizia lui Viorel:** nu-l rebazăm noi; dezvoltatorii îl pot rebaza singuri. |
+| [PipeWire !2951](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951) | **✅ Integrat 6 nov 08:55 UTC** de wtaymans (`97699d70`), după rebazarea din 6 nov dimineață. *Arhivă:* head `b1c1ca538c4c`; API-ul raportează `unchecked` la 19 oct; `allow_collaboration` activ. Ultimul [pipeline reușit](https://gitlab.freedesktop.org/vrilutza/pipewire/-/pipelines/1749658) este din **19 septembrie**, fără a valida master-ul actual. | **4 oct, 10:28 UTC:** [rmader spune că schimbarea îi pare corectă](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951#note_3693994). Niciun răspuns nou. **12 oct, decizia lui Viorel:** nu-l rebazăm noi; dezvoltatorii îl pot rebaza singuri. |
 | [Debian dkms !8](https://salsa.debian.org/debian/dkms/-/merge_requests/8) | **Deschis**, `mergeable`, head `03eded2e6673`; [CI 11/11 reușit](https://salsa.debian.org/vrilutza/dkms/-/pipelines/1187919), din **11 oct** | **12 oct:** comentariul nostru despre avertismentul lintian NMU (trailer-ul nostru nu e în Uploaders; intrarea rămâne UNRELEASED pentru cel care încarcă). Niciun răspuns al mentenantului (anbe) la **19 oct**. Tot pe 12 oct: mail la [#1076269](https://bugs.debian.org/1076269) și [#1035707](https://bugs.debian.org/1035707) — eticheta `fixed-upstream` e înșelătoare (issue-urile GitHub închise ca inactive); arhivele recitite pe 19 oct nu au răspunsuri ulterioare. |
-| [facetimehd #361](https://github.com/patjak/facetimehd/issues/361) (al nostru, 17 oct) | **Deschis**, 0 comentarii | Tag-ul 0.7.0.2 e pe `846f1c4`, care n-a intrat în master; 0.7.0.3, 0.7.2 și master au `PACKAGE_VERSION=0.7.0.1`. Sugestie: versiunea ridicată pe master înainte de tag. |
+| [facetimehd #361](https://github.com/patjak/facetimehd/issues/361) (al nostru, 17 oct) | **Deschis**, 0 comentarii (6 nov: master tot 0.7.0.1; patjak a anunțat pe #364 o versiune nouă curând) | Tag-ul 0.7.0.2 e pe `846f1c4`, care n-a intrat în master; 0.7.0.3, 0.7.2 și master au `PACKAGE_VERSION=0.7.0.1`. Sugestie: versiunea ridicată pe master înainte de tag. |
 | facetimehd wiki (17 oct) | **Publicat** de Viorel în browser, verificat identic cu ciornele auditate | Home `78e1e28`, Installation `2415136` (o singură secțiune DKMS; mkdeb/mkdsc scoase), Get-Started `54c72e6`; răspunsuri pe [#336](https://github.com/patjak/facetimehd/issues/336#issuecomment-6232092711) și [#299](https://github.com/patjak/facetimehd/issues/299#issuecomment-6232169553). |
 | [facetimehd #360](https://github.com/patjak/facetimehd/pull/360) (al nostru, 17 oct) | **Deschis**, 0 comentarii | ENUM_FRAMEINTERVALS listează 30/25/24/20/15/10/5 fps (S_PARM le acceptă din #343; completează #323); discret, din cauza Chromium V4L2 și libwebrtc; pe PipeWire fără reparațiile din 1.4.10 cere #359. |
 | [facetimehd-firmware #16](https://github.com/patjak/facetimehd-firmware/pull/16) (al nostru, 17 oct) | **Deschis**, 0 comentarii | #11: `make FW_VER=1.43.0` și `--osx-10.11.5` spun când cpio (BusyBox) nu poate scoate driverul; `make` implicit (5.60.0) nu mai folosește cpio din 6411d90. |
-| [facetimehd #358](https://github.com/patjak/facetimehd/issues/358) (IIxauII, 14 oct) | **Deschis**, 0 comentarii | **Regresie atribuită lui #343 al nostru:** `818702f` face G_PARM să raporteze 256/7680 în loc de 1/30 (`25bbe7b`, #327); ceasul pluginului GStreamer din PipeWire < 1.4.10 calculează `GST_SECOND × 256` în `gint` → negativ → „num >= 0” → Snapshot îngheață după primul cadru (Debian 13 are 1.4.2). Verificat în cod (16 oct); reparația PipeWire e `68a57c58b` (Robert Mader, în 1.4.10). **[#359](https://github.com/patjak/facetimehd/pull/359)** (același autor) reduce fracția în G_PARM (`gcd`), 1/30 la aceeași rată. **16 oct, reprodus pe MacBook** (fără reîncărcarea modulului): clientul GStreamer 1.4.2 îngheață la primul cadru cu aserțiunea din raport, 6/6; aceeași stivă 1.4.2 cu fracția redusă la 1/30 (emularea #359 printr-un shim în daemon) merge 12/12; PipeWire 1.4.10 nu e afectat; pe 1.4.2 sunt două defecte declanșate de 256/7680 — ceasul (`68a57c58b`) și latența (`be1677f56`, găsit prin bisect; PipeWire #4957, aceeași fracție la camera Apple Silicon); #359 emulat nu schimbă nimic pe 1.6.9/master (12/12); #359 se compilează curat pe 7.2.9. **`818702f` (#343) a șters comentariul din `25bbe7b` care explica de ce G_PARM raporta 1/30.** Raport pentru auditor: [`pipewire-5363/rezultate/proba-358/RAPORT-358-359-pentru-auditor.md`](pipewire-5363/rezultate/proba-358/RAPORT-358-359-pentru-auditor.md). **Actualizare 19 oct:** răspunsul nostru este public pe #359 din 16 oct, iar autorul a răspuns pe 17 oct și a restaurat comentariul în `633c511a673d`; PR-ul rămâne deschis. |
+| [facetimehd #358](https://github.com/patjak/facetimehd/issues/358) (IIxauII, 14 oct) | **Închis 3 nov** prin integrarea #359 (`41ef3588`). *Arhivă:* deschis, 0 comentarii | **Regresie atribuită lui #343 al nostru:** `818702f` face G_PARM să raporteze 256/7680 în loc de 1/30 (`25bbe7b`, #327); ceasul pluginului GStreamer din PipeWire < 1.4.10 calculează `GST_SECOND × 256` în `gint` → negativ → „num >= 0” → Snapshot îngheață după primul cadru (Debian 13 are 1.4.2). Verificat în cod (16 oct); reparația PipeWire e `68a57c58b` (Robert Mader, în 1.4.10). **[#359](https://github.com/patjak/facetimehd/pull/359)** (același autor) reduce fracția în G_PARM (`gcd`), 1/30 la aceeași rată. **16 oct, reprodus pe MacBook** (fără reîncărcarea modulului): clientul GStreamer 1.4.2 îngheață la primul cadru cu aserțiunea din raport, 6/6; aceeași stivă 1.4.2 cu fracția redusă la 1/30 (emularea #359 printr-un shim în daemon) merge 12/12; PipeWire 1.4.10 nu e afectat; pe 1.4.2 sunt două defecte declanșate de 256/7680 — ceasul (`68a57c58b`) și latența (`be1677f56`, găsit prin bisect; PipeWire #4957, aceeași fracție la camera Apple Silicon); #359 emulat nu schimbă nimic pe 1.6.9/master (12/12); #359 se compilează curat pe 7.2.9. **`818702f` (#343) a șters comentariul din `25bbe7b` care explica de ce G_PARM raporta 1/30.** Raport pentru auditor: [`pipewire-5363/rezultate/proba-358/RAPORT-358-359-pentru-auditor.md`](pipewire-5363/rezultate/proba-358/RAPORT-358-359-pentru-auditor.md). **Actualizare 19 oct:** răspunsul nostru este public pe #359 din 16 oct, iar autorul a răspuns pe 17 oct și a restaurat comentariul în `633c511a673d`; PR-ul rămâne deschis. |
 | [facetimehd #356](https://github.com/patjak/facetimehd/pull/356) | **Deschis, Draft**, head `aa14a73` | Trimis **3 oct**; aruncă primele două cadre. Întrebarea despre aplicarea generică sau numai senzorului verificat rămâne în descriere. **0 comentarii, 0 review-uri**. Nu este inclus în `all-patches`. |
-| [facetimehd-firmware #14](https://github.com/patjak/facetimehd-firmware/pull/14) | **Deschis**, head `adebe6e`, **4 commit-uri** | Include corecțiile din fostul #15, sursa Boot Camp și curățarea extracției parțiale. **0 comentarii, 0 review-uri** la 19 oct. Descrierea a fost corectată pe 17 oct; codul este neschimbat. |
+| [facetimehd-firmware #14](https://github.com/patjak/facetimehd-firmware/pull/14) | **✅ Integrat 6 nov 11:03 UTC** de patjak (`8464f0b6`). *Arhivă:* head `adebe6e`, **4 commit-uri** | Include corecțiile din fostul #15, sursa Boot Camp și curățarea extracției parțiale. **0 comentarii, 0 review-uri** la 19 oct. Descrierea a fost corectată pe 17 oct; codul este neschimbat. |
 | [snd_hda_macbookpro #189](https://github.com/davidjo/snd_hda_macbookpro/pull/189) | **Deschis**, ultimă actualizare 4 iul | Preferă sursa kernelului instalată local. Un comentariu al nostru, **niciun review extern**. Închiderea issue-ului #187 nu înseamnă integrarea acestui PR. |
 
 ### Propuneri închise fără integrare separată
@@ -128,7 +883,7 @@ precum și v4l2loopback #659 și Snapshot !464, sunt ale altor autori și sunt u
 | [PipeWire !2966](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2966) | **Închis** | Schimbarea este inclusă în !2965, integrat. Nu îl numărăm ca al paisprezecelea MR integrat. |
 | [PipeWire !2980](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2980) | **Retras**, neintegrat | !2985 repară negocierea centrală; propunerea originală nu a fost acceptată separat. |
 | [PipeWire !3046](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/3046) | **Închis 13 oct de wtaymans**: „I think master should have a similar and more simple commit now that achieves the same thing.” | Dubla configurare a camerei (regresia din `52b23384e`) e reparată în master de **`f2ce6ab0a` + `c04bf4fd8`** (Wim, 13 oct; mesajul trimite la !3046): `ensure_state` merge în IDLE și când `pending_state >= IDLE`. Aceeași idee, o singură condiție. |
-| [facetimehd-firmware #15](https://github.com/patjak/facetimehd-firmware/pull/15) | **Închis pe 26 sep**, neintegrat | Schimbările sunt în #14, care rămâne deschis. |
+| [facetimehd-firmware #15](https://github.com/patjak/facetimehd-firmware/pull/15) | **Închis pe 26 sep**, neintegrat | Schimbările sunt în #14, **integrat 6 nov** (`8464f0b6`). |
 
 ### facetimehd — toate cele 20 de PR-uri ale noastre integrate
 
@@ -239,9 +994,9 @@ Defectul kmemleak/sheaves și candidații nouveau/i915/KHO **nu au patch trimis 
 | Unde | Stare verificată la 19 oct | Ce s-a întâmplat |
 |---|---|---|
 | [facetimehd #355](https://github.com/patjak/facetimehd/pull/355), pschatzmann | **Integrat 14 oct de patjak** (+63 −36) | „Support buffers that start inside a page (fixes PipeWire), don't hang on stop”. Tratează regresia din #333 al nostru (vezi tabelul de mai sus). |
-| facetimehd [#357](https://github.com/patjak/facetimehd/pull/357) (jerrinot), [#359](https://github.com/patjak/facetimehd/pull/359) (IIxauII) | **Deschise**, heads `e99eaf7f27f6` / `633c511a673d` | #357: două commit-uri noi pe 19 oct după review-ul nostru; de reverificat. #359: autorul a preluat pe 17 oct comentariul propus. Detalii și pași rămași la începutul secțiunii 0.1. Nu sunt PR-urile noastre. |
+| facetimehd [#357](https://github.com/patjak/facetimehd/pull/357) (jerrinot), [#359](https://github.com/patjak/facetimehd/pull/359) (IIxauII) | **6 nov:** #357 deschis (retestul nostru 1 nov „looks good”; patjak cere autorului istoric curat, 3 nov); **#359 integrat 3 nov**. *Arhivă (19 oct):* deschise, heads `e99eaf7f27f6` / `633c511a673d` | #357: două commit-uri noi pe 19 oct după review-ul nostru; de reverificat. #359: autorul a preluat pe 17 oct comentariul propus. Detalii și pași rămași la începutul secțiunii 0.1. Nu sunt PR-urile noastre. |
 | PipeWire [#5522](https://gitlab.freedesktop.org/pipewire/pipewire/-/work_items/5522) (Radwolf83) | **Închis 13 oct de wtaymans** | EIO la `VIDIOC_G_CTRL` pe un control simplu blocha enumerarea `Props`. Era deja reparat de !2963 al nostru (`919de4c52`, master) și de backport-ul `458b8b183` din **1.6.9**; Viorel a răspuns pe 13 oct. Probat cu interceptare EIO pe Lenovo: ramura 1.4 reproduce, 1.6/master nu (`pipewire-5363/rezultate/p3-p4-12oct/proba-5522/CONCLUZIE.md`). |
-| PipeWire [#5519](https://gitlab.freedesktop.org/pipewire/pipewire/-/work_items/5519) (moj) | **Deschis**, fără comentarii | Regresie confirmată de noi (ramurile 1.4/1.6 trec, master pică), de la `823dcd884` după raportor. Nu e a noastră; un comentariu cu datele ar fi opțional. |
+| PipeWire [#5519](https://gitlab.freedesktop.org/pipewire/pipewire/-/work_items/5519) (moj) | **Închis 26 oct**: Wim a reparat pe master, moj a confirmat. *Arhivă:* deschis, fără comentarii | Regresie confirmată de noi (ramurile 1.4/1.6 trec, master pică), de la `823dcd884` după raportor. Nu e a noastră; un comentariu cu datele ar fi opțional. |
 | [Debian user-setup !1](https://salsa.debian.org/installer-team/user-setup/-/merge_requests/1) (fsateler) | **Deschis** | 11 oct: comentariul nostru cu cazul „Dummy Output” (grupul `audio` + linger). Fără răspuns. |
 | [MacBookPro14.1 #3](https://github.com/vrilutza/MacBookPro14.1/pull/3) (Weirdlogic) | **Deschis** | 6 oct: comentariul nostru (problema reală e în `install.cirrus.driver.sh` pe kernelurile OEM); autorul n-a răspuns. |
 | [facetimehd #346](https://github.com/patjak/facetimehd/pull/346), kurobeats | **Integrat 5 oct** | Nu este numărat printre cele 20 de PR-uri ale noastre. |
@@ -252,7 +1007,7 @@ Defectul kmemleak/sheaves și candidații nouveau/i915/KHO **nu au patch trimis 
 | [PipeWire #5481](https://gitlab.freedesktop.org/pipewire/pipewire/-/work_items/5481) | **Deschis**, fără comentarii | Întrebarea Range×Range rămâne o discuție de politică, fără patch trimis. |
 | [PipeWire #5363](https://gitlab.freedesktop.org/pipewire/pipewire/-/work_items/5363), [#5431](https://gitlab.freedesktop.org/pipewire/pipewire/-/work_items/5431), [#4842](https://gitlab.freedesktop.org/pipewire/pipewire/-/work_items/4842) | **Închise** | Stările rămân cele obținute prin reparațiile deja integrate. |
 | [WirePlumber #972](https://gitlab.freedesktop.org/pipewire/wireplumber/-/work_items/972), [#986](https://gitlab.freedesktop.org/pipewire/wireplumber/-/work_items/986) și [Snapshot #367](https://gitlab.gnome.org/GNOME/snapshot/-/work_items/367) | **Închise** | #986 a fost mutat în PipeWire #5431. Nu sunt PR-uri suplimentare ale noastre. |
-| PipeWire [#4797](https://gitlab.freedesktop.org/pipewire/pipewire/-/work_items/4797), [#2489](https://gitlab.freedesktop.org/pipewire/pipewire/-/work_items/2489), [#4174](https://gitlab.freedesktop.org/pipewire/pipewire/-/work_items/4174), [#4863](https://gitlab.freedesktop.org/pipewire/pipewire/-/work_items/4863) | **Deschise** | Sunt rapoarte ale altora, la care am adăugat probe sau context; nu le declarăm rezolvate doar pentru că un patch înrudit a fost integrat. |
+| PipeWire [#4797](https://gitlab.freedesktop.org/pipewire/pipewire/-/work_items/4797), [#2489](https://gitlab.freedesktop.org/pipewire/pipewire/-/work_items/2489), [#4174](https://gitlab.freedesktop.org/pipewire/pipewire/-/work_items/4174), [#4863](https://gitlab.freedesktop.org/pipewire/pipewire/-/work_items/4863) | **6 nov:** #4174 și #4863 **închise de wtaymans** cu `e5d3471d` (refcount în tee, mod opțional); #4797 și #2489 deschise, fără noutăți din aug | Sunt rapoarte ale altora, la care am adăugat probe sau context; nu le declarăm rezolvate doar pentru că un patch înrudit a fost integrat. |
 
 **Forkurile, citite prin API pe 19 oct:** `vrilutza/facetimehd` are `master=6dc8cd85e879`
 (identic cu upstream) și `all-patches=0ed8a3fd1f65`; ramurile #356 și #360 sunt la
@@ -1742,7 +2497,8 @@ rulată **la construire**, nu la revizuire.
 **A cincea trecere, cu `shellcheck` instalat:** fișierul de la upstream are **16 constatări** proprii,
 dintre care **două sunt defecte reale** — mesajul de nepotrivire tipărește `${firm_hash}` în loc de
 `fw_hash`, deci iese **fără hash** (dovedit pe viu), și un „then" rămas ca argument în plus. Ramura
-separată `shellcheck-cleanup` (`026ac9b` + `1814328`, **netrimisă**) le repară, plus ghilimele, `-gt`
+separată `shellcheck-cleanup` (`026ac9b` + `1814328`, **netrimisă**; *24 oct: reparația `fw_hash` e în
+[facetimehd-firmware #14](https://github.com/patjak/facetimehd-firmware/pull/14), deschis; #15 închis pe 26 sep*) le repară, plus ghilimele, `-gt`
 și `|| exit` la `cd`; zero constatări după. Dovedit că nu schimbă comportamentul: aceleași intrări,
 ieșiri identice octet cu octet, singura diferență fiind chiar mesajul reparat.
 
@@ -2376,7 +3132,8 @@ dovedește că driverul nu corupe memoria, doar că nu s-a detectat nimic în ac
 **Ciornele de reparație PipeWire, ținute local (16 sep):** două comituri pe `2fd2d224c`
 (`~/.cache/banc-mbp/wt-fix-16sep`, ramura `fix-tampoane-16sep`) — garda de index din `mmap_read()`,
 care oprește căderea daemonului pe v4l2loopback, și tăierea preferinței la interval în `filter.h`,
-care dă 8 tampoane în loc de 4 unui client fără setări. **Netrimise, după regula lui Vik**: nimic nu
+care dă 8 tampoane în loc de 4 unui client fără setări. *(24 oct: garda a devenit !3013, acceptat; tăierea din
+`filter.h` nu s-a trimis — problema tampoanelor a fost reparată central de !2985, acceptat pe 7 sep.)* **Netrimise, după regula lui Vik**: nimic nu
 pleacă până nu sunt acoperite joburile CI, efectul asupra audio și ramura 1.6. Plan:
 `pipewire-5363/fthd-masuratori/descrieri/PLAN-weekend-19-20sep.md`; rapoartele-ciornă sunt alături.
 
@@ -2417,7 +3174,8 @@ pleacă până nu sunt acoperite joburile CI, efectul asupra audio și ramura 1.
   `1871_01XX.dat (-2)`. Pachetul AUR chiar instalează fișierul (verificat în PKGBUILD), deci fie modulul a fost
   încărcat înainte de instalare, fie e altceva. Separat, **am găsit un bug vechi din 2015**: verificarea pentru
   MacBook Air compară `DMI_BOARD_NAME` cu „MacBookAir", dar pe firmware-ul Apple acolo stă identificatorul de
-  placă (`Mac-…`), deci Air-urile cer `1871` în loc de `1771`. Ar trebui `DMI_PRODUCT_NAME`. **Netrimis.**
+  placă (`Mac-…`), deci Air-urile cer `1871` în loc de `1771`. Ar trebui `DMI_PRODUCT_NAME`. **Netrimis.** *(24 oct: trimis ca
+  [facetimehd #351](https://github.com/patjak/facetimehd/pull/351), acceptat pe 26 sep — `DMI_SYS_VENDOR` + `DMI_PRODUCT_NAME`.)*
 - 🖥️ **Kernel 7.2.6+deb14** instalat pe 23 sep la 06:12, cu `linux-source-7.2` pus în aceeași tranzacție —
   regula din [secțiunea 6](#6--upgrade-de-kernel) a ținut. Toate cele trei module DKMS (facetimehd,
   snd_hda_macbookpro, v4l2loopback) construite pentru el; camera merge. Rulăm pe el din 23 sep 06:20.
@@ -3766,6 +4524,8 @@ Raport complet: `pipewire-5363/results/VIVID-CAUZA-17aug.md`. Draft de răspuns,
 
 ### 3.3m 🟡 4–5 septembrie — imaginea întunecată: cauza găsită, trei patch-uri **netrimise**
 
+> **Stare la 24 oct:** #343 și #344 acceptate pe 5 oct; al treilea rămâne aruncat. Secțiunea e închisă.
+>
 > **Stare la 13 sep:** din cele trei, unitățile ratei au plecat ca **#343** (6 sep), coborârea ratei
 > de AE ca **#344** (7 sep), iar plafonul de câștig a fost **aruncat** (strică lizibilitatea, JURNAL
 > §6). Rămân deschise de aici doar bifa pentru **#340** și dungajul/tenta.
@@ -3831,7 +4591,8 @@ Jurnal: `pipewire-5363/fthd-masuratori/rezultate/JURNAL-3sep-review-si-decupare.
 
 > **Stare la 20 sep:** punctul 3 e **făcut** — testul de calibrare din 19 sep (rezultatul în [0.1](#01-rapoarte-trimise-upstream--tablou)
 > și în `pipewire-5363/fthd-masuratori/rezultate/calibrare-1571-19sep/`), iar patch-ul `0x248` și nota de wiki
-> sunt gata local, netrimise. **Toate cele cinci puncte sunt închise.**
+> sunt gata local, netrimise. **Toate cele cinci puncte sunt închise.** *(24 oct: `0x248` trimis ca #348 pe 20 sep,
+> acceptat pe 26 sep; nota de wiki publicată pe 20 sep.)*
 >
 > **Stare la 18 sep:** punctul 3 (calibrarea `1571`) se face în weekendul 19–20 sep, la lumina zilei, cu
 > Lenovo alături ca referință — `pipewire-5363/fthd-masuratori/descrieri/PLAN-test-calibrare-1571.md`.
@@ -4495,3 +5256,489 @@ cu `-EINVAL` ([secțiunea 7.1](#71-nvram-autoboot--pornire-nedorită-la-ridicare
 aritmetica bufferelor camerei, 1280×720 NV12 ≈ 1,38 MB × 8 ≈ 11 MB (azi fără obiect, [secțiunea 3.4](#34--ce-s-a-închis-din-versiunea-veche-a-acestei-secțiuni)) · regresia audio 7.0.10
 ([secțiunea 7.6](#76-audio-rupt-pe-7010)) · `PATCH[0]`/`PATCH_MATCH[0]` ca directive DKMS reale (E10) · ghidul de demontare A1708 —
 pentalobe P5, T5 înăuntru, bateria deconectată prima, PTM7950 pentru die expus ([secțiunea 4.2](#42-de-făcut)).
+
+## Retestare MR-uri PipeWire/WirePlumber — 2026-10-26T06:09:40.248832+02:00
+
+- [x] Patru MR-uri deschise și16 integrări anterioare verificate live; masterele/ramurile neschimbate.
+- [x]48 capturi fizice și12 controale de oprire pe MacBook/Lenovo, identități și restaurare confruntate din brut.
+- [x] Conversii GST, sanitizatori, parametru volume și procese i386: comportamentele reparațiilor confirmate.
+- [ ] Urmărire !2951; decizia12oct este să nu facem noi rebase automat. La27oct API-ul dă unchecked/has_conflicts:false; need_rebase nu este reconfirmat de această actualizare.
+- [ ] Viorel: precizare în descrierea !3078, pe baza filtrului SPA real; codul backportului nu cere schimbare.
+- [ ] Observație separată: primul config_load_abspath Lenovo eșuat nu s-a reprodus; nu se pretinde o cauză demonstrată.
+
+[Raport și dovezi](pipewire-5363/rezultate/retestare-mr-pw-wp-20261026-050201/RAPORT.md). Auditul nu a modificat codul propus sau configurația sistemelor și nu a publicat nimic.
+
+
+## 2026-10-26T07:49:02.456930+02:00 — Teste suplimentare MR-uri PipeWire
+
+- [x] Fiecare dintre cele4 MR-uri verificat separat pe MacBook/Lenovo; reanaliză din brut.
+- [ ] Defect separat existent: mute nu afectează PCM în pluginul SPA volume, înainte și după !3079; verificat x86_64/i386. Nu este o regresie a MR-ului.
+- [ ] Rebase !2951 și precizarea descrierii !3078 rămân.
+
+[Raport](pipewire-5363/rezultate/teste-suplimentare-mr-20261026-073156/RAPORT.md). Fără modificări ale propunerilor sau publicare.
+
+
+## 2026-10-26T18:37:40.126035+02:00 — Review-uri Chromium/WebRTC
+
+- [x] Audit live al celor4 CL-uri și al patchset-urilor locale; [raport](pipewire-5363/rezultate/audit-recenzie-live-20261026-181556/RAPORT.md).
+- [x] PipeWire !3077,!3078,!3079 integrate, confruntate cu varianta testată.
+- [x] Publicate și confirmate live: Chromium8648509PS2; WebRTC511140PS2/511160PS3 cu kron numai pe511160;511141PS2. Cele6 răspunsuri sunt în firele corecte. Vezi auditul upload-urilor de mai jos.
+- [ ] Review final și CI upstream; nu se confundă testele trecute cu aprobarea owner-ilor.
+
+
+## 2026-10-26T19:14:01.840001+02:00 — Matricea de compatibilitate din26oct
+
+- [x] Verificate noile vârfuri și suitele native:48/50/70 PipeWire și66 WirePlumber pe fiecare pereche.
+- [x] Patch-urile locale noi se aplică pe main în copii izolate; fără rebase al ramurilor utilizatorului.
+- [x] Runnerul matricei: oprirea descendenților cu setsid și marcarea verificării imposibile confirmate în v4; jurnalul gol este respins. Vezi auditul de închidere de mai jos.
+- [x] Probele pe lanțul final verificate independent: 36 în Chrome și 24 în harness pe ambele laptopuri; identități și rezultate brute confirmate. Vezi auditul final de mai jos pentru limite și lacunele evaluatorului.
+
+
+## 2026-10-26T23:08:50.258503+02:00 — Audit final al matricei de compatibilitate
+
+- [x] Datele brute de pe ambele laptopuri:36 probe Chrome și24 harness, toate conforme în domeniul demonstrat; suite native și identități confirmate.
+- [x] F1, cazul inițial setsid: corectat în v3 și confirmat pe ambele mașini. Rămâne separat eroarea de citire R1 din reauditul de mai jos.
+- [x] F2: identitatea WebRTC lipsă este respinsă în evaluatorul v2; confirmat independent.
+- [x] F3, cazul inițial al altei rute: respins în v2. Rămâne separat intrarea duplicată R2 din reauditul de mai jos.
+- [x] După corecțiile inițiale: martorii negativi și reevaluarea datelor existente confirmate. Nu există un motiv nou demonstrat să recompilăm CL-urile sau să reluăm toate60 de probe.
+
+[Raport și reproducători](pipewire-5363/rezultate/audit-matrice-finale-20261026-224803/RAPORT.md). Acceptul tehnic nu autorizează publicarea.
+
+
+## 2026-10-26T23:24:07.155531+02:00 — Reauditul reparațiilor matricei
+
+- [x] Cazurile inițiale F1–F3 remediate; reevaluarea reală confirmă36 Chrome+24 harness, fără probleme.
+- [x] R1: procesul viu necitibil produce76/neverificat în v4; confirmat independent pe ambele mașini și în runnere.
+- [x] R2: rolurile duplicate sunt respinse în evaluatorul v3; martorul negativ și reevaluarea reală confirmate.
+- [x] După R1/R2: controale izolate și reevaluarea datelor existente încheiate;0 probleme pe fiecare mașină, fără recompilări/capturi fizice noi.
+
+[Raport și reproducători](pipewire-5363/rezultate/audit-reparatii-matrice-20261026-231853/RAPORT.md). Fără modificări ale CL-urilor și fără publicare.
+
+
+## 2026-10-26T23:38:48.709692+02:00 — R1 și R2 închise
+
+- [x] Procesul necitibil dă76/neverificat, pe ambele mașini; pașii normali și cazurile setsid păstrează verdictele corecte.
+- [x] Evaluatorul respinge rolul duplicat și toate cele8 cazuri negative; datele reale dau0 probleme pe fiecare mașină.
+- [x] Propagarea76 confirmată și cap-coadă în runnerele Chrome/Firefox, cu actori simulați; sursele runnerelor neschimbate.
+- [x] Cele6 unelte sunt identice prin hash între mașini; reanaliza36 Chrome+24 harness este neschimbată.
+- [ ] Urmărirea review-ului, aprobărilor și CI upstream; cele3 push-uri și răspunsurile sunt publicate și verificate live. R1/R2 sunt închise.
+
+[Raport de închidere](pipewire-5363/rezultate/audit-inchidere-unelte-20261026-233342/RAPORT.md). Limitele matricei sunt păstrate; nimic publicat.
+
+
+- [x] 2026-10-26T23:50:35.744235+02:00: confirmare independentă a verificărilor511141 pe f9e5f700; [dovezi](pipewire-5363/rezultate/audit-inchidere-unelte-20261026-233342/COMPLETARE-511141.md). Nicio cerință tehnică blocantă suplimentară pentru runda de publicare.
+
+
+## 2026-10-27T00:02:15.202473+02:00 — Publicări Gerrit confirmate independent
+
+- [x] Cele3 push-uri au actualizat exact cele4 CL-uri auditate, cu commiturile și dependența corecte.
+- [x] Cele6 răspunsuri în firele corecte,0 fire nerezolvate și0 drafturi; kron numai pe511160.
+- [ ] Aprobări Code-Review/Code-Owners și verificări CI upstream; CL-urile sunt încă NEW, nu integrate.
+
+[Raport și răspunsuri API](pipewire-5363/rezultate/audit-upload-gerrit-20261026-235747/RAPORT.md). Audit numai în citire; nicio acțiune publică efectuată de auditor.
+
+## Compilare H.264 confirmată și probe pornite — 30 octombrie, 02:00 EET
+
+- Compilarea s-a terminat pe 29 octombrie la 22:29: `Build Succeeded`, 2284 de pași în 5 h 59 min. `reluare-oom/BUILD-RESULT.json` consemnează cod 0 și amprente pentru 1128 de artefacte.
+- La revenirea din 30 octombrie, vechiul supraveghetor și workerul de teste nu mai rulau; lipsea `reluare-oom/compilare/receipt.json`, iar testele nu începuseră. Cauza dispariției acestor procese nu este confirmată. Nu declarăm supravegherea continuă a acelui interval ca demonstrată.
+- Am verificat toate cele 1128 de artefacte și am reluat numai confirmarea incrementală, într-un serviciu utilizator independent de sesiunea terminalului. Rezultat: `ninja: no work to do`, 0 pași, cod 0, curățare confirmată. Amprenta surselor înainte/după rămâne `1e34e7e54be5f3ed0bd4c2218662301f80cf0a866c1587840b9cb0cd118ffb3d`.
+- Probele automate H.264/VP8 pe MacBook au început. Primele probe H.264 mode 0 și 1 confirmă transmisie/recepție locală, culori și mișcare. Campania nu este încă declarată încheiată.
+- Repetarea pe Lenovo este programată: transfer verificat al runtime-ului (5932 de fișiere), apoi probe locale și Discord, după terminarea sesiunii Discord de pe MacBook. Nu se folosesc camerele fizice. Profilul AppArmor temporar este limitat la cele două executabile de test și se scoate la încheiere; nu se schimbă permisiunile camerei.
+- Unități: `discord-h264-finalizare-1030.service`, `discord-h264-lenovo-pregatire-1030.service`; stările și dovezile sunt în `h264/confirmare-30oct-0200/`, `h264/POSTBUILD.json` și `h264/lenovo-30oct/`.
+- Nu sunt schimbate patch-urile publicate și nu este publicat nimic. Rămân distincte: testele locale de codec, partajarea sintetică Discord și apelul cu recepție într-un al doilea cont (neefectuat).
+
+## Încheiere probe H.264/Discord — 30 octombrie, 02:20 EET
+
+Compilarea este încheiată (29 oct, 22:29). Confirmarea incrementală nouă: 0 pași, cod 0. Probele de codec: MacBook 8/8 și Lenovo 8/8, inclusiv H.264 mode 0/1 cu codare, recepție locală, decodare și verificarea imaginilor.
+
+Discord: MacBook 4/4 probe scurte; Lenovo 3/4. Încercarea Lenovo `discord-03-h264-final` rămâne nereușită: previzualizare prezentă, conexiune video connecting pe toată observația de 8 s, zero cadre codate. Fără crash. Perechea suplimentară de 40 s trece: referință VP8 343 cadre, H.264 348. Nu pretind că aceasta explică retrospectiv cauza conectării nereușite.
+
+În aceste sesiuni Discord, contoarele RTP de pachete/bytes trimise sunt zero; demonstrația de codare nu este prezentată ca recepție într-un al doilea cont. Apelul cu al doilea cont și desktopul real în noua configurație rămân separate.
+
+Lenovo: 5932 de fișiere runtime verificate înainte/după și la final. Profilul AppArmor temporar este descărcat, fără schimbări ale permisiunilor camerei sau pachete instalate. Serviciile de test sunt terminate, fără browsere de test rămase pe niciuna dintre mașini. Seria scurtă Lenovo rămâne corect cu exit 1.
+
+Raport: `discord-extins-20261029-0743/h264/RAPORT-FINAL-30oct.md`; bilanț brut: `BILANT-FINAL-30oct.json`; sincronizare verificabilă: `discord-extins-20261029-0743/sincronizare-30oct-final/`. Patch-urile publicate sunt neschimbate; nimic publicat.
+
+Sincronizare încheiată: 445 de intrări în pachetul stabil, 0 diferențe pe MacBook și Lenovo. Verificări: `discord-extins-20261029-0743/sincronizare-30oct-final/VERIFICARE-MACBOOK.json` și `VERIFICARE-LENOVO.json`.
+
+## Investigația conectării Discord — 30 octombrie
+
+Am identificat și corectat o lacună a protocolului: cele opt secunde începeau la previzualizare, înaintea conectării video. Noul banc observă ICE/DTLS și măsoară codarea după conectarea efectivă. Controale: 16/16. Probe noi: 8/8 headless și 4/4 cu interfață, pe MacBook și Lenovo, 1273 de cadre codate suplimentar. Componentele și toate cele 5932 de fișiere ale runtime-ului nou sunt verificate înainte/după serii.
+
+Încercarea veche rămâne nereușită: canalul vocal era conectat, canalul partajării a rămas în starea numită DTLS_CONNECTING de aplicație aproximativ 10,55 s, până la oprirea cerută de inspector. Lipsesc statisticile ICE/DTLS pentru acea sesiune; cauza exactă a întârzierii nu este demonstrată retrospectiv. Nu declar episodul rezolvat prin repetări reușite și nu există o modificare a produsului.
+
+Campania Discord completă rămâne deschisă: al doilea cont/receptor, desktop și fereastră prin selector real, FaceTime/UVC pe noua configurație, microfon Lenovo și noua configurație, cameră+ecran/cicluri în aceeași sesiune. Lista exactă este în discord-extins-20261029-0743/RESTANTE.md. Prezența operatorului și autentificarea celui de-al doilea cont sunt întrebate, încă neconfirmate.
+
+Toate cele șase servicii ale noii investigații sunt terminate curat. Fără browsere de test rămase și fără profilul AppArmor temporar încărcat pe Lenovo. Raport: discord-extins-20261029-0743/h264/investigatie-conectare-30oct/RAPORT.md. Nu s-a publicat nimic și patch-urile sunt neschimbate.
+
+## Pregătire cont receptor și selector Share — 30 octombrie, 07:17
+
+La cererea utilizatorului, am deschis pe Lenovo o fereastră nouă a runtime-ului H.264, cu profilul privat separat discord-peer, pentru autentificarea personală într-un al doilea cont. Profilul primar discord nu a fost delogat și nu s-au copiat autentificări. Browser PID la pornire: 54352; unitate: discord-peer-login-1030.service. Nicio cameră, microfon sau captură de desktop nu a fost pornită de această pregătire.
+
+Pe Lenovo rămâne intenționat încărcat profilul AppArmor temporar discord-peer-login-1030 cât fereastra de autentificare este deschisă; se descarcă la închiderea serviciului. Nu este profilul discord-h264-1030 al testelor încheiate anterior.
+
+Portalul MacBook anunță AvailableSourceTypes=7, inclusiv WINDOW. Urmează fotografierea selectorului Chrome și a dialogului GNOME, dacă apare, și verificarea tipurilor cerute efectiv de browser. Nu este încă demonstrat un defect al selectorului. Pași/dovezi: discord-extins-20261029-0743/pregatire-apel-real-30oct/.
+
+## Pauză cerută pentru deplasare — 30 octombrie
+
+Utilizatorul pleacă la muncă, MacBook-ul rămâne pornit și internetul va lipsi circa 15 minute. **Reluarea se face numai după mesajul lui că a ajuns**, nu automat la revenirea internetului. Probele camerei, Mic Test și sunetul filei rămân pregătite, neexecutate în această pauză. Lenovo a fost oprit de utilizator; nu se accesează. Browserul Google Chrome obișnuit rămâne neatins. Stare: discord-extins-20261029-0743/STARE-LA-PLECARE-30oct.json.
+
+Probele de dimineață confirmă captură reală de monitor, captură de filă cu video H.264 și pistă audio (liniște în probe) și captură reală de fereastră Wayland la 812x482, fără redimensionare observată în timpul măsurării. Nu sunt apeluri primite într-un al doilea cont. Încercările neconforme de automatizare/autentificare sunt păstrate.
+
+
+## Continuare Discord la muncă — 30 octombrie, camera / Mic Test / filă
+
+Utilizatorul a confirmat revenirea la muncă și a cerut reluarea. Am testat numai MacBook; Lenovo este oprit și nu a fost accesat.
+
+- Camera FaceTime pe runtime-ul H.264 nou: 2/2, cu 350 și 335 de cadre suplimentare în previzualizarea Discord și identitatea componentei confirmată.
+- Mic Test: 2/2 rulări × 2 cicluri, cu recepție/decodare locală, energie și progres de eșantioane. Nu este apel la alt cont.
+- Filă nativă animată + ton: 2/2 probe verificate direct din fluxul original, trei culori, progres H.264 și tăcere după oprirea tonului. Două încercări anterioare care citeau numai pixelii elementului DOM Discord rămân neconforme; în acea citire se vede negru, în timp ce fluxul original observat separat conține culorile corecte. Nu declarăm un defect nou al produsului și nu rescriem datele vechi.
+- O sesiune combinată a trecut zece faze: FaceTime + filă, oprire/repornire cameră independentă, trei porniri/opriri ale partajării în aceeași pagină și viewport 1216×720 → 800×600 → 1216×720. Nu este echivalentă cu redimensionarea unei ferestre Wayland prin portal.
+- 9 aserțiuni ale observatorului, 12 controale ale evaluatorului filei și 11 controale ale evaluatorului combinat sunt conforme. Toate cele 1128 de artefacte runtime și cele patru bănci folosite după reluare au amprentele așteptate.
+- Nivelul intrării audio s-a schimbat de la 0,65 la 0,47 pe parcursul primei campanii; cauza exactă nu este izolată. L-am restaurat la 0,65. Prima campanie păstrează exit 1, trei probe/servicii ulterioare exit 0. La final, camera liberă, fără browsere de test rămase; niveluri audio, dispozitive implicite și permisiuni cameră verificate identice cu începutul.
+- Capturile cu operatorul de dimineață sunt clasificate după `displaySurface`, nu numele directorului: monitor real, o filă aleasă într-o probă numită window, o încercare de autentificare neconformă, apoi o fereastră reală 812×482. Titlul exact al ferestrei nu este identificat independent, iar redimensionarea ei nu este demonstrată.
+
+Raport curent: `discord-extins-20261029-0743/continuare-macbook-30oct-0903/RAPORT.md`; toate cele nouă rulări sunt în `BILANT.json` (7 validate și 2 neconforme la criteriul inițial de imagine). `RESTANTE.md` și `BANCURI.md` sunt actualizate. Datele noi sunt numai pe MacBook; sincronizarea așteaptă Lenovo. Rămân apelul/recepția cu al doilea cont, repetarea echivalentă pe Lenovo, redimensionarea ferestrei reale și combinația cameră + monitor/fereastră prin portal. Nu se publică nimic; patch-urile sunt neschimbate.
+
+
+## Discord — diferența previzualizării lămurită, 30 octombrie, 10:10
+
+Am continuat independent pe MacBook cu două probe țintite, headless și cu fereastră. Fără un element video suplimentar și fără play() manual pe previzualizare: starea naturală este document hidden + video paused + currentTime 0 + pixeli negri. Activarea filei Discord schimbă starea la visible/paused=false, timpul media avansează și apar toate cele trei culori. Ambele protocoale au terminat curat, cu componenta corectă și fără procese rămase. Aceasta explică de ce măsurarea DOM de fundal nu valida imaginea; încercările istorice nu sunt rescrise drept trecute.
+
+Nu mai cer o repetare pentru această diferență. Pentru măsurarea previzualizării, verificăm vizibilitate, paused, timp media și pixeli; observarea fluxului original este o probă distinctă.
+
+Toate cele 1128 de artefacte și banca diagnosticului au fost verificate înainte/după. Intrarea audio a rămas 0,65. Ieșirea este 0,06 la final; nu a fost măsurată la începutul acestei probe, deci nu afirm că este neschimbată și nu o readuc la o valoare istorică. Nu au fost instalate pachete sau schimbate servicii/configurații de sistem.
+
+Raport: discord-extins-20261029-0743/diagnostic-previzualizare-30oct/RAPORT.md. RESTANTE.md și BANCURI.md sunt actualizate; copiile de la 09:34 sunt arhivate pentru verificarea manifestului istoric de 397 de intrări. Lenovo nu a fost accesat; sincronizarea așteaptă revenirea utilizatorului după 17:30. Rămân repetările Lenovo, receptorul cu al doilea cont, redimensionarea ferestrei reale și cameră+monitor/fereastră cu cicluri prin portal. Nicio modificare sau publicare de cod.
+
+
+## Actualizare upstream live — 30 octombrie 2026, 10:19
+
+Verificare independentă numai prin citire, cu autentificarea existentă pentru Gerrit și GitLab; Bugzilla REST și issue Chromium randat într-un profil temporar separat. Nicio postare, modificare de patchset sau pornire CQ.
+
+- Chromium 8648509: NEW, PS2 a7a01bdfee. Guidou a aprobat pe 28 octombrie, alături de ilnik; Code-Review, Review-Enforcement și Code-Owners sunt îndeplinite. Nu mai lipsește al doilea reviewer. Urmează CQ; nu apare o rulare activă pentru PS2 în mesajele citite.
+- WebRTC 511140 și 511141: rămân MERGED, 90148194b9 și a28232fd46, ambele din 28 octombrie.
+- WebRTC 511160: NEW, PS4 8af5a513, mergeable, zero fire nerezolvate. Pe 29 octombrie au aprobat jleconte, ilnik și Jan. Code-Owners încă UNSATISFIED: endpoint-ul oficial per fișier arată cinci fișiere din portal/screencast PENDING și îl indică pe kron ca proprietar. El are doar votul retras de pe PS3, nu un vot actual PS4. Aprobarea lui poate acoperi fișierele restante; apoi urmează CQ.
+- Issue Chromium 40252886: fără comentarii după #15 al nostru. Mozilla 2085509: UNCONFIRMED, fără modificări după 24 octombrie.
+- PipeWire !3078: merged în 1.6, pipeline success. Noutate: PipeWire 1.6.11 a fost publicat pe 29 octombrie și conține commitul 01a9c6ee al MR-ului, verificat explicit prin referințele tag-urilor. Nu extind această concluzie la backporturile GST separate.
+
+Nu există cereri noi de modificare a codului. Detaliile tuturor builderelor LUCI nu au fost auditate; endpoint-urile generale /checks au dat 404 și nu sunt tratate ca eșecuri de test. Nu am accesat Lenovo, pornit camera sau compilat. Profilul temporar al paginii Chromium este șters după ieșirea normală a browserului; browserul obișnuit rămâne neatins.
+
+Raport și răspunsuri brute: `stare-upstream-20261030-1019/RAPORT.md`, `STARE.json`, `raw/`; reconfirmare finală a celor două CL-uri deschise și a fișierelor fără owner în `FINAL-VERIFY.json`. Datele sunt pe MacBook; sincronizarea cu Lenovo rămâne pentru când acesta este disponibil.
+
+
+## A doua verificare upstream — 30 octombrie 2026, 11:03–11:14
+
+Aprobările, patchset-urile și stările primei treceri se confirmă. Recalculare independentă: 22 de comentarii, 12 fire, zero fire nerezolvate și zero comentarii noi. Chromium rămâne pregătit pentru CQ; 511160 rămâne pe PS4, cu cinci fișiere portal/screencast fără aprobarea de owner, pe care le acoperă kron.
+
+Completare importantă la omisiunea de CI din prima trecere: Buildbucket găsește un tryjob linux_rel reușit pentru 511160 PS4, #98497 / 8666622445725167185, din 29 octombrie. Am citit și ResultDB: 30 de ID-uri distincte PipeWireBufferChecksTest în modules_unittests, toate PASS/expected=true, și 4 PipeWireStreamTest în shared_screencast_stream_test, toate PASS/expected=true. Nu sunt SKIP sau FAIL în cele 34 de rezultate selectate și nu există pagini restante. Aceasta confirmă și în CI înregistrarea testelor mutate cerută de Jan; un tryjob Linux nu înlocuiește CQ complet.
+
+Pentru 511140 PS2 sunt 45 de builduri SUCCESS, pentru 511141 PS2 sunt 44 SUCCESS. Aceste numere sunt builduri, nu teste unitare. Nu au fost reauditate toate cazurile și retry-urile din cele 89 de builduri. Căutarea publică nu găsește builduri pentru Chromium PS2. Nu s-a declanșat nicio rulare: RPC-urile folosite sunt exclusiv SearchBuilds, GetBuild și QueryTestResults.
+
+!3078 în 1.6.11: reconfirmat prin referințele commitului, prin prezența commitului exact între cele 39 din comparația 1.6.10..1.6.11 și direct în sursa tagurilor (max_width/max_height în vechiul cod, step_width/step_height în 1.6.11). Mozilla și issue-ul Chromium rămân fără comentarii noi. Fără compilare, cameră, acces Lenovo sau publicare. Profilul public temporar al browserului de citire este șters.
+
+Raport complet: `reaudit-upstream-20261030-1103/RAPORT.md`; dovezi: FETCH.json, COMPARATIE-GERRIT.json, BILANT-CI.json și raw/. Raportul și manifestul primei treceri au rămas nemodificate. Jurnalele și dovezile noi sunt pe MacBook; sincronizarea cu Lenovo rămâne până la disponibilitatea acestuia.
+
+
+## Bilanț Discord/share, plan Lenovo și corectura CQ — 30 octombrie, 11:43
+
+Rapoartele detaliate cerute de Viorel sunt în `bilant-discord-si-upstream-20261030-1143/`: RAPORT-DISCORD.md, PLAN-LENOVO.md, CQ-SI-PIPEWIRE.md și punctul de intrare RAPORT.md. INDEX-DOVEZI.json inventariază 77 de dosare de rulare, inclusiv încercările respinse, cu căi absolute și amprente; nu este un total de PASS. Au fost reevaluate nouă rezultate pe date salvate (cele șapte valide noi plus două Mic Test vechi), fără probe media sau acces Lenovo.
+
+Bilanțul separă camera fizică de canvas, codecul local de recepția Discord, fila nativă de monitor/fereastră prin portal și redimensionarea viewport-ului de redimensionarea unei ferestre. Explicația pixelilor negri rămâne confirmată: previzualizarea de fundal era pusă pe pauză; în prim-plan rulează. Sunt păstrate explicit vechile crash-uri codec_settings, încercarea Lenovo connecting, cele două criterii DOM neîndeplinite și încercările de autentificare/profil respinse.
+
+Pregătire rămasă înaintea Lenovo: parametrizarea căii runtime și a etichetei UVC în copiile bancului; pe Mac verificările sunt specifice căii H264Discord și FaceTime. Duratele fazelor se stabilesc înainte de probe după controlul sursei UVC (anterior circa 7,7 fps în YUYV 640x480). Copiile de control demonstrează necesitatea configurației, fără modificarea implementărilor auditate. Planul după 17:30: sincronizare verificată fără profiluri private, UVC/Mic Test/filă/scenariu combinat pe Lenovo; monitor/fereastră cu redimensionare și cameră prin portal pe MacBook; apoi apel/partajare primite în contul B și închidere/restaurare. Nu se presupune o recompilare de browser dacă runtime-ul existent este intact.
+
+Corectură CQ confirmată independent: permisunea de a seta +2 în Gerrit nu garantează acceptarea inițiatorului de către LUCI. Încercarea autorului la 11:35 a fost refuzată ca necommitter. Viorel a precizat că el a postat cererea către recenzenți; nu repet mesajul și nu public nimic. La recitirea finală am găsit CQ+2 dat de ilnik la 11:47:36 EET și pornirea confirmată de LUCI la 11:47:48. La 12:09 erau 49 de builduri, 44 SUCCESS și 5 STARTED; încă nu declar integrarea.
+
+Chromium main a8bcd4467 fixează WebRTC 3178a2873; ascendența confirmă 511140 și 511141, cu obiecte deja existente, fără fetch/rebase. 511160 rămâne PS4 cu cinci fișiere fără aprobare de owner. !3078 este în PipeWire 1.6.11; convertorul GST din 1.6.11 este byte-identic cu 1.6.10 și nu are helperul de preferință. Niciun MR GST spre 1.6 nu este deschis al contului; !2951 rămâne la mentenanți. Nu am testat Discord pe tagul 1.6.11 în această trecere și nu am schimbat surse/configurații sau pornit compilări.
+
+Toate materialele noi sunt pe MacBook; copierea pe Lenovo așteaptă disponibilitatea lui după 17:30. Ultima instrucțiune explicită a utilizatorului: nu se publică nimic, cererea de CQ a fost deja postată de el.
+
+
+## Continuare audit — Chromium integrat și evaluator Mic Test, 30 octombrie, 13:11–13:20 EET
+
+Verificare live numai prin citire: Chromium 8648509 este MERGED în main la 12:32:08 EET, ca 8936c3eeec7eda100b3730f3184f8d4cf96f19cb, PS3 creat de rebase-ul automat CQ. Aceleași modificări în toate cele șase fișiere ca PS2 auditat; autorul este păstrat. CQ: 49/49 builduri SUCCESS. Rezultatele selectate linux-rel în ResultDB: 15 teste V4L2 distincte, 235 de înregistrări PASS/expected, fără pagini restante; nu sunt 235 de teste diferite și nu s-a auditat fiecare caz din toate buildurile. 511160 rămâne NEW PS4, cu cinci fișiere în așteptarea aprobării de owner; există mesajul lui Viorel către kron din 12:06. Nu se repetă mesajul. Recitire finală Gerrit 13:17. Mozilla fără schimbări; !3078 este în 1.6.11, MR GST nedeschis, !2951 rămâne la mentenanți.
+
+20 de controale izolate ale celor patru evaluatoare: 18 conforme, două lacune demonstrate în verifica-mic.py: acceptă prima fază duplicată în locul ciclului al doilea și acceptă lipsa afterStop/pcs prin all([]). Reproducerile CLI ale uneltei nemodificate ies cu 0 în ambele cazuri; controlul inspector 23 este respins. Patru rulări reale Mic Test, opt cicluri: faze distincte [1,2], timpi ordonați, afterStop prezent, conexiuni consemnate closed. Nu sunt invalidate de aceste două lacune. Cele 77 de runner.json au aceleași amprente. Același evaluator este în 25 de copii locale, 16 de banc/evaluare și 9 arhivate; înaintea refolosirii se corectează/versionează intrarea curentă și consumatorii activi, păstrând arhivele. Auditul nu aplică reparații.
+
+Raport și reproducători: /home/vik/scripts/pipewire-5363/rezultate/continuare-audit-20261030-131159/RAPORT.md; CONTROALE-REZULTAT.json, REPRODUCERE-CLI.json, MIC-DATE-REALE.json, RESULTDB-V4L2.json, COMPARATIE-PS2-LANDING.json. Nu am pornit probe media sau compilări, nu am modificat patch-uri/configurații și nu am publicat nimic. Lenovo nu a fost accesat; probele și sincronizarea continuă când este disponibil după 17:30. Planul anterior se completează cu închiderea celor două lacune Mic Test înaintea refolosirii evaluatorului.
+
+
+## Audit independent al noutăților — 30 octombrie, 17:38 EET
+
+Raport: /home/vik/scripts/pipewire-5363/rezultate/audit-noutati-20261030-172718/RAPORT.md. Verificări proprii GET și SSH numai prin citire. WP 0.5.19 publicat, !934 în tag și în ramurile 0.5/master, toate la 4ab992fa. !895 a avansat după raportul de la 17:18: citire la 17:33, head fixat 099c62423b55 peste 4ab992fa; opt fișiere diferă de head-ul 7f6bde209e, inclusiv alegerea stream-ului implicit. Pentru test se fixează head-ul efectiv, fără a confunda integrarea planificată săptămâna viitoare cu un termen tehnic după care reviziile nu mai pot fi testate.
+
+Clarificare logind: monitorul citește starea UID și seat-urile active, nu sesiunea SSH individuală. Lenovo are UID active, un seat activ, sesiune X11 pe seat0; apeluri libsystemd și loginctl consemnate. SSH-only fără seat activ este alt caz, dedus din cod, nu testat prin închiderea sesiunii grafice. vivid/vimc nu sunt încărcate; pe sysfs apar doar cele două noduri EasyCamera. Nu am încărcat module sau schimbat servicii/configurații. Bancul existent poate da start=0 și pentru un eșec de activare așteptat; rezultatul nu trebuie confundat cu o captură reușită.
+
+Matrice recomandată !895: WP 0.5.19 versus candidat pe același PipeWire, UVC raw/MJPEG, vivid intervale, libcamera/vimc separat dacă se pregătește, sursă implicită/explicită, doi consumatori cu date efective, cicluri și logind separat. Sunt recomandări, nu teste deja efectuate. Cele două lacune Mic Test de la 13:20 sunt încă în cele două copii curente MacBook (hash fcab3051...), datele reale rămân susținute. Restanțele Discord și sincronizarea nu sunt închise de acest audit. P3/P4 rămân în evaluare arhitecturală; nu sunt promovate automat upstream. Nu am reauditat pachetul S3 în această trecere.
+
+Chromium M159 confirmat la commitul integrat; beta 11 nov și stable 8 dec sunt calendar planificat. 511160 rămâne NEW, owner pending, fără mesaj nou de la kron. Nu am publicat nimic și nu am pornit capturi/compilări. Documentele sunt pe MacBook; sincronizarea nu a fost efectuată în această trecere.
+
+
+## Audit al planului backport / !3066 / WP !895 — 30 octombrie, 18:11 EET
+
+Raport independent: /home/vik/scripts/pipewire-5363/rezultate/audit-plan-backport-3066-20261030-174458/RAPORT.md și PLAN-COMPLETAT.md. 22 colectări GET, toate paginile complete; 35 de note !3066 și discuțiile lor, 23 umane, toate corpurile prezente în documentul autorului. Head Wim 0099fdb2 și master 5009ec694 au baza comună 0bfcada0a, apoi șase versus opt commituri distincte; nu sunt aceeași bază cu un singur fix. WP !895 la citirea 17:46: 2a894621ad38, țintă mobilă de fixat înaintea probei.
+
+GST 4b06d7a86 peste 55a35bf6 se aplică pe 1.6.11 în toate cele trei fișiere. Cei patru candidați 765e628cb, 7a8e49384, 682932a6f, 6734d69c8 au defectele/condițiile în stabil și se aplică; nu au fost compilați sau testați hardware de mine pe stabil. Recomandări: nu gruparea tuturor fixurilor independente într-un singur MR, teste dedicate pe fiecare și combinație. Alți candidați verificați în cod: 6c25924b4 (NULL unref primul cadru keepalive/resend), 718675fc4 (unități PTS), 31b556d6b (latență negativă unsigned); ultimul necesită 718675fc4 și trece numai după el, pe copie izolată. Niciun backport nou nu e declarat gata de publicare din aplicare curată.
+
+48 de probe SPA izolate, pe headere exportate din 1.6.11 și master5009; predicțiile normale trec, două controale cu așteptări deliberat greșite ies cu 1. Pool 4 în [1,8] este valoare legală preferată; min client 8 dă 8, min9 respinge. Pierderea pasului Step∩Range acceptă 641x480 respins inițial. Același loc în cod nu înseamnă același defect sau un singur fix. WebRTC nu poate fi exclus de la durata de viață a bufferului: citește între dequeue/queue și are ramură raw callback, nu copiere universală; nicio corupere WebRTC nouă reprodusă aici. Ramura actuală Wim aplică DELAYED atât reliable, cât și refcounted; vechile rezultate pool4 necesită repetare. Plan: WP singur, Wim fast/on, apoi combinație, clienți vechi/noi și ASan/renegociere/deconectare.
+
+Sursa reală S3 citită de pe Lenovo: /home/vik/tee-refcount-24oct/unelte/tine.c. hold-sec implicit3, check-ms500; pentru istoricul8s sunt necesare comenzile exacte. Logurile istorice S3 nu au fost renumărate aici. Informațiile istorice pot fi furnizate acum, clar etichetate; concluziile despre politica actuală cer probe noi. Nu am scris sau postat un răspuns public. P3/P4 rămân în evaluare, cu clienți vechi/noi și graf mixt audio/video; NO_RATE nu declară singur o politică de lock-rate.
+
+Corectură proprie importantă: prima mea verificare git apply --check era invalidă deoarece directorul de probă se afla sub alt repo Git și patch-urile erau ignorate (Skipped patch, exit0). Ieșirile inițiale sunt arhivate ca invalide. Am prins eroarea cu dependența 31b556d6b și am refăcut toate verificările cu discovery izolat și verbose. Probe de control în CONTROL-DISCOVERY-GIT.json. Aceasta nu este o constatare despre testele autorului. HEAD al clonei auditate rămâne 04d6a2bca, origin/master5009; am folosit hashuri explicite. Nu am modificat ramuri, commituri sau implementări auditate, pornit capturi ori schimbat configurații. Căutarea mea largă rg pe Lenovo a fost oprită după PID-ul propriu, apoi sursa a fost citită exact. Jurnale locale pe MacBook, sincronizarea rămâne separată; !2951 neschimbat.
+
+
+## A doua trecere — arhitectura bufferelor, 30 octombrie, 18:24
+
+Raport: /home/vik/scripts/pipewire-5363/rezultate/audit-arhitectura-buffere-20261030-182407/RAPORT.md; ARHITECTURA.md și RECOMANDARI.md conțin direcția tehnică și verdictul pe fiecare schimbare. !3066 și cercetarea MetaBusy sunt legate prin aceleași buffere, dar proprietatea conținutului, viața GstBuffer/GstMemory/FD, selecția, trezirea și finalizarea GPU sunt obligații distincte. MetaBusy rămâne prototip de cercetare, nu patch gata de trimis; P3/P4 nu sunt promovate prin acest raport.
+
+Recalculare proprie a 12 probe OFF/ON arhivate, 540 de intrări cu amprente neschimbate: șase OFF cu stagnarea urmărită, șase ON fără ea. Patru mostre = trei împrumuturi și o copie. Nu sunt probe noi pe master/cameră/GPU și nu este benchmark. Auditul precedent: 477 de fișiere, zero nepotriviri. Citire GET upstream la 18:29: 23 de note umane !3066, fără note noi; Wim0099 neschimbat, master4cfc avansat numai în pw-dot. Datele și sursele sunt fixate în raw/ și FETCH.json.
+
+Completări ale recomandării: buget pe sloturi fizice distincte plus rezervă de progres; cotele per consumator nu sunt suficiente singure. DELAYED ridică minimul alocării, nu adaugă automat un buffer. Returul fără cadru nou trebuie testat pe toate căile, inclusiv reuse; existența unui if nu dovedește un deadlock nou. Generațiile pool-ului previn confundarea retururilor vechi cu sloturi noi. CPU refs și fences GPU nu sunt echivalente; SPA_META_SyncTimeline este contract existent de investigat, nu dovada integrării lui complete. Calea rapidă trebuie să fie limitată și fără alocări/așteptări blocante în RT; copierea este selectivă și numai din sursă coerentă. Politica pentru video comprimat cu dependențe se păstrează la straturile care cunosc formatul, fără parser de codec introdus în tee.
+
+Backportul GST și candidații mici de stabil rămân lucrări independente cu teste dedicate. Mai întâi WP singur și Wim fast/refcounted pe revizii fixate, apoi combinația; verificarea payloadului și a recuperării după retur are prioritate față de numărarea simplă a cadrelor. Nu am modificat implementări, ramuri, configurații, pornit teste media/compilări, accesat Lenovo sau publicat. Runda este pe MacBook; sincronizarea pe Lenovo nu este declarată efectuată. Recomandările de arhitectură sunt ale auditorului, nu un acord upstream.
+
+
+## Auditul completărilor — backporturi, S3 și !3066, 30 octombrie seara
+
+Raport: /home/vik/scripts/pipewire-5363/rezultate/audit-completari-3066-20261030-185811/RAPORT.md. Citiri proprii GET și arhiva istorică Lenovo prin SSH, fără teste media/compilări/configurații/publicări. Nu am intervenit în campania Lenovo. Am copiat 323 de fișiere ale probei 1.6.9 din septembrie (671.991 octeți), amprente verificate. Recalculare 240 de rânduri: pe fiecare mașină 60 cazuri B cu gardă, daemon viu și EOS; total B 120. Martor A: 24 procese neviu pe fiecare. GDB confirmă pe ambele A în spa_v4l2_use_buffers, C în mmap_read, B exited normally. Nu este test nou al commitului final pe 1.6.11 sau audit complet de proveniență binară a campaniei septembrie. Afirmația „orice client” e prea largă: JURNAL §19.4 consemnase min-buffers=8 ca excepție. 120/120 per mașină din verificator include A și B, nu 120 capturi reparate pe acea mașină.
+
+S3: 15 probe selectate, 30 intrări neschimbate, 239 verificări de conținut recalculate, identități consemnate maps/corelate cu inode/dev și ieșiri verificate. Opțiunile reale există în start: implicitul 3 s din sursă nu descrie acele comenzi. Lenovo: baza 13/17; Wim client fără schimbare 13/17 (3 repetări); Simon fără schimbare 16/17 (2), cu schimbare 0/17 (3). MacBook există și probe de 4 s/9 verificări, deci nu generalizăm 8 s sau raportul 13/17 la toate cazurile. Sunt observații istorice, fără validarea coerenței inițiale sau a headurilor actuale.
+
+Precedente citite live: !3080 are 27 commituri/10 autori, inclusiv Wim; !2721 are două commituri. Nu impun un MR pentru fiecare bug: păstrăm commituri logice și teste per fix, cu MR-uri coerente pe componentă. Perechea V4L2 poate merge împreună; testul parțial poate ajunge la al doilea defect cunoscut. Trei MR-uri (GST, V4L2, pipewiresrc) sunt o organizare rezonabilă; latența poate merge separat dacă întârzie. Nu era o restricție împotriva backporturilor commiturilor lui Wim.
+
+!3066 head f96b45e6 confirmat. Comparația proprie față de 0d994fe9 este identică cu copia autorului și schimbă alocarea bitmask-urilor; S1/S2 trebuie repetate, nu declarate actuale sau închise din diff. Separăm pauza prin epuizare, stagnarea după retur, suprascrierea unui împrumut protejat și nelivrarea unui cadru nou. Arhitectura GPU/bugete este mai largă decât comentariul curent, fără cerința unui protocol nou ca blocaj la backport; renegocierea/retururile rămân direct relevante. Generația poate fi garantată prin lifetime/drain existent, iar finalizarea GPU prin ordonare/fences fără a ține CPU blocat în RT. Planul poate continua cu WP !895, apoi comparațiile fixate, clienți cu/fără schimbarea de retur și backporturi pe 1.6.11. Jurnale locale actualizate; noul raport nu a fost copiat pe Lenovo.
+
+
+## Audit independent al campaniei de seară — 31 octombrie 2026
+
+Raport: /home/vik/scripts/pipewire-5363/rezultate/audit-seara-30oct-20261031-035336/RAPORT.md. Manifestele pachetelor: 800 + 514 + 960 = 2.274 intrări, zero nepotriviri. Recalculări proprii: 68 fișiere mostre WP, 8.087 cadre, 12 perechi cu hash-uri comune/min=1; opt grafuri F1 confirmă link pe 0.5.19 și absența lui pe !895. Codul fixat wp-stream.c confirmă eroarea activării la EnumFormat absent; regresia este susținută și prioritară pentru raportare de către Viorel. Identitățile runtime ale daemonilor WP nu sunt capturate complet în pasul 1; clienții au bibliotecile consemnate. Abaterea FPS c1 nu are cauză demonstrată.
+
+Constatare majoră de raportare P3: afirmația „clientul vechi nu mai pornește deloc” este falsă. Toate cele nouă cazuri cu idle→error revin ulterior error→running și au 6–7 callback-uri process; P3/P34 au nouă și nu trec prin error. Am verificat 18 probe, inclusiv martorul cu WP anterior. Clientul este audio sintetic cu biblioteca 1.0.5 (identitate și versiune confirmate), nu o cameră/browser. Indicatorul grep eroare_nod păstrează prima eroare, nu starea terminală. Poarta poate respinge legitim orice eroare, dar aceasta nu înseamnă nepornire permanentă. Cronologia completă: P3-CRONOLOGIE.json. P4: 12 probe și loguri confirmă două vs o configurare, 0,686–0,691 vs 0,033–0,039 s. Proba audio+video active simultan în același graf NU a fost făcută; P3/P4 rămân în evaluare arhitecturală.
+
+44 probe tee recalculate și identități consemnate verificate: client1.6.2 16/17 schimbări; client1.6.11/master 0/17. Pool4/K1 și pool8/K5 nu au niciun cadru la ambii clienți în cele ~8,5 s de după eliberare; nu declar „definitiv în orice condiții” sau o regulă universală K+3. Simon trace: după încălzire ID0–3, martorii0–7. S1 nu a schimbat pool-ul efectiv, deci rămâne neexercitat. Corectură de etichetă: 33 refcounted, 8 fast, 3 implicit, ZERO reliable explicit. Numerele pool4→4 și cerere2→3 sunt măsurate în refcounted; reliable este deocamdată concluzie din cod.
+
+GST repetat independent pe MacBook, fără recompilare: candidat19/19, martor5/19 (14 eșecuri așteptate). V4L2 pe1.6.11: datele susțin perechea de fixuri în domeniul testat, nu revendic un nou GDB pe fiecare cădere. G1 măsoară caps_fixate, nu o captură Snapshot. 6734d69c8 nu mai are blocarea activării, dar Props încă are controlul scalar fals; poate fi amânat fără a spune că defectul a dispărut complet. unref(NULL) repetat local:0 fără diagnostic. 765e628cb și lanțul de latență rămân funcțional neconcludente/nevalidate.
+
+Defecte de banc demonstrate izolat, fără reparații aplicate: cadre.py salvează eroare Gst dar iese0; ruleaza2.py salvează daemon23/socket absent dar iese0; toate-pas1.sh iese0 cu opt pași23; fragmentul final continuare2.sh dă0 deși after a eșuat și rc_total=2. system-snapshot.py ignoră PermissionError pentru un proces propriu viu și poate da lista goală. Reproduceri în CONTROALE*.json și controale-izolate.py. În datele reale pas2 daemoni/client ies conform; after P3/P4 este consemnat reușit, deci nu invalidez automat rezultatele. Pas1 nu permite certificarea retrospectivă a tuturor codurilor individuale nesalvate. Reparațiile se versionează în bancul activ, fără rescrierea manifestelor istorice; aceleași tipare trebuie verificate în învelișurile înrudite.
+
+Lenovo verificat numai prin citire la04:07: modulele temporare absente, camera liberă, servicii active, portal fără drop-in/mediu temporar, volum0,40. Erorile reale de permisiune /proc rezolvate cu sudo readlink sunt systemd/systemd-executor/sshd, nu procese de test; scanarea finală nu a avut intrări neverificate. Nu am modificat formatul camerei sau pornit capturi/daemoni. Nu am găsit SCHIMBARI-SISTEM.txt în cele două rădăcini încercate; am verificat snapshoturile și starea live. API actual: WP8952a8946, Simonf96b, master4cfc, stabil4287, Wim0099. Jurnale locale actualizate; auditul nou nu este copiat pe Lenovo. Nimic publicat și nicio implementare/ramură/configurație modificată.
+
+Corecturi ale propriilor unelte: două mock-uri inițiale incomplete (set_value și STDOUT) și o cale greșită client.txt în loc de client.json; încercările/versionările sunt păstrate, iar rulările finale au trecut aserțiunile independente. Aceste erori sunt ale auditului, nu ale produselor auditate.
+
+
+## Audit independent — corecturile bancului și P4 mixt, 31 octombrie 2026
+
+Raport: /home/vik/scripts/pipewire-5363/rezultate/audit-p4-mixt-20261031-045923/RAPORT.md. Recalculare independentă a 77 probe mixte (pilot exclus), zero nepotriviri în agregatele verificate; M3 vivid 7/12 cu P4 vs 1/12 fără, Fisher post-hoc 0,0271907, fără concluzie cauzală. Beneficiul M1 se confirmă (2→1 configurări); M2 o configurare și la martor; M4 forțare/restaurare, noua pauză ulterioară rămâne netestată. Numărul handoff-urilor nu dovedește unicitatea sau continuitatea imaginilor: regimul rapid include și reluare 0,108 s față de 0,044 s în exemplul comparat. P4 rămâne în evaluare arhitecturală.
+
+Cele 10 controale furnizate trec în copia izolată. Controale proprii suplimentare: ruleaza2.py acceptă exit23 după TERM cerut și escaladare KILL, fiindcă verifică stopped_by_us fără rezultatul opririi; system-snapshot.py poate ignora PID viu când Path.exists ascunde PermissionError (Python3.14 pe ambele). Sunt lacune de banc, fără incident astfel demonstrat în datele reale: cei doi daemoni ies0 în toate cele44 probe pas2. Controlul wrapperelor istorice este acum salvat complet în noul audit; vechiul audit rămâne neschimbat.
+
+Audio: sursa și dezasamblarea binarului confirmă contor după dequeue reușit/queue, nu toate callbackurile; zerouri până la maxsize, sink nul, fără validare PCM la receptor. Restrâns „audio neafectat în orice scenariu” la indicii efectiv măsurați. Raportul contorului0,21–0,36 nu dovedește singur redare la un sfert de viteză. Ferestrele audio force-set încă folosesc timpul shell; alinierea mono/local este prin evenimente asincrone. Limita≤0,9s nu e demonstrată global.
+
+Verificarea OOM a autorului începea04:40, față de before04:35:12; jurnalul kernel Lenovo citit independent04:34–04:55 (292 linii), zero OOM, deci concluzia pentru campania concretă se confirmă și pe intervalul omis, dar unealta trebuie corectată. Lenovo: module temporare absente, procese test absente/fără intrări necitibile, camera liberă, servicii active, portal fără mediu/drop-in temporar, volum0,40. SCHIMBARI-SISTEM.txt confirmat în /home/vik/webrtc-511160-ps2/, inclusiv intrarea04:55. Nu am deschis camera sau schimbat formatul.
+
+P3:66 loguri istorice recitite, cele9 cazuri actuale error→running se recuperează. Efect favorabil P3 susținut în clientul audio sintetic; „primul callback” este în realitate primul eșantion periodic cu contor pozitiv, nu timestampul exact al callbackului. Manifestele16+1173 și istorice800+514+960 (originalele corect păstrate), plus corecturi4+2+10: fără nepotriviri. Proveniența runtime a noii campanii mixte rămâne mai slabă decât a bancului precedent: funcția provenienta_procese nu este apelată, fără maps/amprente pe daemon/scheduler/client per rulare.
+
+Recomandare: corectarea cazurilor de banc, apoi comparație U/P4 cu ordine prestabilită/randomizată, identități runtime și metadate per cadru, plus semnal PCM determinist verificat la receptor. Nu cer repetarea tuturor77 doar pentru cazuri neobservate în ele. P3/P4 rămân locale; backporturile validate pot avansa independent; regresia WP!895 rămâne separată și prioritară pentru informarea de către Viorel. Nicio implementare/ramură/configurație modificată, nicio captură/compilare nouă și nimic publicat.
+
+
+## Audit independent — proba P4 țintită și eroarea date, 31 octombrie 2026
+
+Raport: /home/vik/scripts/pipewire-5363/rezultate/audit-p4-tintit-20261031-082722/RAPORT.md. Cele37 controale ale autorului trec în copia izolată; F1 din runnerul ruleaza2, F2 scanare și F6 fereastra OOM sunt închise în domeniul controlat. Garda campaniei acceptă acum numai etichete TERM, dar nu poate colecta exitcode-ul daemonului; 168TERM nu demonstrează168exit0. Limita este recunoscută de autor, fără incident real nou demonstrat.
+
+Reanaliză proprie84 probe:78vivid+6UVC, plan complet fără duplicate,4732 înregistrări maps conforme, schedulerU a81646f0 șiP4 7687660c consemnate și comparate cu binarele Lenovo. SursaU neschimbată față de4cfc47112; P4 are cele5linii cunoscute. M3:11/27 vs11/27 pauze499,408–500,001ms, după excluderea primelor11 cu căutarea suprapusă9/24U vs8/22P4. Testul24/24vs24/24 începe la+0,5s și omite cea mai mare parte a pauzei; p=1 nu dovedește echivalență. Corect: asocierea veche nu s-a reprodus și fenomenul există fărăP4; nu cauză exclusă universal/întâmplare demonstrată.
+
+Defect nou în banc:pcm-receptor.c:57 convertește float în uint32 înaintea verificării domeniului. Control propriu cu float-cast-overflow/UBSan:0,25/NaN/Inf/1000 declanșează eroare, martorii0,5/0,75 trec. Nu am dovada schimbării datelor salvate; PCM brut lipsește pentru replay. M1/M3 receptorul consemnează continuitate în video, K1 salt4800 șiK2 27648zerouri confirmate; M2 stricat șiU, contorul decodat după reeșantionare nu numără exact mostrele originale pierdute. UVC/M1U are48274,29/s, +0,5714% peste±0,5%prescris, compatibil cu numărarea bufferelor întregi la margineaW.
+
+Eroarea uutilsdate0.10.0 reprodusă independent pe Lenovo cu ore fixe șiGNUgnudate9.7:fracțiuni mici greșite la%6N/%3N; timpul formatat poate reveni înapoi. V2mixt rerulat izolat:77 rezultate identice, M2UVC0,23 în toate4. 17/186 reprezintă abateri detectate față de intervalele presupuse, nu o numărătoare exhaustivă demonstrată a tuturor coruperilor istorice. Parserul și filtrul original de browser acceptă în control o observație din afara etapei din cauza timestampului greșit. Revalidare necesară pentru corelările temporale din banc-v3-18oct, banc-v3-19oct șiFirefoxLenovo23oct; imaginile/unittests/identitățile nu sunt invalidate automat. Nu am recalculat toate acele campanii istorice în această rundă.
+
+Arhitectura:NO_RATE în spa/node/io.h147–149 înseamnă rată aproximativă, recomandănsec/rate_diff; stream.c676foloseștensec. Nu impune lock-rate prin contract. V4L2 suprascrie ținta, libcamera setează același flag dar fracție goală, netestată aici. P4 rămâne decizie arhitecturală pentru mentenanți; M3 nu mai este dovadă de regresie produsă deP4. Backporturile validate rămân separate.
+
+Integritate:1598campanie+9r2banc+7r2mixt conforme. În vechiul manifest al bancului, READMEoriginal lipsește din arhivă (nepotrivire numai de documentație); sursele și datele schimbate sunt păstrate. Lenovo citit fără intervenții:module temporare absente, procese test absente, servicii active, portal fără override, volum0,40, camera liberă;544linii kernel07:35–08:20 fărăOOM. Jurnalul sistemului include corectura orei. Fără capturi/daemoni/compilări PipeWire noi, configurații/ramuri/commituri modificate sau publicări. Numai compilarea unui control C propriu foarte mic în directorul auditului.
+
+
+## Audit independent al backportului stabil — 31 octombrie 2026, înaintea publicării
+
+Raport: /home/vik/scripts/pipewire-5363/rezultate/audit-backport-stabil-20261031-095154/RAPORT.md. Candidat c4228f9b5 peste 1.6.11 (4287f3151), arbore 3ffe28b7. Sursele sunt neschimbate; șase patch-id identice cu master, adaptarea acea30afa păstrează INT_MAX și forma finală relevantă din master.
+
+Constatare blocantă: candidatul dă 18/19 teste GST cu SDK-ul real 1.22, pe ambele mașini. dmabuf-list presupune DMA_DRM fără condiționarea după funcționalitatea disponibilă. Reprezentarea veche YUY2 + memory:DMABuf funcționează. Este o incompatibilitate nouă a testului, nu o regresie DMA-BUF de producție demonstrată. Autorul trebuie să corecteze testul și să-l repete pe 1.22 și 1.28, pe SHA final; nu recomand ridicarea minimului stabil.
+
+Recomand suplimentar 6c25924b4: unref(NULL) la primul buffer cu keepalive/resend produce CRITICAL pe 1.22 și abort cu critice fatale; 1.28.8 îl tolerează. Blocul exact vechi/candidat și blocul upstream reparat, cu GstBuffer real, confirmă defectul și fixul la prima și a doua înlocuire, repetate și pe Lenovo. Nu am adăugat commitul și nu am făcut o sesiune Snapshot completă cu 1.22.
+
+Probe independente: suita 69/69 pe MacBook; 131 controale V4L2 ASan/UBSan pe fiecare mașină, cu surse exacte și syscalluri simulate; 16 controale lock order (martor blocat 3/3, candidat terminat 3/3); 81 intrări GstCaps și 16 forme audio. Cele 18 probe la limite păstrează explicit două eșecuri FPS preexistente. Testele GST actuale trec 19/19 cu 1.28.8 pe MacBook și 1.28.2 pe Lenovo. Cele 173 rezultate ale repetării izolate Lenovo includ intenționat eșecurile cunoscute, nu sunt 173 cazuri funcționale verzi. Evaluatorul propriu are controale negative pentru date lipsă, eșec, identitate binară și erori sanitizer.
+
+Recomand păstrarea lui 765e628cb (interblocarea este acum reprodusă controlat) și 6734d69c8 (proprietatea payload falsă, fără atribuirea blocării vivid pe 1.6.11). Perechile #2+#3 și #4+#5 rămân împreună. Preferințele afectează și audio. Pasul și fracțiile extreme nu sunt complet reparate: controlul pe puncte găsește 24 de intrări cu pas lărgite, deja pe bază; is_subset singur era insuficient. Reproiectarea SPA, P3 și P4 rămân în afara stabilului.
+
+Reanalizate 120 de cazuri hardware ale autorului, câte 60 pe mașină: loop8, baza cade 10/10 și candidatul termină cu EOS 10/10; loop4, baza termină 8/10 și candidatul 10/10; camera fizică 10/10 în ambele variante. G1 este fixare de caps, nu captură. FaceTime folosește MMAP/EXPBUF în această serie, deci nu reproduce importul din #4. Reanalizate 48 de probe P4 MacBook: pauza M3 pe vivid U 4/10, P4 5/10, pe FaceTime 0/3 pentru fiecare. Clasificatorul reparat trece 14/14 sub sanitizer; dezasamblarea binarului istoric confirmă verificările înaintea conversiei pentru acel executabil.
+
+GET upstream 10:36: headuri neschimbate; zero MR-uri publice spre 1.6 nu exclude lucrări private. WP !895 rămâne prioritar pentru informarea de către Viorel; notele live dau 401 în această rundă. Pe 511160 cele două BUILD.gn sunt deja aprobate de Jleconte; lipsesc ownerii pentru cinci fișiere portal/screencast. Nu am publicat sau modificat implementări, ramuri, commituri ori configurații; nu am pornit capturi și nu am încărcat/scos module. Lenovo avea v4l2loopback încărcat la citirea finală, fără a-i putea atribui originea; l-am lăsat în pace. Acceptul pentru trimitere rămâne condiționat de corectarea testului 1.22.
+
+
+## Clarificare audit GST — MR-uri și proiect, 31 octombrie 2026
+
+Raport: /home/vik/scripts/pipewire-5363/rezultate/audit-stare-gst-20261031-105140/RAPORT.md. Ambele puncte aparțin pluginului GST din PipeWire. Testul dmabuf-list vine din !3077, deja integrat; corecția pentru SDK 1.22 nu este încă într-un MR public deschis. DMA-BUF există în 1.22, dar reprezentarea DMA_DRM este din seria stabilă 1.24. Fixul 6c25924b4 este deja integrat în master prin !2930 (29 iulie); lipsește backportul în 1.6. Citite toate cele 74 de MR-uri publice deschise și diffurile lor, fără erori/overflow, fără modificări ale testului sau liniilor relevante și fără ținte 1.6. Verificat și codul master/1.6 direct prin API. Fără publicare sau modificarea implementării; nicio captură nouă.
+
+
+## Audit r4 — completări GST și incident rsync, 31 octombrie 2026
+
+Raport: /home/vik/scripts/pipewire-5363/rezultate/audit-corecturi-r4-20261031-110458/RAPORT.md. Confirmate independent sursele oficiale 1.24/1.26 (verificare NULL cu CRITICAL) și 1.28.0 (returnare pentru NULL), inclusiv ramurile 1.24/1.26; copiile autorului au hashuri identice. Nu revendic o nouă execuție pe pachetele exacte Ubuntu/Debian 13. Repetarea lockurilor consemnează binarele corecte și rezultatele controlate cunoscute.
+
+Lenovo la 11:07: vivid/v4l2loopback absente; cele 13 intrări greșite din rădăcină absente. Copia corectă are 606/606 intrări conforme pe ambele mașini, același manifest. Lipsa inventarului anterior al rădăcinii nu permite certificarea că rsync/ștergerea nu a pierdut alt fișier acolo; nu invalidez automat datele păstrate ale campaniei.
+
+Documentele autorului nu sunt încă integral corectate: PRIORITATI :11–15 repetă backport pregătit și concluzia retrasă despre FaceTime; RAPORT :21 deduce absența oricărei lucrări din lipsa MR-urilor, :78 revendică pașii general, :161 păstrează lockul neconfirmat deși nota nouă arată reproducerea controlată; PRIORITATI :49 numește eșantionul periodic primul buffer fără a identifica proba audio sintetică. Am arhivat forma citită; nu am modificat aceste documente.
+
+Plan recomandat: corectură separată pe master, caz DMA-BUF vechi permanent plus DMA_DRM condiționat după build, config.h vizibil testului și înregistrare Meson coerentă; apoi 6c25924b4 și verificarea noului SHA în 1.6. Numărul de teste poate crește; nu trebuie forțat la 19. Se poate testa local fără a aștepta integrarea MR-ului master. Candidatul actual este tot c4228f9b5, fără accept final până la corecție. Fără intervenții asupra codului/ramurilor/configurațiilor, capturi sau publicări.
+
+
+## Audit v2 și proba completă GST 1.22 — 31 octombrie 2026
+
+Raport: /home/vik/scripts/pipewire-5363/rezultate/audit-v2-gst122-20261031-113012/RAPORT.md. 56c269258 este exact c4228f9b5 plus backportul 6c25924b4: patch-id identic, autor original și trasabilitate păstrate, surse curate. Patru arhive Debian comune și bibliotecile SDK coincid cu auditul anterior. Repetare independentă: V2 69/69 pe 1.28.8, 68/69 pe 1.22 (numai dmabuf-list); părintele, GST 18/19 pe 1.22. Cele 157 de execuții includ două eșecuri cunoscute, nu sunt 157 verzi.
+
+Recalculate 18 capturi ale autorului: părinte 1.22 nefatal, patru cu CRITICAL și EOS; fatal, patru cu rc134 fără EOS; V2, opt fără CRITICAL și cu EOS; martor 1.28, două conforme. Nu am pornit capturi proprii. Montajul bibliotecilor verificat separat cu gst-inspect/LD_DEBUG: exact pluginurile private și core 1.22. Capturile istorice nu au identitatea maps per proces.
+
+Constatare de banc: noul teste.sh doar consemnează codul clientului și ignoră rezultatele celor trei comenzi Meson GST. Controale izolate: client exit23, timeout124, lipsă EOS, critică neașteptată, versiune eșuată și trei comenzi Meson eșuate lasă verdictul zero, ca martorul valid. Necesită comparație cu predicția pe caz; rc134 este intenționat numai la martorul vechi cu critice fatale, iar V2 trebuie să termine curat. Datele reale sunt conforme și repetarea independentă le susține. grep FAIL dublează sumarul: este un singur test eșuat, nu două. Helperul vechi nu colectează codurile de ieșire ale daemonilor.
+
+Constatările despre documente sunt închise. Arhivele r5 corespund instantaneelor proprii; manifestele 607 și 83 sunt conforme și pe Lenovo. Manifestul părinte include gst122, inclusiv arhivele și rezultatele. Întrebarea 2 trebuie orientată spre handle_video_fields la liniile 556–604, nu blocurile 1020/1039 ale conversiei inverse. configinc nu include automat config.h. Pentru noul test recomand verificarea ambelor lățimi și a features, nu doar numărul doi. Codul corecturii rămâne de formulat/implementat de autor în condițiile proiectului.
+
+Backportul 6c este susținut; stiva finală rămâne în așteptarea corecturii testului, a runnerului și a verificării noului SHA pe ambele mașini. Fără modificări de implementare, ramuri sau configurație, capturi noi ori publicări de către auditor.
+
+
+## Audit evaluator GST — 31 octombrie 2026
+
+Raport: /home/vik/scripts/pipewire-5363/rezultate/audit-evaluator-gst122-20261031-115248/RAPORT.md. Confirmate independent martorul pozitiv și cele 13 negative ale autorului. Nouă abateri suplimentare sunt însă acceptate incorect: critică NULL adăugată, EOS lipsă și critică așteptată lipsă numai în brut; SKIP/TIMEOUT în locul eșecului cunoscut; test înlocuit cu un nume inventat; client duplicat; suită brută eronată cu sumar bun; status FAIL suprascris de OK în sumar. Necesare: corelare brut/sumar, tip și motiv exact pentru excepție, catalog și cardinalitate exacte, fără mascarea contradicțiilor prin dict. Scriptul de control dă zero atât când evaluatorul simulat acceptă tot, cât și când respinge tot; și el trebuie să-și compare rezultatele cu așteptările.
+
+Cele 26 de fișiere brute reale coincid cu auditul precedent, deci rezultatele reale rămân susținute. Nu am pornit capturi noi sau modificat codul autorului.
+
+Constatare pentru testul încă nescris: schimbarea numai a intrării DMA_DRM în YUY2, într-o copie a testului actual, trece pe 1.22 dar pică pe 1.28 la gst_caps_is_subset. Convertorul produce două dimensiuni corecte pe ambele; SDK-ul nou oferă și reprezentarea DMA_DRM. Comportamentul apare și în baza 1.6.11, nu este o regresie nouă a v2. Trebuie stabilite aserțiunile potrivite, fără eliminarea oarbă a verificărilor sau schimbarea convertorului pentru test. Planul de două cazuri rămâne, dar 19/20 sunt predicții, nu rezultate.
+
+Raportul răspunde celor trei etape propuse și explică cele cinci întrebări tehnice. Cu catalogul actual neschimbat în rest, configurația reparată ar avea 19 GST / 69 total fără DMA_DRM și 20 GST / 70 total cu el. Așteptările și versiunile se fixează per build/mașină înainte de execuție, fără a cere 1.28.8 pe Lenovo dacă acolo este 1.28.2.
+
+Incident propriu: primul helper al auditului a omis GST_REGISTRY și a rescris cache-ul utilizatorului. Am consemnat și păstrat fișierul rezultat, apoi am regenerat cache-ul cu unealta sistemului 1.28.8; nu pretind restaurarea exactă a vechiului cache nesalvat. Probele au fost repetate izolat. Fără modificări de configurație, pachete sau servicii și fără publicări.
+
+
+## Audit evaluator GST v2 și rsync — 31 octombrie 2026
+
+Raport: /home/vik/scripts/pipewire-5363/rezultate/audit-evaluator-v2-20261031-122538/RAPORT.md. Confirmate independent 24/24 controale; evaluatorul acceptă-tot dă 1/24 și scriptul eșuează, respinge-tot dă 23/24 și eșuează. Cele nouă reproduceri proprii din auditul anterior sunt acum respinse. Corecțiile pentru brut, motivul eșecului cunoscut, catalogul GST, duplicatele de client și linia malformată sunt susținute. Datele reale: 26 fișiere neschimbate.
+
+Rămân patru lacune demonstrate: R1 sumarul GST cu FAIL900 este acceptat fiindcă se verifică doar OK (FAIL2 istoric este o excepție de metadate de documentat, nu motiv de ignorare generală); R2 un test non-GST inventat poate înlocui unul din suita de 69 teste; R3 un contor numeric contradictoriu poate fi suprascris prin dict; R4 ștergerea VERDICT.json poate face garda de mutație să creadă că o operație fără efect a schimbat intrările. No-op-ul cu intrările txt identice și evaluator simulat primește 24/24. Nu contest mutațiile reale actuale, care s-au aplicat.
+
+Arhive Lenovo: 2342 fișiere din cinci manifeste, plus legăturile inventariate, zero nepotriviri. Copiile v1 sub numele noi sunt identice cu arhivele originale. SDK-ul nu fusese copiat; lista de 104 căi nu este inventar complet anterior ștergerii. Nu certific absența oricărei pierderi necunoscute în directorul autorului, dar materialele cunoscute ale auditurilor sunt păstrate.
+
+Stiva este încă 56c269258, fără diff. Evaluatorul final trebuie parametrizat pentru catalog/configurație și versiuni per mașină (Lenovo 1.28.2), nu copiate literal constantele istorice MacBook. Corectura testului rămâne separată, cu precizarea F5 deja demonstrată. Fără noi capturi/compilări, schimbări ale implementării/ramurilor/configurațiilor sau publicări. Nu am folosit registrul GStreamer în această rundă.
+
+
+## Audit evaluator GST v3 și CI !3077 — 31 octombrie 2026
+
+Audit independent. Raport: /home/vik/scripts/pipewire-5363/rezultate/audit-evaluator-v3-ci-20261031-124814/RAPORT.md.
+
+R1–R4 sunt închise independent: 29/29 controale; acceptă-tot 1/29 și respinge-tot 28/29 fac controlul să eșueze; mutația nulă este respinsă de gardă inclusiv cu evaluator simulat care furnizează codurile după etichetă. Cele trei reproduceri originale R1–R3 sunt respinse. Protocolul nou valid trece; FAIL 2 istoric, FAIL 900 și lipsa catalogului sunt respinse. Catalogul69 coincide cu introspecția independentă anterioară. 26/26 fișiere brute sunt neschimbate; cele 889 de fișiere curente selectate din stare-31oct-upstream coincid SHA256 pe Lenovo și MacBook.
+
+CI verificat din zece jurnale originale: Ubuntu are core1.20.3/video1.20.1 și partea GST neactivată; Fedora1.28.8, Debian1.26.2 pe șapte arhitecturi și Alpine1.26.9 execută fiecare19 GST cu DMA_DRM. Niciunul dintre aceste joburi nu acoperă SDK1.22 cu GST activ. Pipeline-ul reușit1775190 este pe83557ed0; testul și configurația CI sunt byte-identice cu18244c974. Pipeline-urile finale sunt skipped/canceled, deci nu pretind un pipeline final complet reușit.
+
+Stiva rămâne56c269258, curată. Corectura testului nu este încă implementată; urmează variantaA și validarea noului SHA. Totalurile69/70 sunt ale configurației backportului, nu universale pentru master; pe fiecare build se fixează catalogul și versiunile efective. Excepțiile istorice nu se reutilizează ca succes pentru testul reparat. Merită acoperire CI explicită pentru minimul1.22 cu componenta GST activată.
+
+Fără capturi sau compilări de produs noi, modificări ale uneltelor/implementării/ramurilor/configurațiilor/serviciilor ori publicare. Registrul GStreamer nu a fost folosit în această rundă.
+
+
+## A doua verificare și auditul corecturii finale DMA-BUF — 31 octombrie 2026
+
+Audit independent. Raport: /home/vik/scripts/pipewire-5363/rezultate/audit-reluare-final-gst-20261031-150224/RAPORT.md.
+
+Corectez starea din răspunsul meu anterior: la reluarea după întrerupere corectura era deja implementată și testată de autor. Auditul vechi închidea R1–R4; etapa nouă este verificată separat acum. Arhiva veche:4284 fișiere integre; 29/29 controale repetate, R1–R3 originale respinse, garda R4 respinge no-op. CI este reconfruntat cu zece jurnale, fără schimbarea concluziei privind lipsa SDK1.22 cu GST activ.
+
+Corectura master8d8f4a1c0/arborec0190cf6 și backport434b612e4/arborebe570af8 au diff identic, exclusiv două fișiere de teste, și arbori curați pe ambele laptopuri. Repetări proprii directe:78/78 GST pe fiecare laptop (20+19 pe fiecare ramură); bibliotecile identificate prin LD_DEBUG. SDK:525/525 fișiere conforme pe fiecare; cele9 MD5 ale campaniei corespund. Suitele complete sunt verificate din brutul autorului:master71/70,1.6final70/69, pe fiecare laptop, toate OK și conforme catalogului. Manifestul campaniei finale:1250/1250 fișiere conforme pe fiecare.
+
+Evaluatorul final:25/25 controale repetate; acceptă-tot1/25 și respinge-tot24/25 fac controlul să eșueze; no-op respins. Probele proprii pentru a doua alternativă: martorul trece, duplicatul de lățime, înălțimea greșită și FPS greșit sunt respinse, pe fiecare SDK (2 pozitive+6 negative). Fără constatare tehnică blocantă pentru noul diff. Nu afirm retestare universală a camerelor, a tuturor patch-urilor sau a noului WPfix.
+
+Înaintea publicării: mesajele PLACEHOLDER trebuie înlocuite de utilizator; corectura întâi pe master, apoi backport trasabil. Dacă se schimbă numai mesajul, confruntarea arborilor/diff-ului este suficientă pentru păstrarea dovezilor funcționale; nu cer recompilare numai pentru text. Baza/code modificate necesită reevaluare. Nu am modificat implementarea, ramurile sau configurația și nu am pornit camere/servicii/module ori publicat ceva. Probele au registru și cache izolate.
+
+
+## Audit WP !895 și ultimul tabel de backport — 31 octombrie 2026
+
+Audit independent. Raport: /home/vik/scripts/pipewire-5363/rezultate/audit-wp895-mesaj-final-20261031-151853/RAPORT.md.
+
+Confirmat din brut W3:0/0 fără fix,161/163 cu fix; W4:103/103 față de104/104; W5:0/0 față de113/114, primul consumator218–219 cadre și gol maxim<0,079s. Suitele autorului:96/96 cu fix,95/96 fără, numai noul test eșuat. Repetări proprii pe Lenovo, cu runtime privat fără camere: pozitivul trece; T2 fără driver și T3 fără fix eșuează cu SIGABRT/watchdog. Bibliotecile private WP/PW sunt identificate prin LD_DEBUG; runtime-ul rămâne gol.0113a148 pe Mac și3804b213 pe Lenovo au arbore identic162b24b5; ambele curate. Manifestul autorului135/135 conform pe ambele.
+
+Punct înaintea acceptului necondiționat al fixului WP: orice eroare EnumFormat este ignorată la activare, nu numai cazul absent. Injecția proprie în API, după apelul real, înlocuiește eroarea consumatorului cu permission-denied sau G_IO_ERROR_CANCELLED; ambele sunt logate și testul trece după finish activation. Este probă sintetică a politicii, nu dovadă de ocolire a permisiunilor sau defect de cameră reală. Recomand delimitarea capabilităților absente de erorile enumerării, ori decizie explicită a mentenantului pentru fallback general și test al contractului. Mixinul nu păstrează errno în GError, deci err->code nu poate fi comparat simplu cu ENOENT.
+
+Banc: w3-fix.sh și w5-fix.sh dau0 după toate4 pornirile simulate cu23; build-fix.sh dă0 după ambele compilări Ninja cu23. Datele brute reale rămân susținute; runnerii nu pot da singuri verdict sigur. Pentru reutilizare: propagarea eșecurilor/evaluator strict; pentru arhivă veche, etichetare explicită.
+
+Tabel:6734d69c8 elimină proprietatea falsă pe1.6.11; blocarea vivid era deja reparată de458b8b183.134 la NULLunref cere fatal-criticals. FaceTime cu4 buffere este context istoric; reproducerea actuală pentru MR este loopback. Adăugat conceptual rândul9, corectura testului DMA-BUF. WPfix este separat de backportul PipeWire1.6.
+
+Acceptul pentru corectura GST/stiva1.6 nu e retras. Nu am schimbat implementarea, ramurile, metadatele commiturilor, servicii/configurații sau publicat nimic. Nu am folosit camera. Rapoartele de audit separă observațiile, injecțiile și limitele.
+
+
+## Audit WP !895 v2 f42d34f4 — 31 octombrie 2026
+
+Audit independent. Raport: /home/vik/scripts/pipewire-5363/rezultate/audit-wp895-v2-20261031-162606/RAPORT.md.
+
+Recomand v2; F1 inchis. Candidatf42d34f48facab3d65c9dfecfe38ab0e593e1f50/arbore863dd789484c01badea5193a76e4a48fbe277325, curat pe ambele laptopuri. Testele sunt identice cuv1. Helperulnode_has_readable_param exista deja laaudio; cand EnumFormat nu e lizibil activeaza fara enumerare; callback-ul original continua sa propage erorile unei enumerari reale. V0 confirma camera r-,client--.
+
+Repetari proprii independente pe fiecare laptop:96/96 suita completa si14 executii tintite cu rezultate asteptate, inclusiv3 T2 negative, v1/v2 siEACCES/CANCELLED, controlul injectorului siabsenta apeluluiEnumFormat la clientulANY. Markerii valideaza iteratorYES, eroarea efectiva inactivare siv2 fara apel pentruANY. Bibliotecile private suntidentificate; runtime gol dupa probe. Nu am folosit camere sau servicii de sistem.
+
+F2 partial:9/9 controale scripturi confirmate;19/19,15/15,10/10 ale evaluatorului confirmate. Totusi evaluatorul accepta suite-testlog gol sau cu un rezultat exit23 daca rc.txt declara96/96. La W3/W5, schimbarea doar a contoarelor.sum in100 (JSONL intact) schimbaNECONFORM inCONFORM. De reparat confruntarea rezultatelor individuale/catelogului si derivarea dinJSONL, nu numai sumare. Datele reale sunt sustinute direct:96 nume+rezultateOK pe fiecare masina; repetarile proprii sunt de asemenea96/96. F2a/b se pot inchide fara capturi noi.
+
+CameraLenovo:W3 ANY0/0 vs121/116; explicit76/74 vs75/75; W5 c1=155/155 vs154/155, c2=0/0 vs79/80; numararile coincid cubrutul. Ritmul~10fps in ambele brate; cauza scaderii fata depranz nestabilita. VerdictulNECONFORM pentrupragul absolut ramane; nu il transform inverde dupa rezultat. Inaceste probe nu apare odegradare consistenta asociata v2.
+
+F3 inchis:tabelulcorectsepara fixarea/captura,contextulFaceTime/probaloopback,proprietateafalsa/blocareavivid,conditiafatal-criticals,randul9siWPseparat. Manifestele687WP si1251PW conforme peambele. Textele corespundv2,linkulreal ramane de completat. Jurnalele Meson originale auInheritedenvironmentcuvalori sensibile:originale local,copii publice cuvalorile deautentificare mascate. Fara publicare sau modificari aleimplementarii/ramurilor/configuratiei. AcceptultehnicGST/1.6ramane.
+
+
+## Completare audit WP v2: teste Lua sărite și rundă completă — 31 octombrie 2026
+
+Audit independent. Raportul curent: /home/vik/scripts/pipewire-5363/rezultate/audit-wp895-v2-20261031-162606/RAPORT.md.
+
+La verificarea TAP am găsit 11 teste wplua cu SKIP în jurnalele originale și în prima repetare proprie. Meson le numără OK deoarece protocolul este exitcode; 96 ieșiri zero nu înseamnă 96 corpuri executate. Corectez această precizare și pentru mesajul/jurnalul meu anterior. Noul test video-no-enum-format nu este printre cele sărite; F1 rămâne închis.
+
+Fabrica audiotestsrc există în biblioteca SPA, dar lipsește maparea numelui din configurația contextului. Am copiat configurația în director propriu și am adăugat numai în copia client.conf aliasul audiotestsrc = audiotestsrc/libspa-audiotestsrc. Am reluat întregul catalog pe ambele laptopuri: 96/96 executate, zero SKIP, zero eșecuri. Runtime-urile sunt goale. Nu am schimbat surse sau configurații ale proiectului/sistemului și nu am folosit camera. Dovezi: replay_no_skip.py, CONFIGURATIE-PRIVATA.diff, SKIP-URI-SI-REPETAREA-COMPLETA.json și replay-noskip-{mbp,lenovo}/.
+
+Recomand v2 f42d34f4, arbore 863dd789. F2 rămâne parțial pentru confruntarea sumarului cu rezultatele individuale/JSONL și raportarea skip-urilor. Toate aceste lacune pot fi verificate pe date existente, fără capturi noi. Pragul absolut al camerei rămâne NECONFORM; numărătorile reale se confirmă. F3 și corecturile tabelului sunt închise. Nu am publicat nimic.
+
+
+## Audit închidere WP !895 — 2026-10-31T17:44:28+02:00
+
+Audit independent. Raport: /home/vik/scripts/pipewire-5363/rezultate/audit-inchidere-wp895-f2-20261031-173433/RAPORT.md
+
+v2 f42d34f4 / arbore 863dd789 rămâne recomandată; surse curate pe ambele laptopuri. F1 și F3 rămân închise; F2a/b/c inițiale remediate. Am repetat controalele 27/27 pe fiecare set de teste, 8/8 pe fiecare set fără SKIP, 22/22 W3 și 14/14 W5; mutația nulă e respinsă în toate cele patru moduri. Cele patru reproduceri originale sunt respinse. Noile jurnale brute confirmă v2 96/96, fără fix 95/96 numai testul nou, zero SKIP, pe fiecare laptop. Manifestele WP 944/944 și PipeWire 1251/1251 conforme pe fiecare.
+
+Două scăpări noi ale uneltelor, reproduse efectiv pe ambele mașini: R1, o eroare a unui client pozitiv consemnată coerent în JSONL/.sum/sumar nu adaugă abatere (W3 rămâne cu aceleași 4 abateri de prag, W5 cu aceleași 2); R2, mascheaza-jurnal.py acceptă un hardlink drept destinație și modifică originalul cu rc 0. R2 testat exclusiv pe fișiere sintetice proprii. Cele 16 JSONL reale nu au evenimente error, deci R1 nu invalidează datele existente. De corectat uneltele și controale izolate; nu cer recompilări sau capturi noi ori schimbări în patch-ul WP.
+
+Camera rămâne NECONFORM la pragul absolut, ~10 fps în ambele brațe; cauza necunoscută. Citirea sudo a jurnalului 17:05–17:15: 743 înregistrări, fără mesaje de spațiu identificate; nu dovedește absența efectelor silențioase ale ENOSPC. Spațiu ~3,0 GB după copiile unice ale noilor jurnale de audit. Nu am șters builduri, schimbat surse/configurații ori publicat. Acceptul tehnic anterior GST/1.6 rămâne; în această rundă am verificat manifestul și continuitatea probelor, nu am refăcut integral acel audit.
+
+
+## Audit R1/R2 și arhivare MacBook — 2026-10-31T18:23:12+02:00
+
+Audit independent. Raport: /home/vik/scripts/pipewire-5363/rezultate/audit-wp895-arhivare-20261031-180727/RAPORT.md
+
+R1/R2 închise prin cod și reproducătorii anteriori pe ambele laptopuri. W3 24/24, W5 17/17; controalele 27/27 și 8/8 repetate pe seturile ambelor mașini. Manifestele WP 1052/1052, PipeWire 1251/1251 conforme pe fiecare; v2 f42d34f4 / arbore 863dd789 rămâne recomandată. Fără capturi sau compilări noi.
+
+Accept tehnic limitat pentru exact 10 builduri B și 36 directoare proprii de audit, enumerate în DECIZIE-STERGERE.json și APROBARE-C-LISTA.txt. Am păstrat pe Lenovo în ~/arhiva-macbook-31oct/<cale originală> 330 fișiere de metadate/jurnale ale buildurilor, verificate SHA256, și arhiva proprie a celor 36 audituri: 24892 fișiere, 33 symlink-uri, 4507 directoare, zero lipsuri/nepotriviri. Corectură: copiile normale anterioare erau complete numai pentru 22/36; arhiva nouă separată este completă pentru toate 36. Nicio sursă nu a fost ștearsă. Auditul curent rămâne local și este exclus din accept.
+
+Nu aprob blocul A în forma actuală: lipsesc în procedură dependențe Git externe (worktree metadata și alternates); un repository sub retestare-mr-pw-wp-20261026-050201 depinde de ~/chromium-build/.cache/banc-mbp/pipewire/.git/objects. Fără alternates lipsesc obiecte. Căile ~/.cache propuse pentru prune nu există, depozitele reale sunt sub ~/chromium-build/.cache. Fără prune în această curățare; întâi conservarea/verificarea Git din copia arhivată. Inventarul trebuie să compare și căi/tipuri/ținte symlink, nu numai numere. Recomand păstrarea Firefox pentru moment; nu intră în accept. Estimările de spațiu nu sunt garantate, hardlink-urile contează.
+
+Nu am aplicat reparații, modificat ramuri/commituri/configurații/servicii sau publicat; am copiat numai dovezi și metadate în arhiva Lenovo. Nu am executat ștergeri.
+
+
+## Audit final al blocului A — 2026-10-31T20:37:25+02:00
+
+Audit independent. Raport: /home/vik/scripts/pipewire-5363/rezultate/audit-bloc-A-20261031-200437/RAPORT.md
+
+Accept tehnic pentru exact cele 176 căi din autor/lista-A.txt și DECIZIE-A.json, SHA256 listă 2d8f096ff1b4c11371944e70b82e157f76454b8b24a7c08c14f78301136e9b05. Condiții deja în plan: inventar MacBook refăcut imediat înainte și identitate cu arhiva, scanare sudo cwd/exe/fd/maps fără utilizare/citiri imposibile, oprire la orice eroare, ștergere cale cu cale cu jurnal. Nu am executat ștergerea. Fără prune; Firefox, pw-trimitere-24oct și cele trei Git externe rămân.
+
+Inventare proprii complete pe ambele mașini: 503767 intrări identice, inclusiv conținut SHA256, tipuri, ținte și permisiuni; 406653 fișiere, 94455 directoare, 2642 symlink-uri și 17 FIFO. Circa30,51 miliarde de octeți unici recitiți pe fiecare. Inventarele proprii JSONL au SHA256 e5c93bb0ecab4b102dcfd3ff9775a48966be92e006c4a3171eea92c83c2ff9ff; conversia originalului în formatul autorului coincide exact cu inventarul acestuia. Lista acoperă499352 intrări;4415 păstrate în scope-ul corect. Controale:10/10 comparator inventar,7/7 listă.
+
+Capturi Git proprii în namespace privat read-only, UID1000: VB541/541 identice,487 rezultate comune fsck cu aceleași2 eșecuri preexistente; VA538/541 statusuri identice,494 rezultate comune fsck cu aceleași14 eșecuri. Excepțiile sunt exact6 symlink-uri în3 depozite; țintele au hash-ul din index pe ambele mașini, bloburile lipsesc înVA și sunt accesibile înVB. Controlul metadata-minimal face să dispară `.M` pe copie fără schimbarea datelor. Comparator Git10/10. Zero procese care folosesc lista și zero necitibile la verificarea finală; zero montări rămase sub/home/vik în spațiile obișnuite.
+
+Două greșeli de banc propriu sunt documentate și nu intră în verdict: prima captură Git a păstrat HOME root după setuid (repetată cu mediul corect); o enumerare repetată pe HDD a fost întreruptă numai pentru procesul propriu și înlocuită cu catalogul propriu validat față de inventarul complet. Sursele/depozitele nu au fost modificate. Clarificare: estimarea veche31,19 miliarde octeți era pentruA+B și excludea deja hardlink-urile externe; nu se reaplică integral dupăB. Nicio constatare blocantă, nimic publicat.
+
+
+## Închidere audit curățenie MacBook — 2026-10-31T20:58:14+02:00
+
+Audit independent. Raport: /home/vik/scripts/pipewire-5363/rezultate/audit-inchidere-curatenie-20261031-204847/RAPORT.md
+
+Audit închis fără constatări blocante. Jurnalele coincid exact cu deciziile proprii: A 176/176, B 10/10, C 36/36 căi unice. Prin lstat toate sunt absente, fără erori de acces. Inventarul final MacBook, scris la 20:44:09 înaintea ștergerii de la 20:44:22, are același SHA256 1832c647… ca inventarul complet verificat independent.
+
+Cele 4413 intrări Git externe sunt prezente și identice cu starea anterioară. WebRTC 8af5a513, WP f42d34f4, pw-trimitere 27d0ed938e și pw-repo 04d6a2bcae păstrate. m-test 8d8f4a1c02 și b16-v3 434b612e4a au buildurile păstrate. Sursele celor 10 builduri vechi au aceleași HEAD-uri și arbori Git accesibili. Firmware fw-cpio/cpio-error-message și fw-143/cpio-hint-1.43.0 accesibile; Firefox, SDK 1.22, P3/P4 și zona driverului prezente. Zero procese folosesc fișierele șterse și zero procese necitibile.
+
+Lenovo: 212 ancore de arhivă prezente (A+C), 330 metadate/jurnale B reverificate SHA256, zero diferențe. Integritatea completă A rămâne cea recitită independent înainte de ștergere; nu am repetat inutil 30,51 GB după operația locală. Index identic: pe MacBook în rezultate/ARHIVA-LENOVO-31oct-INDEX.md, pe Lenovo în ~/arhiva-macbook-31oct/ARHIVA-LENOVO-31oct-INDEX.md.
+
+Spațiu: jurnalul arată 35,1 GB disponibili, compatibil cu df 33 GiB și 85% ocupat; Lenovo df 58 GiB. Nu am făcut ștergeri, reparații, schimbări de servicii sau publicări. Acceptul tehnic WP/stiva PipeWire rămâne neschimbat; nu mai cer verificări pentru această curățenie.
