@@ -93,8 +93,38 @@ compilare și fără teste
 - **Fără noutăți:** bug-ul Chromium 40252886 (ultima activitate 30 oct, comentariul cu CL-ul), depozitele proprii (niciun
   issue/PR nou), firele din fișe neacoperite de colector (!3061, !876, #4842: închise de mult).
 
+**A treia trecere (20 nov, ~18:30 EET): ramurile PipeWire 1.6 și WirePlumber 0.5, plus MR-urile deschise.** Date în
+`urmarire-pr-20nov/trecerea3/`.
+- **PipeWire 1.6:** 19 commit-uri după 6 nov, toate backport-uri cu echivalent pe master. Niciunul nu e de-al nostru și
+  niciunul nu atinge fișierele patch-urilor locale 1.6.
+  - **Pe master, dar nu pe 1.6, în zonele noastre:** seria gst a lui Wim (`8837678ba` „don't sync to clock by default in
+    pipewiresrc”, `ba6ba7d67`, `a1b8c09b6`, `1c1466553`, `3bea21b57`, `2844e96e7`), `920785731` (chunk-ul V4L2 limitat la
+    lungimea bufferului, #5587) și `8d9fda865` (REPORT_BUFFERED).
+  - P02 nu se aplică pe 1.6, fiindcă modul refcounted nu există acolo.
+- **WirePlumber 0.5:** de la 6 nov, 1 commit (!953, Mersad: o scurgere de memorie în dynamic-rules). !934 e în 0.5.19.
+  Fixul din !895 (`74e49995`) e doar pe master: API-ul WpStream e de 0.6.
+  - **Patch-urile locale pe 0.5:** B1 se aplică curat. P09 intră în conflict, dar pe 0.5 nu e nevoie de el (P09 nu se
+    reproduce acolo).
+  - **B2 nu se poate aplica,** fiindcă `lib/wp/stream-link.c` nu există pe 0.5. Pe 7 nov reprodusesem însă B2 și pe 0.5,
+    așa că acolo e nevoie de o variantă separată.
+- **MR-uri deschise care schimbă linii scrise de Viorel** (blame pe `base_sha` al fiecărui MR; PipeWire 60, WirePlumber 16):
+  - **Doar PipeWire !3117** (Cryolitia, 13 nov, 0 comentarii, „gst: copy borrowed MemPtr chunks before returning
+    buffers”): schimbă 5 linii din `dequeue_buffer()` (`gstpipewiresrc.c`, ramura `use_pool` din `bf3951eb0`). Repară un
+    crash în Snapshot (`gst_buffer_copy`). **De citit de Viorel;** reviewul pe GitLab îl face el.
+- **Issue-uri PipeWire noi, în zonele noastre** (fără legătură stabilită cu codul nostru):
+  - #5582 (SIGSEGV, `b->busy` nemapat în `impl_node_process_input`; Wim bănuiește `ced30cf`);
+  - #5586 (ceasul pipewiresrc rămâne în urmă după renegociere; testat pe 1.6.x, nu pe master cu !2951);
+  - #5593 (dequeue pe o legătură anume).
+- **facetimehd: #364 ar trebui să pice `v4l2-compliance`.** În `testEnumFrameSizes()` (mirror-ul GitHub gjasny/v4l-utils)
+  scrie: `if (frmsize.index) return fail("index must be 0 for stepwise/continuous framesizes")`, iar #364 dă STEPWISE la
+  index 1. Predicție din cod, nerulată pe cameră. #360 și #356 se aplică fără conflict pe `4159eef0`.
+
 **Deschise:**
 - [ ] Mozilla: D343942 și D343946, aprobate, până pe autoland, apoi toate trei pe `main`.
+- [ ] facetimehd: `v4l2-compliance` real pe `4159eef0`; dacă pică, Viorel decide continuarea (de exemplu o listă doar
+  DISCRETE, ca în #367).
+- [ ] PipeWire !3117: de citit de Viorel (atinge `bf3951eb0`).
+- [ ] WirePlumber 0.5: B2 are nevoie de o variantă separată, dacă se dorește pe 0.5.
 - [ ] PipeWire 1.6.12, cu cele 8 commit-uri nepublicate.
 - [ ] facetimehd: `v4l2-compliance` pe `4159eef0` (amestecul DISCRETE/STEPWISE), dacă Viorel vrea.
 - [ ] Kernel 7.3.5 în forky: boot, WiFi, `DMAR: [DMA` în jurnal.
