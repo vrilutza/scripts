@@ -60,8 +60,42 @@ compilare și fără teste
 - **WirePlumber `local/7nov-p09` (P09, B1, B2) pe master `6354aaf4`: curat textual.** WirePlumber master are însă o refacere
   mare de API, deci compilarea și suitele trebuie refăcute.
 
+**A doua trecere (20 nov, ~17:45 EET): ce lipsea din prima.** Date în `urmarire-pr-20nov/trecerea2/`.
+- **Chrome M159 (stable pe 8 dec) conține toate cele 4 CL-uri**, verificat după pozițiile commit-urilor:
+  - Chromium `8936c3ee` = main@{#1731301}, iar M159 a ramificat la #1739869;
+  - DEPS-ul M159 aduce WebRTC main@{#49201}, iar 511160 = #49131;
+  - M158 nu conține niciunul: Chromium a ramificat la #1727472, WebRTC la #49055.
+  Prima trecere verificase doar CL-ul Chromium.
+- **Mozilla, Phabricator:** D343945 e Closed (pe autoland). D343942 și D343946 sunt **Accepted**, adică aprobate, dar încă
+  neîmpinse.
+- **Ce a intrat în versiuni publicate:**
+  - **PipeWire 1.6:** 16 commit-uri ale lui Viorel; 3 în 1.6.9, 5 în 1.6.11, **8 nepublicate** (așteaptă 1.6.12,
+    printre ele backport-urile din !3097/!3098). Debian are 1.6.9, deci doar 3 dintre ele.
+  - **PipeWire master:** 25 de commit-uri ale lui Viorel, ~9 doar pe master. Nu există încă nicio versiune scoasă din
+    master (niciun tag 1.7).
+  - **WirePlumber:** !934 (`73744325`) e în 0.5.19, deci și în Debian 0.5.19-1. Fixul din !895 (`74e49995`) e doar pe master,
+    nepublicat.
+- **Cod modificat de alții după 6 nov** (blame pe liniile șterse/schimbate de fiecare commit nou; metoda e validată pe un caz
+  cunoscut, `c5cf6fad`):
+  - PipeWire master și 1.6: **nicio linie scrisă de Viorel modificată sau ștearsă**.
+  - WirePlumber: Julian (`535a2f62`, 10 nov) a mutat helper-ele din !934 (`lib/wp/device.c`) în API-ul generic al
+    client-context. Verificarea `ctx && wp_client_context_in_thread()` a rămas.
+  - facetimehd #364 adaugă cod în jurul liniilor din #331, fără să le schimbe.
+- **facetimehd, ce nu prinsese colectorul** (firele nu ne implică direct):
+  - **#369** (richtw370, 18 nov): „Chrome doesn't detect the camera since PR #331 (STEPWISE frame sizes)”, raport despre
+    regresia noastră. #364 îl rezolvă, dar #369 e încă deschis. Lipsa YVYU de care se plânge vine din `e437469`
+    (Anthony Cozamanis, 10 sep), nu de la noi.
+  - **#370** (20 nov): spune că descărcarea firmware-ului dă 403. **De aici nu se reproduce:** ambele URL-uri din Makefile
+    (10.12.6 combo și 10.11.5) răspund 206 cu date, la 15:43 UTC.
+  - **linux-media, 6–7 nov:** Carlos Alberto a trimis facetimehd în staging. Patjak a refuzat: urcă el driverul, după ce
+    golește coada de PR-uri de pe GitHub („mostly AI generated fixes”). Coada de acum: 4 PR-uri și 97 de issue-uri
+    deschise.
+- **Fără noutăți:** bug-ul Chromium 40252886 (ultima activitate 30 oct, comentariul cu CL-ul), depozitele proprii (niciun
+  issue/PR nou), firele din fișe neacoperite de colector (!3061, !876, #4842: închise de mult).
+
 **Deschise:**
-- [ ] Mozilla: D343942 și D343946 până pe autoland, apoi toate trei pe `main`.
+- [ ] Mozilla: D343942 și D343946, aprobate, până pe autoland, apoi toate trei pe `main`.
+- [ ] PipeWire 1.6.12, cu cele 8 commit-uri nepublicate.
 - [ ] facetimehd: `v4l2-compliance` pe `4159eef0` (amestecul DISCRETE/STEPWISE), dacă Viorel vrea.
 - [ ] Kernel 7.3.5 în forky: boot, WiFi, `DMAR: [DMA` în jurnal.
 - [ ] Patch-urile locale: rebazare, compilare și suite pe master-ele noi.
