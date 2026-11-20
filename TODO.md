@@ -18,9 +18,12 @@ Citire live, doar GET, pornită la 15:21:44 UTC. „Nou” înseamnă după 6 no
   - Firefox `main` = 163.0a1.
 - [x] **facetimehd #364 (alex-tw-lam): integrat de patjak pe 20 nov, 09:03 UTC** (`4159eef0`, acum master).
   - Patjak nu a revenit la #331. `ENUM_FRAMESIZES` dă acum dimensiunea nativă ca DISCRETE la index 0 și păstrează
-    intervalul STEPWISE la index 1. dsr-265 a testat pe MacBookPro12,1 cu Chrome 158: camera apare.
+    intervalul STEPWISE la index 1. Ultimul comentariu dinaintea integrării (dsr-265, MacBookPro12,1, Chrome 158) descrie
+    o listă de 5 dimensiuni DISCRETE, nu varianta din #364.
   - **De verificat:** după `vidioc-enum-framesizes.rst`, STEPWISE răspunde doar la index 0, iar un DISCRETE la index 0
-    înseamnă că urmează tot DISCRETE. Specificația nu prevede amestecul. N-am rulat `v4l2-compliance` pe `4159eef0`.
+    înseamnă că urmează tot DISCRETE. Specificația nu prevede amestecul. **Corectat după a treia trecere:** amestecul l-am
+    măsurat chiar noi pe 1 nov, în comentariul lui Viorel de pe #364 (MacBookPro14,1, master + #359 + #360 + #364):
+    `v4l2-compliance` 48/48 → 44/48, iar GStreamer `v4l2src` raportează o dimensiune falsă 320x1296.
   - Revenirea locală la #331 (`revert-331-for-release`, `a4bd69a`) a fost depășită de alegerea upstream.
   - Încă nicio versiune nouă: ultimul tag e 0.7.2, iar master are tot `PACKAGE_VERSION=0.7.0.1` (#361).
 - [x] **Kernel 7.3.4, WiFi mort pe MacBook (17 nov)**: regresie brcmfmac (`f0ba5fd51ff2`), reparată de `7ed5dce55fa8` în
@@ -117,16 +120,17 @@ compilare și fără teste
   - #5593 (dequeue pe o legătură anume).
 - **facetimehd: #364 ar trebui să pice `v4l2-compliance`.** În `testEnumFrameSizes()` (mirror-ul GitHub gjasny/v4l-utils)
   scrie: `if (frmsize.index) return fail("index must be 0 for stepwise/continuous framesizes")`, iar #364 dă STEPWISE la
-  index 1. Predicție din cod, nerulată pe cameră. #360 și #356 se aplică fără conflict pe `4159eef0`.
+  index 1. Asta confirmă codul de test. Rezultatul pe cameră exista deja: 44/48, măsurat de noi pe 1 nov (vezi mai sus).
+  #360 și #356 se aplică fără conflict pe `4159eef0`.
 
 **Deschise:**
-- [ ] Mozilla: D343942 și D343946, aprobate, până pe autoland, apoi toate trei pe `main`.
-- [ ] facetimehd: `v4l2-compliance` real pe `4159eef0`; dacă pică, Viorel decide continuarea (de exemplu o listă doar
-  DISCRETE, ca în #367).
+- [ ] **Mozilla 2085509 e RESOLVED FIXED de pe 20 nov, 15:57 UTC (Firefox 163).** Pe mozilla-central a intrat doar D343945
+  (`58245b147851`). D343942 și D343946 sunt aprobate, dar neintrate. Bug-ul e închis, deci pot fi uitate.
+- [ ] facetimehd: Viorel decide continuarea pentru #364/#331 (de exemplu o listă doar DISCRETE, ca în #367). Pe
+  `4159eef0` exact (fără #360) nu am remăsurat, dar funcția de enumerare e identică cu cea măsurată pe 1 nov.
 - [ ] PipeWire !3117: de citit de Viorel (atinge `bf3951eb0`).
 - [ ] WirePlumber 0.5: B2 are nevoie de o variantă separată, dacă se dorește pe 0.5.
 - [ ] PipeWire 1.6.12, cu cele 8 commit-uri nepublicate.
-- [ ] facetimehd: `v4l2-compliance` pe `4159eef0` (amestecul DISCRETE/STEPWISE), dacă Viorel vrea.
 - [ ] Kernel 7.3.5 în forky: boot, WiFi, `DMAR: [DMA` în jurnal.
 - [ ] Patch-urile locale: rebazare, compilare și suite pe master-ele noi.
 
