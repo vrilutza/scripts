@@ -1,3 +1,157 @@
+## Stare upstream verificată — 20 noiembrie 2026, 17:21 EET
+
+Citire live, doar GET, pornită la 15:21:44 UTC. „Nou” înseamnă după 6 nov 13:47 EET, ultima citire.
+- **Ce am citit:** GitHub (59 de fire și notificările), GitLab freedesktop (41), Salsa (3), GNOME (2), Gerrit (după id-ul
+  de cont), Bugzilla 2085509 și 2069473, BTS #1076269 și #1035707, lore (subiectul „kmsan”, de la 1 nov).
+- **Date:** [`pipewire-5363/rezultate/urmarire-pr-20nov/`](/home/vik/scripts/pipewire-5363/rezultate/urmarire-pr-20nov/RAPORT.md).
+
+**Ce s-a mișcat de la 6 noiembrie:**
+- [x] **Mozilla 2085509 (al nostru): backport-ul în Firefox a pornit.**
+  - Viorel a cerut un răspuns pe 16 nov („ping ?”). Pe 17 nov, alt utilizator a confirmat defectul în Firefox 158, cu
+    v4l2loopback la 2560×1440.
+  - Pe 18 nov, Robert Mader a întrebat dacă Viorel trimite backport-urile sau le preia altcineva. Le-a preluat Jan Grulich
+    (Red Hat), în 3 revizii Phabricator, r=pehrsons: D343942 (Reject unusable PipeWire frame chunks), D343945 (Handle
+    PipeWire camera size choices), D343946 (Order PipeWire capture checks around callbacks). Bug-ul a trecut din
+    UNCONFIRMED în ASSIGNED.
+  - **D343945 e pe autoland din 20 nov, 07:19 UTC** (`36f5cb7d1f4c`, din commit-ul WebRTC `90148194b939`). Viorel a fost
+    adăugat în `third_party/libwebrtc/AUTHORS`. Celelalte două nu sunt încă împinse.
+  - Firefox `main` = 163.0a1.
+- [x] **facetimehd #364 (alex-tw-lam): integrat de patjak pe 20 nov, 09:03 UTC** (`4159eef0`, acum master).
+  - Patjak nu a revenit la #331. `ENUM_FRAMESIZES` dă acum dimensiunea nativă ca DISCRETE la index 0 și păstrează
+    intervalul STEPWISE la index 1. dsr-265 a testat pe MacBookPro12,1 cu Chrome 158: camera apare.
+  - **De verificat:** după `vidioc-enum-framesizes.rst`, STEPWISE răspunde doar la index 0, iar un DISCRETE la index 0
+    înseamnă că urmează tot DISCRETE. Specificația nu prevede amestecul. N-am rulat `v4l2-compliance` pe `4159eef0`.
+  - Revenirea locală la #331 (`revert-331-for-release`, `a4bd69a`) a fost depășită de alegerea upstream.
+  - Încă nicio versiune nouă: ultimul tag e 0.7.2, iar master are tot `PACKAGE_VERSION=0.7.0.1` (#361).
+- [x] **Kernel 7.3.4, WiFi mort pe MacBook (17 nov)**: regresie brcmfmac (`f0ba5fd51ff2`), reparată de `7ed5dce55fa8` în
+  stable 7.3.5. Notă: `/home/vik/scripts/wifi-kernel-7.3.4-17nov/NOTA.md`.
+  - Viorel a scris pe Salsa `kernel-team/linux!2169` la 17:33 UTC. Carnil a adăugat „Update to 7.3.5” la 18:01 și a
+    integrat MR-ul la 19:20 UTC.
+  - **Debian 7.3.5-1 e în unstable; forky are încă 7.3.4-1** (madison). MacBook-ul rămâne pe 7.2.15 până vine 7.3.5.
+- [x] **snd_hda_macbookpro**: pe 14 nov, David a mutat master-ul pe varianta cu mutex-uri („NOTA BENE - MAJOR CHANGE”,
+  vechiul master e acum `oldmaster`) și a scris că PR-urile trebuie actualizate. #189 (al nostru, doar
+  `install.cirrus.driver.sh`) rămâne deschis și integrabil fără conflicte după GitHub (`mergeable`).
+
+**Fără schimbare:**
+- Gerrit: cele 4 CL-uri sunt integrate; nici mesaje noi, nici CL-uri noi.
+  - Chromium 8648509 (30 oct) intră în M159: branch pe 9 nov, stable pe **8 dec**.
+  - M158 (stable 17 nov) a ramificat pe 26 oct, înainte de integrare.
+- PipeWire: niciun MR de-al nostru deschis. #5481 neschimbat. Ultimele versiuni: PipeWire 1.6.11 (29 oct), WirePlumber
+  0.5.19 (30 oct). Debian: pipewire 1.6.9-2, wireplumber 0.5.19-1.
+- Activitatea upstream de la 6 nov, niciun commit de-al nostru:
+  - PipeWire master: 120 de commit-uri (62 Brad Smith, portări BSD; 38 Wim);
+  - PipeWire 1.6: 19;
+  - WirePlumber master: 36 (Julian: WpClientContext, WpRegistry public, „lib: remove the deprecated API”);
+  - WirePlumber 0.5: 1.
+- facetimehd #360 (rate FPS), #356 (Draft) și #361: nicio activitate. facetimehd-firmware: master tot `961774d`.
+- Debian dkms !8: deschis, mergeable, CI reușit, fără comentarii din 12 oct. Debian are tot dkms 3.2.2-1. BTS #1076269
+  și #1035707: identice octet cu octet.
+- KMSAN v2: niciun mesaj nou pe serie din 1 nov și nu e în mainline. Sesiunea KMSAN e separată.
+- Mozilla 2069473 (neschimbat din 14 sep), MacBookPro14.1 #3, GNOME Snapshot, v4l2loopback #659: neschimbate.
+
+**Patch-urile locale (netrimise), aplicate pe master-ele de azi.** E doar aplicare textuală, cu `git merge-tree`, fără
+compilare și fără teste
+([detaliu](/home/vik/scripts/pipewire-5363/rezultate/urmarire-pr-20nov/aplicabilitate.txt)):
+- **PipeWire `local/7nov-master` (13 commit-uri) pe master `ae121341`: toate se aplică curat.**
+  - **P02 tot nu e reparat upstream:** `impl_port_reuse_buffer()` pune încă bufferele OUTPUT în `queued`. Am citit funcția
+    pe master.
+  - B5 (`3e7d8aa0a`, deja scos din ramură) intră în conflict în `impl-port.c` și `stream.c`.
+- **PipeWire `local/7nov-1.6` (6) pe 1.6 `24a70733`: curat.**
+- **WirePlumber `local/7nov-p09` (P09, B1, B2) pe master `6354aaf4`: curat textual.** WirePlumber master are însă o refacere
+  mare de API, deci compilarea și suitele trebuie refăcute.
+
+**Deschise:**
+- [ ] Mozilla: D343942 și D343946 până pe autoland, apoi toate trei pe `main`.
+- [ ] facetimehd: `v4l2-compliance` pe `4159eef0` (amestecul DISCRETE/STEPWISE), dacă Viorel vrea.
+- [ ] Kernel 7.3.5 în forky: boot, WiFi, `DMAR: [DMA` în jurnal.
+- [ ] Patch-urile locale: rebazare, compilare și suite pe master-ele noi.
+
+---
+
+## Seara de 6 noiembrie — firmware, P02 și V4L2 pe master e5d3471d, suite pe 1.6/master — 17:25 EET
+
+- [x] **Firmware 5.60.0 e o îmbunătățire reală**: la același zgomot păstrează cu 24–28 % mai mult detaliu decât 1.43.0
+  netezit (testul de netezire pe capturile din 25 sep, Lenovo).
+- [x] **P02 rămâne pe master e5d3471d** (refcount-ul lui Wim integrat azi): producător client `pw_stream` oprit după
+  8 buffere, 4/4 cazuri pe ambele laptopuri. Mecanismul (trasa din 2 nov): `stream.c:impl_port_reuse_buffer()` pune
+  returul în `queued`, nu în `dequeued`. Explicația `-ENOTSUP` din nota publică din 2 nov e infirmată — de corectat
+  de Viorel în mesajul către Wim.
+- [x] **V4L2 UVC pe e5d3471d**: refcounted K5/K6 nu mai opresc driverul, bufferele ținute protejate; consumatorul rapid
+  pierde cadre cât timp celălalt ține (25/39 la K5, 13/39 la K6). Reliable K6 se oprește încă.
+- [x] Suite pe ambele: PW master 71/71 (Lenovo: un timeout unic la `logger_journal`, 2/2 la repetare), PW 1.6 70/70,
+  WP master 97/97, WP 0.5 67/67.
+- [x] **Corectura P02 testată pe master 46d9214a2**: o linie în `stream.c:impl_port_reuse_buffer()` (OUTPUT → `dequeued`)
+  repară producătorul client pe ambele laptopuri (149–150 producții în loc de 8, fără imagini repetate, conținut ținut
+  protejat, recuperare după release); fast și suitele 71/71 neschimbate.
+- [ ] Viorel: mesajul pentru Wim — P02 rămâne pe codul integrat, corectarea explicației `-ENOTSUP` din nota din 2 nov,
+  rezultatul V4L2 și, dacă vrea, schimbarea de o linie (textul și codul MR-ului le scrie și le susține el).
+- [x] **Sincronizare cu registrul și auditorii** (`bench-6nov-seara/SINCRONIZARE-AUDITORI.md`): P01, P06, P07 reproduse pe
+  master 46d9214a2 și 1.6, ambele laptopuri; retransmiterile refcounted (P04 în al doilea audit) sunt efectul P02, nu ASan.
+- [x] **Reproducere minimă P02 în C**, fără WirePlumber (`bench-6nov-seara/p02-repro-c/`), ambele laptopuri.
+- [x] `pactl` instalat pe MacBook (OK Viorel).
+- [x] **Restul registrului pe ramurile curente** (PW master/1.6, WP master/0.5, fără 1.4), ambele laptopuri: P09 reprodus pe WP
+  master (0.5 curat); P08 reprodus la rulare (SIGSEGV în `tee_process_refcount`); P05 reprodus (SIGKILL la deținător oprește tot
+  fluxul refcounted); P10 doar în reliable. Tabel unic: `bench-6nov-seara/SINCRONIZARE-AUDITORI.md`.
+- [x] **P03, P04, B1–B4, mecanismul P05** (7 nov), ambele laptopuri: P03 nu se reproduce (S1, 72 de rulări curate); P04 reprodus
+  nativ (23 inversiuni/caz la consumator întârziat, refcounted) — nu e artefact ASan; B4 = același mecanism (26/26 după goluri
+  de 80–87 ms); P05 explicat cu gdb (Busy rămas de la consumatorul omorât); B1 reprodus pe WP master; B2 reprodus pe WP master
+  și 0.5; B3 confirmat (Step × Step pierde pasul, pas față de 0, SPA → GST pierde pasul). P04/P05/reținerea rerulate cu WP
+  master: identice.
+- [x] **Audit, a doua trecere (7 nov)**, banc C minim fără WP, master nemodificat + 1.6, ambele laptopuri
+  (`pipewire-5363/rezultate/audit-7nov/REZULTAT.md`): P04 și P08 reconfirmate fără corectura P02; P05 afectează și 1.6
+  (fast: degradare permanentă); P09 cauza exactă (marcaj follow-default în `target.stream.<grup>` când ținta explicită =
+  implicitul); P10 și B5 și pe 1.6; P07 64/64; anomalia Pulse nereprodusă pe AC.
+- [x] **A treia trecere (7 nov, după repornire, kernele noi)**: totul se reproduce la fel; P10 mecanism găsit (tee-ul reliable
+  dă bufferele înapoi doar la schimb); P05 fast și diferența MacBook/Lenovo explicate cu gdb (rata = 25 × libere/total);
+  P04: saltul peste slotul ocupat văzut la rulare (breakpoint), inversiuni ≤ salturi. Citări corectate: impl-port.c:449–450, :362.
+- [x] **A patra trecere + arhitectura (7 nov)**: P04 — fiecare blocaj dă inversiune sau 2 cadre pierdute; camera UVC reală:
+  P04, P10, B5 reproduse, V4L2 revine după kill (P05 doar la producători pw_stream); P09 confirmat pe ALSA real; P08 natural
+  neatins (rămâne cu injecție). Analiza de arhitectură, confruntată cu cei doi auditori: `pipewire-5363/rezultate/audit-7nov/ARHITECTURA.md`.
+- [ ] Rămas: anomalia mutării Pulse (nereprodusă pe AC, 0/60); B3 de întrebat upstream (originea pasului); B2: cine reface
+  legăturile după PortConfig; banc: observatorul de graf nu citește `pw-dump --monitor` 1.6; Bluetooth cu Viorel.
+- [x] **Cutia neagră repusă (7 nov)**: stătea oprită din 26 oct (script lipsă din dosarul de lucru). Capturile copiate întâi
+  în arhiva Lenovo (md5 60/60), scriptul în `/usr/local/lib/cutie-neagra/`, unitatea arată acolo. Nota:
+  `pipewire-5363/rezultate/cutie-neagra-7nov/NOTA.md`.
+
+[Raport](/home/vik/scripts/pipewire-5363/rezultate/bench-6nov-seara/RAPORT.md).
+
+---
+
+## facetimehd: pregătire pentru versiunea nouă + curățenie — 6 noiembrie 2026, 15:45 EET
+
+- [x] Măsurat pe master, master + revert #331, + #360 și 0.7.2 (martor): 0.7.2 dă 51/57, ~30 WARNING în kernel și nu
+  încarcă set file 1571; master 57/57 curat; revertul readuce doar eșecul „Scaling” din 0.7.2 (56/57); #360 se aplică
+  curat pe ambele. Chromium: reparația abia în 159 (Canary), stabil programat pe 8 dec.
+- [ ] **Decizia lui Viorel:** push `revert-331-for-release` (local, `a4bd69a`) + PR, apoi comentariul pe #364 (texte
+  gata în raport). Signed-off-by: îl adaugă el, dacă vrea.
+- [x] Curățenie copii facetimehd/firmware pe MacBook: 19 arbori șterși, la 60 doar produsele de compilare; 551 MB
+  eliberați; commiturile nepublicate salvate în `curatenie/commituri-nepublicate-*.bundle` (verificate, refăcute).
+  Arhiva vechiului driver pr359-pr360 ștearsă (refăcută identic din git întâi).
+- [ ] **Diseară, pe Lenovo:** (1) testul de netezire pe capturile 1.43.0/5.60.0 din 25 sep (în
+  `Lenovo:/home/vik/arhiva-macbook-24oct`): netezit 1.43.0 până la zgomotul lui 5.60.0, cât detaliu rămâne?
+  Răspunde dacă 5.60.0 e o îmbunătățire reală sau doar netezire; (2) aceeași verificare a copiilor facetimehd pe Lenovo.
+- [ ] De hotărât de Viorel: Chromium (60 GB), Firefox (12 GB) — toate CL-urile sunt integrate; neatinse.
+
+[Raport](/home/vik/scripts/pipewire-5363/rezultate/facetimehd-master-6nov/pregatire-release/RAPORT.md),
+[curățenie](/home/vik/scripts/pipewire-5363/rezultate/facetimehd-master-6nov/curatenie/stergeri.log).
+
+---
+
+## Camera: driver și firmware master — 6 noiembrie 2026, 14:58 EET
+
+- [x] **Driver zilnic = upstream master `4e588ae9`** (DKMS `0.7.2-master-4e588ae9`, kernelurile 7.2.12 și 7.2.11);
+  `0.7.2` construit ca rezervă; `0.7.2-6dc8cd8-pr359-pr360` scos (sursa arhivată).
+- [x] **Firmware 5.60.0** din facetimehd-firmware master `961774d` (`make` + `make install`); copii `firmware-5.60.0.bin`
+  și `firmware-1.43.0.bin`; fișierele de calibrare neschimbate.
+- [x] Teste A (master + 1.43.0) și B (master + 5.60.0) față de 17 oct: identice funcțional (57/57, 30 fps,
+  calibrarea 1571); ENUM doar 30 fps (#360 nu e în master); `pipewiresrc` 150 de cadre în 5,5 s față de 9,1 s —
+  cauza nestabilită.
+- [ ] Opțional: comparația de imagine 5.60.0 / 1.43.0 în lumina de zi (scena din 25 sep), cu Viorel.
+
+[Rezultat și dovezi](/home/vik/scripts/pipewire-5363/rezultate/facetimehd-master-6nov/REZULTAT.md).
+
+---
+
 ## Stare upstream verificată — 6 noiembrie 2026, 13:47 EET
 
 Citire live prin API (doar GET), toate proiectele: GitHub 58 de fire (+ notificările de la 31 oct, toate acoperite),
@@ -12,7 +166,7 @@ căutare după expeditor/destinatar). „Nou” = după 31 oct 20:58 (ultima act
   9 commituri pe ramura 1.6.
 - [x] **WirePlumber !895** (julian) — integrat 3 nov 12:50 UTC; fixul nostru preluat de julian („looks correct”, 2 nov),
   pe master ca `74e49995`.
-- [x] **facetimehd-firmware #14** (al nostru) — integrat **6 nov 11:03 UTC** (`8464f0b6`).
+- [x] **facetimehd-firmware #14** (al nostru) — integrat **6 nov 11:03 UTC** (`8464f0b6`); **#16** (al nostru, mesajul cpio pentru 1.43.0) — integrat 6 nov 12:11 UTC; master firmware `961774d`.
 - [x] **facetimehd #359** (IIxauII) — integrat 3 nov: repară regresia din #343-ul nostru; #358 închis.
   #366 (debugfs) integrat 3 nov; master `4e588ae9`.
 - [x] **WebRTC 511160** — integrat 3 nov, PS6 (main@{#49131}). **Toate cele 4 CL-uri Gerrit sunt integrate.**
@@ -23,13 +177,13 @@ căutare după expeditor/destinatar). „Nou” = după 31 oct 20:58 (ultima act
 - [x] PipeWire #5519 (moj, regresia „corked”): închis 26 oct — Wim a reparat pe master, raportorul a confirmat.
 
 **Total:** PipeWire **21 de MR-uri** integrate, niciunul deschis; WirePlumber 1 (!934) + fixul din !895; facetimehd
-20 de PR-uri; facetimehd-firmware 1 (#14); Gerrit 4 CL-uri.
+20 de PR-uri; facetimehd-firmware 2 (#14, #16); Gerrit 4 CL-uri.
 
 **Deschise / de urmărit:**
 - [ ] **facetimehd #364** (regresia #331 în Chromium): patjak (4 nov) revine la #331 acum și îl readuce după ce
   Chrome/Firefox publice au reparația; vrea o versiune nouă și apoi driverul trimis upstream. Viorel (4 nov): fără
   obiecții. **Revenirea nu e făcută încă** pe master. De urmărit: revert, versiunea nouă (#361: master tot 0.7.0.1).
-- [ ] facetimehd #360 (FPS) și firmware #16 — 0 comentarii din 17 oct. #356 Draft, amânat.
+- [ ] facetimehd #360 (FPS) — 0 comentarii din 17 oct. #356 Draft, amânat.
 - [ ] **KMSAN v2**: Acked-by pe 3/4 de la David Hildenbrand și Mike Rapoport (1 nov); fără răspuns x86/KMSAN.
   (Dubla apariție în lore = același Message-ID în B4 Relay și LKML, nu o trimitere dublă.)
 - [ ] Mozilla 2085509: UNCONFIRMED, needinfo pe jib de la BugBot (2 nov), fără răspuns.
@@ -849,14 +1003,15 @@ Nu a fost făcut niciun commit sau upload prin actualizarea planului.
 
 | Proiect | Integrate | Încă deschise | Închise fără integrare separată |
 |---|---|---|---|
-| `patjak/facetimehd` | **20 PR-uri** | **#356, Draft; #360** (verificat 6 nov) | niciuna |
+| `patjak/facetimehd` | **20 PR-uri** | **#356, Draft; #360** (verificat 20 nov; #364 al altui autor, integrat 20 nov, înlocuiește revenirea la #331) | niciuna |
 | PipeWire | **21 de MR-uri** (6 nov: + !3077, !3078, !3079, !3097, !3098, !2951) | **niciunul** (6 nov) | !2966 absorbit în !2965; !2980 retras; **!3046 închis 13 oct — Wim a integrat propria variantă (`c04bf4fd8`, „See !3046”)** |
 | WirePlumber | **!934** + fixul din !895 (`74e49995`, 3 nov) | niciunul | !936 (0.5) închis |
-| `patjak/facetimehd-firmware` | **#14** (6 nov) | **#16** | #15 absorbit în #14 |
-| Chromium / WebRTC (Gerrit) | **4 CL-uri**: 8648509, 511140, 511141, 511160 (3 nov) | niciunul | — |
-| `davidjo/snd_hda_macbookpro` | niciuna | **#189** | — |
-| Linux x86/KMSAN | 0 integrate | **v2 (4 patch-uri, 1 nov)**: Acked-by pe 3/4 de la Hildenbrand și Rapoport; fără răspuns x86/KMSAN (6 nov) | v1 (6 oct) înlocuit de v2 |
-| Debian `dkms` (Salsa) | — | **!8** (3.4.4), CI 11/11 verde | — |
+| `patjak/facetimehd-firmware` | **#14, #16** (6 nov) | niciunul | #15 absorbit în #14 |
+| Chromium / WebRTC (Gerrit) | **4 CL-uri**: 8648509, 511140, 511141, 511160 (3 nov); Chromium stable cu reparația: M159, 8 dec | niciunul | — |
+| Firefox (Mozilla 2085509) | backport preluat de Jan Grulich: D343945 pe autoland (20 nov) | D343942, D343946 (20 nov) | — |
+| `davidjo/snd_hda_macbookpro` | niciuna | **#189** (încă `mergeable` după schimbarea master-ului din 14 nov) | — |
+| Linux x86/KMSAN | 0 integrate | **v2 (4 patch-uri, 1 nov)**: Acked-by pe 3/4 de la Hildenbrand și Rapoport; fără răspuns x86/KMSAN (verificat 20 nov) | v1 (6 oct) înlocuit de v2 |
+| Debian `dkms` (Salsa) | — | **!8** (3.4.4), CI 11/11 verde; fără răspuns (verificat 20 nov) | — |
 
 Numerele de PR/MR sunt numere de contribuții, nu de commit-uri. #346 și #355 din facetimehd,
 precum și v4l2loopback #659 și Snapshot !464, sunt ale altor autori și sunt urmărite separat.
