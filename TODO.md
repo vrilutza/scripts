@@ -112,7 +112,8 @@ compilare și fără teste
     așa că acolo e nevoie de o variantă separată.
 - **MR-uri deschise care schimbă linii scrise de Viorel** (blame pe `base_sha` al fiecărui MR; PipeWire 60, WirePlumber 16):
   - **Doar PipeWire !3117** (Cryolitia, 13 nov, 0 comentarii, „gst: copy borrowed MemPtr chunks before returning
-    buffers”): schimbă 5 linii din `dequeue_buffer()` (`gstpipewiresrc.c`, ramura `use_pool` din `bf3951eb0`). Repară un
+    buffers”): schimbă 2 linii din `dequeue_buffer()` (`gstpipewiresrc.c`, ramura `use_pool` din `bf3951eb0`). Pe 20 nov
+    scrisesem 5: unealta număra și liniile de context ale diff-ului; corectat pe 21 nov, cu două metode independente. Repară un
     crash în Snapshot (`gst_buffer_copy`). **De citit de Viorel;** reviewul pe GitLab îl face el.
 - **Issue-uri PipeWire noi, în zonele noastre** (fără legătură stabilită cu codul nostru):
   - #5582 (SIGSEGV, `b->busy` nemapat în `impl_node_process_input`; Wim bănuiește `ced30cf`);
