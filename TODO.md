@@ -49,6 +49,39 @@ Citire live, doar GET, pornită la 10:56:47 UTC. „Nou” înseamnă după 20 n
 - **Restul:** snd_hda_macbookpro #189 deschis. GNOME: nimic. Chromium 8648509 și WebRTC 511140, 511141, 511160 sunt
   integrate, fără mesaje noi.
 
+**A doua trecere (23 nov, 13:09–13:15 EET): ce lipsea din prima.** Date în `urmarire-pr-23nov/trecerea2/`.
+- **Codul lui Viorel modificat de alții:** nicio linie. Verificat cu blame pe liniile șterse sau schimbate de fiecare commit
+  nou:
+  - PipeWire master `ae121341..f8d4c2973`, 1.6 `24a70733..79335396e` și WirePlumber master `6354aaf4..c6a331d27`;
+  - singurul commit care atinge linii de-ale lui e al lui însuși (4b2d052af, `test-stream-reuse.c`).
+- **MR-uri deschise ale altora:** din 62 PipeWire, doar !3117 atinge cod de-al lui Viorel (2 linii), neschimbat. Din 19
+  WirePlumber, niciunul.
+- **Issue-uri noi:**
+  - PipeWire are 3, dintre care unul în zona noastră: **#5603**, `'source->loop == &impl->loop' failed … remove_from_poll()`
+    în `client-node`, după epuizarea descriptorilor (1.6.11). E închis ca duplicat al lui #5596, reparat de Wim (`f30af45bc`,
+    `2e61919a`, 17–18 nov). E aceeași aserție ca la P07, dar alt cod; nu e al nostru.
+  - WirePlumber: 0.
+  - #5582, #5586 și #5593 sunt neschimbate.
+- **facetimehd:**
+  - în afara lui #369, nimic de la alții;
+  - #253 și #299 sunt încă deschise, deși Viorel a scris pe 20 nov că pot fi închise;
+  - #370 și #360 n-au răspuns la mesajele lui Viorel din 21 nov;
+  - pe lore, niciun mesaj „facetimehd” după 20 nov (control: 6 mesaje în 1–10 nov).
+- **Chromium 40252886:** ultima activitate pe 30 oct (comentariul nostru); parserul de timpi validat pe această dată.
+- **Mozilla Phabricator:** D343942 și D343946 tot Accepted, neintegrate (control: D343945 apare Closed).
+- **Versiuni:**
+  - niciun tag nou (PipeWire 1.6.11, WirePlumber 0.5.19);
+  - **Debian sid are acum pipewire 1.6.11-1/-2**, forky are tot 1.6.9-2;
+  - dkms e tot 3.2.2-1, deci !8 rămâne neintegrat.
+- **Alte depozite** (snd_hda_macbookpro, MacBookPro14.1, facetimehd-firmware): nicio activitate. snd_hda #189 e
+  `mergeable`, dar `blocked`. Firul KMSAN v1: nimic nou.
+- **Înainte de repornire:**
+  - GRUB pornește implicit `vmlinuz-7.3.5+deb14-amd64`;
+  - `dkms status`: facetimehd, snd_hda_macbookpro și v4l2loopback sunt `installed` pe 7.3.5;
+  - changelog-ul Debian 7.3.5-1 conține „wifi: brcmfmac: map msgbuf RX packet IDs bidirectional (Closes: #1153595)”, adică
+    `7ed5dce55fa8`, reparația regresiei WiFi din 7.3.4;
+  - niciun proces de test rămas.
+
 **Deschise:**
 - [ ] **WebRTC 518261 și 518440:** așteaptă încă o aprobare și Commit-Queue.
   - La recenzii răspunde Viorel (politica AI Chromium); eu pregătesc ciorne.
@@ -59,7 +92,9 @@ Citire live, doar GET, pornită la 10:56:47 UTC. „Nou” înseamnă după 20 n
 - [ ] PipeWire !3117: de citit de Viorel (atinge `bf3951eb0`).
 - [ ] WirePlumber 0.5: B2 are nevoie de o variantă separată, dacă se dorește pe 0.5.
 - [ ] PipeWire 1.6.12, cu commit-urile nepublicate (acum și 79335396e).
-- [ ] **Kernel 7.3.5:** repornire, apoi verificat boot, WiFi și `DMAR: [DMA` în jurnal.
+- [ ] **Kernel 7.3.5:** repornire, care e pregătită (GRUB, DKMS, reparația brcmfmac în pachet). După ea: boot, WiFi,
+  `DMAR: [DMA` în jurnal, camera și sunetul.
+- [ ] facetimehd #253 și #299: încă deschise după propunerea de închidere a lui Viorel.
 - [ ] **Patch-urile locale:** P01, P02, P06, P07 și pw_filter sunt acum upstream. Rămân P08 (decizii deschise), P04/P10 (cu
   Wim), P05 și P11. Rebazarea pe master-ele noi nu e verificată.
 
