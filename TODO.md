@@ -1,3 +1,70 @@
+## Stare upstream verificată — 23 noiembrie 2026, 12:56 EET
+
+Citire live, doar GET, pornită la 10:56:47 UTC. „Nou” înseamnă după 20 nov 17:21 EET (15:21:44 UTC), ultima citire.
+- **Ce am citit:**
+  - GitHub (64 de fire și notificările), GitLab freedesktop (49), Salsa (3), GNOME (2);
+  - Gerrit WebRTC și Chromium (după id-ul de cont);
+  - Bugzilla 2085509 și 2069473, BTS #1076269 și #1035707;
+  - lore (căutarea „kmsan” și firul seriei v2), git.kernel.org (mainline și linux-next, cu control pozitiv).
+- **Date:** [`pipewire-5363/rezultate/urmarire-pr-23nov/`](/home/vik/scripts/pipewire-5363/rezultate/urmarire-pr-23nov/).
+
+**Ce s-a mișcat de la 20 noiembrie:**
+- [x] **PipeWire: cele 5 MR-uri ale seriei sunt integrate de Wim**, cu patch-uri și mesaje identice cu ce am trimis (patch-id
+  verificat):
+  - !3185 (P02): e0c984695, 22 nov;
+  - !3189 (pw_filter): 4b2d052af, 23 nov la 08:21 UTC;
+  - !3191 (P06): e49b9994e, la 08:23 UTC;
+  - !3198 (P01): dfbb263e7, la 09:31 UTC. Înainte, Viorel a împins rebase-ul 0c1d524db; conflictul era în `test/meson.build`,
+    cu !3191. Testat pe ambele laptopuri: martorul pică în toate 3 cazurile, rebase-ul trece 74/74;
+  - !3199 (P07): 0cb09a070, la 09:34 UTC.
+  - **În 1.6** Wim a adus !3191 ca 79335396e: doar corecția din `stream.c`, fără test, cu autor Wim.
+  - **P02 e acum reparat upstream**, prin !3185.
+- [x] **WebRTC: 517620 (Jan Grulich) integrat** pe 23 nov, la 08:12 UTC (a222406d49ec).
+  - **518261 (0001):** PS2 urcat la 10:12 UTC: rebase pe main plus comentariul de test corectat. **Ilya Nikolaevskiy
+    Code-Review+1** la 10:39 UTC.
+  - **518440 (0002), CL nou, dependent de 518261:** urcat la 10:15 UTC, după corectarea regresiei găsite de auditor (interval
+    de rate fără limită de sus; banc de filtru SPA pe PipeWire master, 1.6 și 1.4). **Ilya Code-Review+1** la 10:46 UTC.
+  - **Ambele:** Code-Owners îndeplinit; Code-Review și Review-Enforcement încă neîndeplinite; niciun comentariu inline;
+    Commit-Queue nepornit.
+  - Date: `pipewire-5363/rezultate/upstream-23nov/rebase-0002/trimitere/v2/TRIMIS.md`.
+- [x] **facetimehd #369:** raportorul (richtw370, 22 nov, 02:06 UTC) confirmă că, pe versiunea nouă, Chrome și Caprine merg.
+  Issue-ul e încă deschis.
+- [x] **facetimehd:** pe 20 nov, între 16:33 și 17:26 UTC, patjak a închis #199, #297, #303, #306 și #363, după comentariile
+  lui Viorel că pot fi închise.
+- [x] **Kernel 7.3.5-1 instalat pe MacBook.** DKMS a construit facetimehd, snd_hda_macbookpro și v4l2loopback pentru 7.3.5
+  (`/var/log/apt/term.log`). Rulează încă 7.2.15: repornirea nu s-a făcut.
+
+**Fără schimbare:**
+- **WirePlumber !963, !964, !965:** deschise, CI verde, mergeable, fără comentarii. Master WP e tot c6a331d2 (21 nov).
+- **PipeWire:** #5481 neschimbat. !3117 (Cryolitia, atinge `bf3951eb0`): deschis, 0 comentarii, neschimbat din 13 nov.
+- **facetimehd:** #360, #356 (Draft) și #361 fără activitate externă. Master tot `4159eef0` (#364); facetimehd-firmware
+  master tot `961774d`.
+- **Debian:** dkms !8 fără activitate. BTS #1076269 și #1035707 identice octet cu octet.
+- **KMSAN v2:**
+  - niciun mesaj nou pe fir din 1 nov (12 mesaje; Acked-by Hildenbrand și Rapoport pe 3/4);
+  - nu e nici în mainline, nici în linux-next. Căutare după subiect, cu control pozitiv: „KMSAN: fix memset() when using
+    fortify-source, again” e găsit în ambele;
+  - activitatea „kmsan” nouă de pe lore e a altora: seria v5 a lui Hao Ge, Muchun Song, Matt Fleming, backport-uri stable.
+- **Mozilla:** 2085509 are doar comentariul de închidere (20 nov, 15:57 UTC); 2069473 e neschimbat.
+- **Restul:** snd_hda_macbookpro #189 deschis. GNOME: nimic. Chromium 8648509 și WebRTC 511140, 511141, 511160 sunt
+  integrate, fără mesaje noi.
+
+**Deschise:**
+- [ ] **WebRTC 518261 și 518440:** așteaptă încă o aprobare și Commit-Queue.
+  - La recenzii răspunde Viorel (politica AI Chromium); eu pregătesc ciorne.
+  - Amânate: proba Chromium (exact 30 pe 15–60, 90 pe 30–120) și captura cu WirePlumber 0.5/master.
+- [ ] WirePlumber !963–965: așteaptă recenzie.
+- [ ] facetimehd #369: raportorul confirmă reparația; Viorel poate propune închiderea.
+- [ ] facetimehd: Viorel decide continuarea pentru #364/#331.
+- [ ] PipeWire !3117: de citit de Viorel (atinge `bf3951eb0`).
+- [ ] WirePlumber 0.5: B2 are nevoie de o variantă separată, dacă se dorește pe 0.5.
+- [ ] PipeWire 1.6.12, cu commit-urile nepublicate (acum și 79335396e).
+- [ ] **Kernel 7.3.5:** repornire, apoi verificat boot, WiFi și `DMAR: [DMA` în jurnal.
+- [ ] **Patch-urile locale:** P01, P02, P06, P07 și pw_filter sunt acum upstream. Rămân P08 (decizii deschise), P04/P10 (cu
+  Wim), P05 și P11. Rebazarea pe master-ele noi nu e verificată.
+
+---
+
 ## Stare upstream verificată — 20 noiembrie 2026, 17:21 EET
 
 Citire live, doar GET, pornită la 15:21:44 UTC. „Nou” înseamnă după 6 nov 13:47 EET, ultima citire.
