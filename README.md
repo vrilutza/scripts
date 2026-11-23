@@ -176,9 +176,12 @@ To live-debug events (e.g., "did my tap register as click?"): `sudo libinput deb
 watch -n 1 'sensors | grep -E "Core|fan"'
 
 # Fan floor active? (should be 3500; SMC auto-ramps above it under load)
-cat /sys/devices/platform/applesmc.768/fan1_min
-cat /sys/devices/platform/applesmc.768/fan1_input   # current RPM
-cat /etc/udev/rules.d/99-macbook-fan.rules          # the persistent floor rule
+# On 7.3.5 the fan attributes sit on applesmc's hwmon device; on 7.2.15 they were
+# directly under /sys/devices/platform/applesmc.768/.
+cat /sys/devices/platform/applesmc.768/hwmon/hwmon*/fan1_min
+cat /sys/devices/platform/applesmc.768/hwmon/hwmon*/fan1_input   # current RPM
+systemctl status macbook-fan-floor.service          # writes the floor at boot
+cat /etc/udev/rules.d/99-macbook-fan.rules          # starts that service
 
 # One-shot read of all sensors (CPU, battery, ambient)
 sensors
@@ -226,10 +229,12 @@ journalctl -u thermald -u macbook-rapl-thermald.service -b 0 | tail -8
 
 **Fan floor (`fan1_min=3500`).** The Apple SMC's stock fan curve is silence-first to a fault — it
 keeps the single exhaust fan at its floor (~1200 RPM) even at 80°C. The script raises the floor to
-3500 RPM (the noise sweet spot on the A1708) via a udev rule:
+3500 RPM (the noise sweet spot on the A1708). `fan1_min` only appears once applesmc has probed, after
+the device's `add` event, so writing it from udev races at boot. Instead a udev rule starts
+`macbook-fan-floor.service`, which waits up to 5 s for the attribute and then writes the floor:
 
 ```
-ACTION=="add", SUBSYSTEM=="platform", KERNEL=="applesmc.768", ATTR{fan1_min}="3500"
+ACTION=="add", SUBSYSTEM=="platform", KERNEL=="applesmc.768", TAG+="systemd", ENV{SYSTEMD_WANTS}+="macbook-fan-floor.service"
 ```
 
 Crucially this only raises the *floor* — `fan1_manual` stays `0`, so the SMC keeps full automatic
@@ -247,11 +252,11 @@ So the floor keeps the common idle/light case noticeably cooler (and reduces hea
 worn battery — heat is the #1 killer of lithium cells), while the SMC's auto-ramp above the floor
 keeps heavy load safe. One honest caveat: the SMC reacts *slowly*, so a sudden 100% load still
 spikes to ~94°C for ~20-30 s before the fan ramps meaningfully — that lag is inherent to the SMC,
-not the floor, and it stays under TJmax (100°C). To change the floor, edit
-`/etc/udev/rules.d/99-macbook-fan.rules` then `sudo udevadm control --reload && sudo udevadm
-trigger --action=add /sys/devices/platform/applesmc.768`. To revert to stock: set it back to
-`1200` (or just `echo 1200 | sudo tee /sys/devices/platform/applesmc.768/fan1_min` — resets on
-reboot anyway).
+not the floor, and it stays under TJmax (100°C). To change the floor, edit the value in
+`/usr/local/sbin/macbook-fan-floor` then `sudo systemctl restart macbook-fan-floor.service`. To
+revert to stock: set it back to `1200` (or just
+`echo 1200 | sudo tee /sys/devices/platform/applesmc.768/hwmon/hwmon*/fan1_min` — resets on reboot
+anyway).
 
 **Hot-weather fingerprint (measured 2026-07-19, ~3h PSI/thermal monitoring, Chrome+Firefox).**
 With high summer ambient the chassis heat-soaks: the fan sat at max (≥7000 RPM) ~85% of a 3-hour

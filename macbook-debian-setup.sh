@@ -850,8 +850,16 @@ fi
 # Persistat via udev (fan1_min e volatil, se reseteaza la reboot).
 FAN_MIN_RPM=3500
 FAN_SMC="/sys/devices/platform/applesmc.768"
+# fan1_min sta pe platform device pe 7.2.15 si pe device-ul hwmon al applesmc pe 7.3.5
+# (applesmc.768/hwmon/hwmonN/fan1_min, dupa trecerea la hwmon_device_register_with_info).
+fan_min_path() {
+    for f in "$FAN_SMC/fan1_min" "$FAN_SMC"/hwmon/hwmon*/fan1_min; do
+        [ -e "$f" ] && { echo "$f"; return 0; }
+    done
+    return 1
+}
 
-if [ ! -e "$FAN_SMC/fan1_min" ]; then
+if ! fan_min_path > /dev/null; then
     warn "applesmc fan1_min lipseste ($FAN_SMC) — sar peste fan floor (modul applesmc neincarcat?)."
 else
     info "Configurare fan floor: fan1_min=$FAN_MIN_RPM RPM (SMC ramane auto deasupra)..."
@@ -866,16 +874,18 @@ else
     # → fan1_min ramane 1200 (stock). Solutie (acelasi model ca RAPL): regula udev
     # declanseaza un service oneshot care ASTEAPTA sa apara atributul, apoi scrie podeaua.
 
-    # Helper: asteapta pana la 5s ca fan1_min sa existe, apoi scrie podeaua.
+    # Helper: asteapta pana la 5s ca fan1_min sa existe (pe oricare din cele doua cai),
+    # apoi scrie podeaua.
     sudo tee "$FAN_HELPER" > /dev/null << FANHLP
 #!/bin/sh
-F=$FAN_SMC/fan1_min
 i=0
 while [ "\$i" -lt 50 ]; do
-    [ -e "\$F" ] && { echo $FAN_MIN_RPM > "\$F"; exit 0; }
+    for F in $FAN_SMC/fan1_min $FAN_SMC/hwmon/hwmon*/fan1_min; do
+        [ -e "\$F" ] && { echo $FAN_MIN_RPM > "\$F"; exit 0; }
+    done
     i=\$((i + 1)); sleep 0.1
 done
-echo "macbook-fan-floor: \$F nu a aparut in 5s" >&2; exit 1
+echo "macbook-fan-floor: fan1_min nu a aparut in 5s sub $FAN_SMC" >&2; exit 1
 FANHLP
     sudo chmod +x "$FAN_HELPER"
 
@@ -915,11 +925,12 @@ FANEOF
     sudo systemctl start macbook-fan-floor.service \
         || warn "start macbook-fan-floor.service a returnat eroare."
 
-    FAN_MIN_READ=$(cat "$FAN_SMC/fan1_min" 2>/dev/null)
+    FAN_MIN_FILE=$(fan_min_path)
+    FAN_MIN_READ=$(cat "$FAN_MIN_FILE" 2>/dev/null)
     if [ "$FAN_MIN_READ" = "$FAN_MIN_RPM" ]; then
         ok "Fan floor aplicat: fan1_min=$FAN_MIN_READ RPM (SMC auto deasupra)."
     else
-        warn "Fan floor: fan1_min=$FAN_MIN_READ (asteptat $FAN_MIN_RPM). Verifica dupa reboot: cat $FAN_SMC/fan1_min"
+        warn "Fan floor: fan1_min=$FAN_MIN_READ (asteptat $FAN_MIN_RPM). Verifica dupa reboot: cat $FAN_MIN_FILE"
     fi
 fi
 
