@@ -310,7 +310,7 @@ Full setup for MacBook Pro 13" 2017 on a fresh Debian install. Runs in 9 stages,
 
 | Stage | What it does |
 |---|---|
-| 1 — Dependencies | `build-essential`, `linux-headers-amd64`, `linux-source`, `dkms`, `git`, `patch`, `wget`, `curl`, `cpio`, `xz-utils`, `libssl-dev`, `rfkill`, `iw` |
+| 1 — Dependencies | `build-essential`, `linux-headers-amd64`, `dkms`, `git`, `patch`, `wget`, `curl`, `cpio`, `xz-utils`, `libssl-dev`, `rfkill`, `iw` |
 | 2 — Audio driver | [davidjo/snd_hda_macbookpro](https://github.com/davidjo/snd_hda_macbookpro) — Cirrus CS8409 patched driver via DKMS, versioned from git (`0.1-<commit>`) and built for every kernel with headers |
 | 3 — Camera firmware | [patjak/facetimehd-firmware](https://github.com/patjak/facetimehd-firmware) — extracted from Apple OS X driver |
 | 4 — Camera driver | [patjak/facetimehd](https://github.com/patjak/facetimehd) — kernel module via DKMS, versioned from git and built for every kernel with headers |
@@ -670,4 +670,4 @@ end to end after `7.1.3 → 7.1.6` (identical `v4l2-compliance` result, capture 
 > served. When the build fails, the kernel package is left half-configured (no initramfs, no GRUB
 > entry); `sudo dpkg --configure -a` re-runs the build and the rest of the kernel installation.
 > [PR #189](https://github.com/davidjo/snd_hda_macbookpro/pull/189) would make the script use the
-> local `linux-source-<X.Y>` package instead; until it lands, the setup does not use `linux-source`.
+> local `linux-source-<X.Y>` package instead; until it lands, the setup neither installs nor uses `linux-source`.

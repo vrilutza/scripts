@@ -4,7 +4,7 @@
 # =============================================================================
 #
 #  Ce instaleaza:
-#    1. Dependente (build-essential, dkms, linux-headers-amd64, linux-source, etc.)
+#    1. Dependente (build-essential, dkms, linux-headers-amd64, etc.)
 #    2. Driver audio Cirrus Logic CS8409
 #       https://github.com/davidjo/snd_hda_macbookpro
 #    3. Firmware camera FaceTime HD (extras din driverul Apple OS X)
@@ -628,7 +628,7 @@ info "Log salvat in: $LOGFILE"
 CURRENT_STEP="ETAPA 1/9 — Dependente"
 step "$CURRENT_STEP"
 
-PKGS=(build-essential linux-headers-amd64 linux-source dkms git patch wget curl cpio xz-utils libssl-dev rfkill iw)
+PKGS=(build-essential linux-headers-amd64 dkms git patch wget curl cpio xz-utils libssl-dev rfkill iw)
 
 info "Actualizare lista de pachete..."
 sudo apt-get update -qq || fail "apt-get update a esuat."

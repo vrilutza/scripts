@@ -5278,8 +5278,8 @@ kernel.org nu răspunde. Pachetul de kernel rămâne atunci configurat pe jumăt
 
 [PR #189](https://github.com/davidjo/snd_hda_macbookpro/pull/189), scris de aici, face scriptul să folosească întâi sursa
 locală, pachetul Debian `linux-source-<X.Y>`. E deschis din 14 iunie, `mergeable`. Până se acceptă, `linux-source` nu e
-folosit. Până pe 23 noiembrie, pe MacBook rula codul din acest PR, iar regula „instalează `linux-source-<X.Y>` înainte de
-upgrade” era necesară doar pentru el. [Issue #187](https://github.com/davidjo/snd_hda_macbookpro/issues/187) e închis de
+folosit; din 24 noiembrie etapa 1 nici nu-l mai instalează. Până pe 23 noiembrie, pe MacBook rula codul din acest PR,
+iar regula „instalează `linux-source-<X.Y>` înainte de upgrade” era necesară doar pentru el. [Issue #187](https://github.com/davidjo/snd_hda_macbookpro/issues/187) e închis de
 Viorel din 6 octombrie.
 
 `facetimehd` nu e afectat (nu descarcă nimic).
