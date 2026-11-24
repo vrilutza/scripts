@@ -323,10 +323,23 @@ Full setup for MacBook Pro 13" 2017 on a fresh Debian install. Runs in 9 stages,
 | 9 — Cosmetic / journal | GNOME media-keys (`hibernate`/`playback-repeat`) + `usb-protection` off + `applespi fnmode=1` — silences benign per-boot log errors |
 
 The two DKMS modules (audio, camera) auto-rebuild on kernel updates. On a re-run, each stage checks what
-is already in place, and Stages 2 and 4 update both drivers to the commit checked out in their clones
-under `~/macbook-setup` after `git pull`:
-- the DKMS version changes with the commit, so `sudo dkms status` shows which code is installed; the
-  source is exported from that commit, without local changes to the clone;
+is already in place, and Stages 2 and 4 update both drivers to their project's current `master`:
+- `master` is fetched from the project's official GitHub repository (the URL is in the script) into the
+  script's own repository, `~/macbook-setup/git-oficial/<project>.git`, and exactly that commit is
+  built. Only the `master` branch is fetched, no tags. For each driver the log records the full SHA, the
+  commit date and the fetch time (UTC), then the DKMS version installed and the kernels it is installed
+  for: what a bug report needs. Clones you keep yourself are not used or touched. The commit is read
+  and exported without your git configuration, the git attributes files outside the commit (yours and
+  `/etc/gitattributes`) and `git replace` objects, so
+  only the commit decides what is built. Stage 3 does the same when the camera firmware is not
+  installed yet;
+- if the fetch fails, the stage first finishes or reverts an interrupted earlier run from what is
+  already on disk. A driver that is then installed and verified on every kernel is kept, the other
+  stages run, and the script lists the update as not done and exits with status 1. Without such a
+  driver (a fresh install, or a kernel left without one) it stops at that stage;
+- the DKMS version changes with the commit, so `sudo dkms status` shows which code is installed
+  (`0.1-<sha>` for audio; for the camera, the commit count padded to six digits, then `-g<sha>`, which
+  DKMS sorts above the `0.7.2` versions kept on this MacBook); the source is exported from that commit;
 - the new version is built for every kernel with headers before anything is replaced; if a build
   fails, nothing on the kernels is changed;
 - each installed module file is compared with the one DKMS built, so a missing or changed `.ko` is not

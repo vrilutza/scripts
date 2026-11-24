@@ -434,7 +434,63 @@ dkms_with_lock() {
     return "$rc"
 }
 
-# Instaleaza modulul $1, versiunea $2, din commitul HEAD al clonei $3, pentru kernelurile din lista $4,
+# Reface local starea DKMS a modulului $1 lasata de o rulare intrerupta, fara depozit: inchide notele din
+# <modul>.activ (activ_reconcile, care pune la loc versiunea notata pe un kernel ramas fara modul) si scoate
+# candidatii ramasi neinstalati, in afara de versiunea $2, daca e data. Rezultatul e doar al lui activ_reconcile
+# (1 daca esueaza): o curatare de candidat esuata se raporteaza, nu opreste etapa, fiindca modulul instalat nu
+# depinde de ea, iar candidatul ramane notat si se reincearca la urmatoarea rulare.
+dkms_recover() {
+    local v
+    activ_reconcile "$1" || return 1
+    for v in $(lista_get "$1" candidati); do
+        [ "$v" = "${2:-}" ] && continue
+        dkms_drop_candidate "$1" "$v" \
+            || warn "Nu am putut scoate candidatul $1 $v; ramane notat si se reincearca la urmatoarea rulare."
+    done
+    return 0
+}
+
+# Fiecare kernel din lista $2 are o versiune a modulului $1 activa, cu fisierele verificate.
+dkms_usable() {
+    local k act
+    for k in $2; do
+        act=$(dkms_active "$1" "$k") || return 1
+        [ -n "$act" ] && dkms_files_ok "$1" "$act" "$k" || return 1
+    done
+}
+
+# git pe depozitul $1, fara configuratia git de sistem si globala a utilizatorului, fara fisierele de atribute din
+# afara commitului si fara obiecte inlocuite (`git replace`). Pentru citirea si exportul commitului preluat: rezultatul
+# depinde doar de commit, inclusiv de .gitattributes din el. Atributele din afara sunt doua: fisierul utilizatorului
+# (fara core.attributesFile, git citeste implicit ~/.config/git/attributes, de aceea se seteaza la /dev/null) si
+# /etc/gitattributes (oprit de GIT_ATTR_NOSYSTEM).
+git_curat() {
+    local r=$1; shift
+    GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null GIT_ATTR_NOSYSTEM=1 \
+        git --no-replace-objects -c core.attributesFile=/dev/null -C "$r" "$@"
+}
+
+# Scrie in log commitul preluat in depozitul $1: SHA-ul complet $2, data commitului si ora preluarii, ambele in UTC.
+git_log_commit() {
+    local data
+    data=$(TZ=UTC git_curat "$1" show -s --format=%cd --date=format-local:'%Y-%m-%d %H:%M:%S UTC' "$2" 2>/dev/null)
+    info "Commit master preluat: $2 (commit din ${data:-data necunoscuta}; preluat la $(date -u '+%Y-%m-%d %H:%M:%S UTC'))"
+}
+
+# Preia `master` din depozitul oficial $2 in depozitul git al scriptului $1 (bare, creat fara sabloane daca lipseste)
+# si tipareste commitul preluat. URL-ul vine din script, iar depozitul e doar al scriptului: clonele utilizatorului
+# nu se folosesc si nu se ating. Se preia doar ramura master, fara tag-uri: commitul si versiunea DKMS nu depind de
+# ele. Preluarea foloseste configuratia git a utilizatorului (proxy, insteadOf); citirea commitului, nu
+# (git_curat). Intoarce 1 daca preluarea esueaza.
+git_fetch_master() {
+    if [ ! -d "$1" ]; then
+        GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null git init --quiet --bare --template= "$1" >&2 || return 1
+    fi
+    git -C "$1" fetch --quiet --no-tags "$2" +refs/heads/master:refs/heads/master >&2 || return 1
+    git_curat "$1" rev-parse --verify --quiet 'refs/heads/master^{commit}'
+}
+
+# Instaleaza modulul $1, versiunea $2, din commitul $5 al clonei $3, pentru kernelurile din lista $4,
 # fara sa lase un kernel fara driver daca ceva esueaza:
 #   0. Notele din <modul>.activ lasate de o rulare intrerupta se inchid, iar un kernel ramas fara modulul
 #      verificat primeste inapoi versiunea notata; daca nu se poate, functia se opreste. Candidatii lasati
@@ -463,13 +519,10 @@ dkms_with_lock() {
 # (dkms_with_lock): a doua se opreste fara sa schimbe ceva.
 dkms_install_from_git() { dkms_with_lock "$1" dkms_install_from_git_locked "$@"; }
 dkms_install_from_git_locked() {
-    local mod=$1 ver=$2 clone=$3 kernels=$4
+    local mod=$1 ver=$2 clone=$3 kernels=$4 rev=$5
     local src="/usr/src/$1-$2" k v act prev st r missing
 
-    activ_reconcile "$mod" || return 1
-    for v in $(lista_get "$mod" candidati); do
-        [ "$v" = "$ver" ] || dkms_drop_candidate "$mod" "$v"
-    done
+    dkms_recover "$mod" "$ver" || return 1
 
     st=$(dkms_st -m "$mod" -v "$ver") || return 1
     if [ -n "$st" ]; then
@@ -479,7 +532,7 @@ dkms_install_from_git_locked() {
             || { warn "Nu pot scrie in $(dkms_state "$mod.candidati"); nu inregistrez $ver."; return 1; }
         info "Export sursa $mod $ver din git in $src..."
         { sudo rm -rf "$src" && sudo mkdir -p "$src"; } || return 1
-        git -C "$clone" archive HEAD | sudo tar -x -C "$src" || return 1
+        git_curat "$clone" archive "$rev" | sudo tar -x -C "$src" || return 1
         sudo sed -i "s/^PACKAGE_VERSION=.*/PACKAGE_VERSION=\"$ver\"/" "$src/dkms.conf" || return 1
         sudo dkms add -m "$mod" -v "$ver" || { dkms_drop_candidate "$mod" "$ver"; return 1; }
     fi
@@ -596,6 +649,7 @@ dkms_install_from_git_locked() {
 
 CURRENT_STEP="initializare"
 WORKDIR="$HOME/macbook-setup"
+UPDATE_FAILED=()   # actualizarile din git care nu s-au facut; la final, exit 1
 KERNEL="$(uname -r)"
 
 mkdir -p "$WORKDIR"
@@ -655,47 +709,41 @@ CURRENT_STEP="ETAPA 2/9 — Driver audio"
 step "$CURRENT_STEP"
 info "Proiect: https://github.com/davidjo/snd_hda_macbookpro"
 
-cd "$WORKDIR"
-if [ -d "snd_hda_macbookpro" ]; then
-    info "Repo exista, actualizez..."
-    # Modificarile locale din clona nu se ating si nici nu intra in modulul construit: sursa DKMS se
-    # exporta din commit. Versiunile vechi ale install.cirrus.driver.sh editau dkms.conf pe loc
-    # (sed -i.orig), iar o asemenea editare blocheaza `git pull`.
-    SND_HDA_DIRTY=$(git -C snd_hda_macbookpro status --porcelain --untracked-files=no 2>/dev/null \
-        | awk '{print $2}' | paste -sd ' ' -)
-    if [ -n "$SND_HDA_DIRTY" ]; then
-        warn "Clona are modificari locale, pe care nu le ating: $SND_HDA_DIRTY"
-        warn "Daca e doar dkms.conf editat de vechiul install.cirrus.driver.sh, il refaci cu: git -C $WORKDIR/snd_hda_macbookpro checkout -- dkms.conf"
-    fi
-    git -C snd_hda_macbookpro pull --quiet || warn "git pull a esuat, continui cu commitul existent."
-else
-    info "Clonez repo-ul..."
-    git clone https://github.com/davidjo/snd_hda_macbookpro.git \
-        || fail "git clone snd_hda_macbookpro a esuat."
-fi
-
-# Ca la camera (etapa 4): dkms.conf spune 0.1 pentru orice revizie, iar install.cirrus.driver.sh -i
-# inregistreaza in DKMS un link spre clona, deci un `git pull` ar schimba codul compilat la urmatorul
-# kernel fara sa se vada nicaieri. Versiunea se ia din git, iar sursa se exporta din commit.
-SND_HDA_REV=$(git -C "$WORKDIR/snd_hda_macbookpro" rev-parse --short=10 HEAD 2>/dev/null)
-[ -z "$SND_HDA_REV" ] && fail "Nu am putut citi revizia git din $WORKDIR/snd_hda_macbookpro."
-SND_HDA_VER="0.1-$SND_HDA_REV"
-info "Versiune driver audio: $SND_HDA_VER"
-
+SND_HDA_URL="https://github.com/davidjo/snd_hda_macbookpro.git"
+SND_HDA_REPO="$WORKDIR/git-oficial/snd_hda_macbookpro.git"
 SND_HDA_KERNELS=$(kernels_with_headers)
 [ -z "$SND_HDA_KERNELS" ] && fail "Nu am gasit headere de kernel in /lib/modules/*/build."
 
-if [ -z "$(dkms_missing snd_hda_macbookpro "$SND_HDA_VER" "$SND_HDA_KERNELS")" ]; then
-    info "Driver-ul audio $SND_HDA_VER e deja instalat pentru toate kernelurile."
-fi
-# Pentru fiecare kernel, PRE_BUILD (install.cirrus.driver.sh --dkms) descarca sursele sound/hda
-# ale kernelului de pe kernel.org (poate dura cateva minute).
-if ! dkms_install_from_git snd_hda_macbookpro "$SND_HDA_VER" "$WORKDIR/snd_hda_macbookpro" "$SND_HDA_KERNELS"; then
-    warn "Starea pe kerneluri:"
+# Se construieste commitul `master` preluat din depozitul oficial in depozitul git al scriptului, exportat cu
+# git archive. O clona tinuta de utilizator in $WORKDIR nu se foloseste.
+cd "$WORKDIR"
+info "Preiau master din $SND_HDA_URL..."
+if SND_HDA_SHA=$(git_fetch_master "$SND_HDA_REPO" "$SND_HDA_URL"); then
+    git_log_commit "$SND_HDA_REPO" "$SND_HDA_SHA"
+    # Ca la camera (etapa 4): dkms.conf spune 0.1 pentru orice revizie, iar install.cirrus.driver.sh -i
+    # inregistreaza in DKMS un link spre clona, deci codul compilat s-ar schimba la urmatorul kernel fara
+    # sa se vada nicaieri. Versiunea se ia din commit, iar sursa se exporta din el.
+    SND_HDA_VER="0.1-$(git_curat "$SND_HDA_REPO" rev-parse --short=10 "$SND_HDA_SHA")"
+    info "Versiune driver audio: $SND_HDA_VER"
+    if [ -z "$(dkms_missing snd_hda_macbookpro "$SND_HDA_VER" "$SND_HDA_KERNELS")" ]; then
+        info "Driver-ul audio $SND_HDA_VER e deja instalat pentru toate kernelurile."
+    fi
+    # Pentru fiecare kernel, PRE_BUILD (install.cirrus.driver.sh --dkms) descarca sursele sound/hda
+    # ale kernelului de pe kernel.org (poate dura cateva minute).
+    if ! dkms_install_from_git snd_hda_macbookpro "$SND_HDA_VER" "$SND_HDA_REPO" "$SND_HDA_KERNELS" "$SND_HDA_SHA"; then
+        warn "Starea pe kerneluri:"
+        dkms_report snd_hda_macbookpro "$SND_HDA_KERNELS"
+        fail "Driver-ul audio $SND_HDA_VER nu e instalat pentru toate kernelurile. Verifica cu: sudo dkms status"
+    fi
+    ok "Driver audio $SND_HDA_VER (commit $SND_HDA_SHA) instalat prin DKMS pentru: $(echo "$SND_HDA_KERNELS" | paste -sd ' ' -)."
+elif dkms_with_lock snd_hda_macbookpro dkms_recover snd_hda_macbookpro && dkms_usable snd_hda_macbookpro "$SND_HDA_KERNELS"; then
+    warn "Preluarea master din $SND_HDA_URL a esuat; actualizarea driverului audio nu s-a facut. Pastrez driverul instalat:"
     dkms_report snd_hda_macbookpro "$SND_HDA_KERNELS"
-    fail "Driver-ul audio $SND_HDA_VER nu e instalat pentru toate kernelurile. Verifica cu: sudo dkms status"
+    UPDATE_FAILED+=("driver audio: preluarea master din $SND_HDA_URL a esuat")
+else
+    dkms_report snd_hda_macbookpro "$SND_HDA_KERNELS"
+    fail "Preluarea master din $SND_HDA_URL a esuat, iar driverul audio nu e instalat si verificat pe toate kernelurile."
 fi
-ok "Driver audio $SND_HDA_VER instalat prin DKMS pentru: $(echo "$SND_HDA_KERNELS" | paste -sd ' ' -)."
 
 if lsmod | grep -q "snd_hda_codec_cs8409" || \
    ls /lib/modules/"$KERNEL"/updates/dkms/ 2>/dev/null | grep -q "snd"; then
@@ -714,21 +762,25 @@ step "$CURRENT_STEP"
 info "Proiect: https://github.com/patjak/facetimehd-firmware"
 
 FIRMWARE_PATH="/usr/lib/firmware/facetimehd"
+FW_URL="https://github.com/patjak/facetimehd-firmware.git"
 
 if [ -f "${FIRMWARE_PATH}/firmware.bin" ]; then
     warn "Firmware-ul camerei este deja instalat la ${FIRMWARE_PATH}/. Sar aceasta etapa."
 else
+    # Se construieste commitul `master` preluat din depozitul oficial, exportat intr-un director separat:
+    # ramurile si modificarile locale ale clonei nu intra in firmware.
     cd "$WORKDIR"
-    if [ -d "facetimehd-firmware" ]; then
-        info "Repo exista, actualizez..."
-        git -C facetimehd-firmware pull || warn "git pull a esuat, continui cu versiunea existenta."
-    else
-        info "Clonez repo-ul..."
-        git clone https://github.com/patjak/facetimehd-firmware.git \
-            || fail "git clone facetimehd-firmware a esuat."
-    fi
+    info "Preiau master din $FW_URL..."
+    FW_REPO="$WORKDIR/git-oficial/facetimehd-firmware.git"
+    FW_SHA=$(git_fetch_master "$FW_REPO" "$FW_URL") \
+        || fail "Preluarea master din $FW_URL a esuat, iar firmware-ul camerei nu e instalat."
+    git_log_commit "$FW_REPO" "$FW_SHA"
+    FW_BUILD="$WORKDIR/facetimehd-firmware-build"
+    { rm -rf "$FW_BUILD" && mkdir -p "$FW_BUILD"; } || fail "Nu am putut pregati $FW_BUILD."
+    git_curat "$FW_REPO" archive "$FW_SHA" | tar -x -C "$FW_BUILD" \
+        || fail "Nu am putut exporta commitul $FW_SHA in $FW_BUILD."
 
-    cd facetimehd-firmware || fail "Nu am putut intra in directorul facetimehd-firmware."
+    cd "$FW_BUILD" || fail "Nu am putut intra in directorul $FW_BUILD."
     info "Extragere firmware din driverul Apple OS X (descarca automat ~50MB)..."
     make || fail "make firmware a esuat. Verifica conexiunea la internet."
     info "Instalare firmware..."
@@ -752,39 +804,50 @@ CURRENT_STEP="ETAPA 4/9 — Driver camera FaceTime HD (DKMS)"
 step "$CURRENT_STEP"
 info "Proiect: https://github.com/patjak/facetimehd"
 
-cd "$WORKDIR"
-if [ -d "facetimehd" ]; then
-    info "Repo exista, actualizez..."
-    git -C facetimehd fetch --tags --quiet || warn "git fetch a esuat, continui cu versiunea existenta."
-    git -C facetimehd pull --quiet || warn "git pull a esuat, continui cu versiunea existenta."
-else
-    info "Clonez repo-ul..."
-    git clone https://github.com/patjak/facetimehd.git \
-        || fail "git clone facetimehd a esuat."
-fi
-
-# Versiunea din dkms.conf e nemodificata in upstream de ani (0.7.0.1), asa ca nu
-# spune nimic despre ce cod e de fapt instalat: doua instalari facute la luni
-# distanta ar purta acelasi nume. Se ia din git, unde se vede si tag-ul, si cate
-# comituri sunt peste el, si care comit anume.
-FTIMEHD_VER=$(git -C "$WORKDIR/facetimehd" describe --tags --always 2>/dev/null)
-[ -z "$FTIMEHD_VER" ] && FTIMEHD_VER=$(grep "^PACKAGE_VERSION=" \
-    "$WORKDIR/facetimehd/dkms.conf" | cut -d= -f2 | tr -d '"')
-[ -z "$FTIMEHD_VER" ] && FTIMEHD_VER="necunoscut"
-info "Versiune driver camera: $FTIMEHD_VER"
-
+FTIMEHD_URL="https://github.com/patjak/facetimehd.git"
+FTIMEHD_REPO="$WORKDIR/git-oficial/facetimehd.git"
 FTIMEHD_KERNELS=$(kernels_with_headers)
 [ -z "$FTIMEHD_KERNELS" ] && fail "Nu am gasit headere de kernel in /lib/modules/*/build."
 
-if [ -z "$(dkms_missing facetimehd "$FTIMEHD_VER" "$FTIMEHD_KERNELS")" ]; then
-    info "Driver-ul camerei $FTIMEHD_VER e deja instalat pentru toate kernelurile."
-fi
-# Sursa DKMS se exporta din commit la fiecare versiune noua: altfel `git pull` aduce cod nou, dar
-# DKMS continua sa compileze copia veche din /usr/src.
-if ! dkms_install_from_git facetimehd "$FTIMEHD_VER" "$WORKDIR/facetimehd" "$FTIMEHD_KERNELS"; then
-    warn "Starea pe kerneluri:"
+# Ca la audio (etapa 2): se construieste commitul `master` preluat din depozitul oficial, exportat cu git
+# archive; `dkms build` il compileaza pentru fiecare kernel, iar ramurile si modificarile locale ale clonei
+# nu intra in modul.
+cd "$WORKDIR"
+info "Preiau master din $FTIMEHD_URL..."
+if FTIMEHD_SHA=$(git_fetch_master "$FTIMEHD_REPO" "$FTIMEHD_URL"); then
+    git_log_commit "$FTIMEHD_REPO" "$FTIMEHD_SHA"
+    # Versiunea din dkms.conf e nemodificata in upstream de ani (0.7.0.1, si in release-ul 0.7.2), deci nu spune
+    # ce cod e instalat. Versiunea DKMS se ia doar din commit: numarul de commituri pana la el, pe 6 cifre, si
+    # SHA-ul scurt. Tag-urile n-o influenteaza (un tag mutat ar da altfel aceeasi versiune pentru cod diferit, iar
+    # un tag cu "/" ar strica exportul). `dkms autoinstall` alege, la un kernel nou, versiunea cea mai mare dupa
+    # VER() din DKMS, comparata cu [[ > ]], deci dupa ordinea localizarii. Cele 6 cifre pastreaza ordinea dintre
+    # versiunile noastre si peste 999 de commituri (VER() completeaza numerele doar pana la 3 cifre). Cu cele 340
+    # de commituri din master (20 nov 2026), versiunea iese deasupra rezervei 0.7.2 si a versiunilor 0.7.2-* de
+    # pe MacBook, verificat cu VER() in localizarea C si in cele UTF-8.
+    FTIMEHD_N=$(git_curat "$FTIMEHD_REPO" rev-list --count "$FTIMEHD_SHA" 2>/dev/null)
+    FTIMEHD_S=$(git_curat "$FTIMEHD_REPO" rev-parse --short=10 "$FTIMEHD_SHA" 2>/dev/null)
+    [[ $FTIMEHD_N =~ ^[0-9]+$ && $FTIMEHD_S =~ ^[0-9a-f]+$ ]] \
+        || fail "Nu am putut citi versiunea git a commitului $FTIMEHD_SHA din $FTIMEHD_REPO."
+    FTIMEHD_VER="$(printf '%06d' "$FTIMEHD_N")-g$FTIMEHD_S"
+    info "Versiune driver camera: $FTIMEHD_VER"
+    if [ -z "$(dkms_missing facetimehd "$FTIMEHD_VER" "$FTIMEHD_KERNELS")" ]; then
+        info "Driver-ul camerei $FTIMEHD_VER e deja instalat pentru toate kernelurile."
+    fi
+    # Sursa DKMS se exporta din commit la fiecare versiune noua: altfel DKMS ar continua sa compileze
+    # copia veche din /usr/src.
+    if ! dkms_install_from_git facetimehd "$FTIMEHD_VER" "$FTIMEHD_REPO" "$FTIMEHD_KERNELS" "$FTIMEHD_SHA"; then
+        warn "Starea pe kerneluri:"
+        dkms_report facetimehd "$FTIMEHD_KERNELS"
+        fail "Driver-ul camerei $FTIMEHD_VER nu e instalat pentru toate kernelurile. Verifica cu: sudo dkms status"
+    fi
+    ok "Driver camera $FTIMEHD_VER (commit $FTIMEHD_SHA) instalat prin DKMS pentru: $(echo "$FTIMEHD_KERNELS" | paste -sd ' ' -)."
+elif dkms_with_lock facetimehd dkms_recover facetimehd && dkms_usable facetimehd "$FTIMEHD_KERNELS"; then
+    warn "Preluarea master din $FTIMEHD_URL a esuat; actualizarea driverului camerei nu s-a facut. Pastrez driverul instalat:"
     dkms_report facetimehd "$FTIMEHD_KERNELS"
-    fail "Driver-ul camerei $FTIMEHD_VER nu e instalat pentru toate kernelurile. Verifica cu: sudo dkms status"
+    UPDATE_FAILED+=("driver camera: preluarea master din $FTIMEHD_URL a esuat")
+else
+    dkms_report facetimehd "$FTIMEHD_KERNELS"
+    fail "Preluarea master din $FTIMEHD_URL a esuat, iar driverul camerei nu e instalat si verificat pe toate kernelurile."
 fi
 
 if ! lsmod | grep -q "^facetimehd"; then
@@ -1560,3 +1623,12 @@ echo -e "  ${GREEN}✓${NC}  Cosmetic: GNOME media-keys/usb-protection silentiat
 echo ""
 echo -e "  ${YELLOW}⚠${NC}  Necesar: ${BOLD}sudo reboot${NC} pentru a activa toate modificarile."
 echo ""
+if [ "${#UPDATE_FAILED[@]}" -gt 0 ]; then
+    echo -e "  ${YELLOW}⚠${NC}  Actualizari nefacute; driverul instalat a ramas:"
+    for u in "${UPDATE_FAILED[@]}"; do
+        echo -e "       - $u"
+    done
+    echo -e "     Reia scriptul cand depozitul e accesibil."
+    echo ""
+    exit 1
+fi
