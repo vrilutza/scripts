@@ -770,48 +770,18 @@ FTIMEHD_VER=$(git -C "$WORKDIR/facetimehd" describe --tags --always 2>/dev/null)
 [ -z "$FTIMEHD_VER" ] && FTIMEHD_VER="necunoscut"
 info "Versiune driver camera: $FTIMEHD_VER"
 
-DKMS_SRC="/usr/src/facetimehd-${FTIMEHD_VER}"
+FTIMEHD_KERNELS=$(kernels_with_headers)
+[ -z "$FTIMEHD_KERNELS" ] && fail "Nu am gasit headere de kernel in /lib/modules/*/build."
 
-if sudo dkms status facetimehd 2>/dev/null | grep -q "facetimehd/${FTIMEHD_VER}.*installed"; then
-    warn "Driver-ul camerei $FTIMEHD_VER e deja instalat prin DKMS. Sar aceasta etapa."
-else
-    # Orice alta versiune inregistrata e dintr-o rulare veche: se scoate, altfel
-    # raman mai multe si nu se mai stie care se incarca la boot.
-    for v in $(sudo dkms status facetimehd 2>/dev/null | sed 's#^facetimehd/##; s#,.*##' | sort -u); do
-        [ "$v" = "$FTIMEHD_VER" ] && continue
-        info "Scot versiunea DKMS veche $v..."
-        sudo dkms remove -m facetimehd -v "$v" --all >/dev/null 2>&1 \
-            || warn "dkms remove $v a esuat, continui."
-        sudo rm -rf "/usr/src/facetimehd-$v"
-    done
-
-    cd facetimehd || fail "Nu am putut intra in directorul facetimehd."
-    info "Compilare modul kernel..."
-    make || fail "Compilarea facetimehd a esuat."
-
-    # Sursa se rescrie de fiecare data: altfel `git pull` aduce cod nou, dar DKMS
-    # continua sa compileze copia veche din /usr/src.
-    info "Copiere sursa in $DKMS_SRC..."
-    sudo rm -rf "$DKMS_SRC"
-    sudo cp -r "$WORKDIR/facetimehd" "$DKMS_SRC" \
-        || fail "Copierea surselor DKMS a esuat."
-    # DKMS cere ca versiunea din dkms.conf sa fie cea cu care il inregistram.
-    sudo sed -i "s/^PACKAGE_VERSION=.*/PACKAGE_VERSION=${FTIMEHD_VER}/" "$DKMS_SRC/dkms.conf" \
-        || fail "Nu am putut scrie versiunea in $DKMS_SRC/dkms.conf."
-
-    info "dkms add..."
-    sudo dkms add -m facetimehd -v "$FTIMEHD_VER" \
-        || warn "dkms add: modulul poate fi deja adaugat, continui."
-
-    info "dkms build..."
-    sudo dkms build -m facetimehd -v "$FTIMEHD_VER" \
-        || fail "dkms build facetimehd a esuat."
-
-    info "dkms install..."
-    sudo dkms install -m facetimehd -v "$FTIMEHD_VER" \
-        || fail "dkms install facetimehd a esuat."
-
-    cd "$WORKDIR"
+if [ -z "$(dkms_missing facetimehd "$FTIMEHD_VER" "$FTIMEHD_KERNELS")" ]; then
+    info "Driver-ul camerei $FTIMEHD_VER e deja instalat pentru toate kernelurile."
+fi
+# Sursa DKMS se exporta din commit la fiecare versiune noua: altfel `git pull` aduce cod nou, dar
+# DKMS continua sa compileze copia veche din /usr/src.
+if ! dkms_install_from_git facetimehd "$FTIMEHD_VER" "$WORKDIR/facetimehd" "$FTIMEHD_KERNELS"; then
+    warn "Starea pe kerneluri:"
+    dkms_report facetimehd "$FTIMEHD_KERNELS"
+    fail "Driver-ul camerei $FTIMEHD_VER nu e instalat pentru toate kernelurile. Verifica cu: sudo dkms status"
 fi
 
 if ! lsmod | grep -q "^facetimehd"; then

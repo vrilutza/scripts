@@ -305,7 +305,7 @@ Full setup for MacBook Pro 13" 2017 on a fresh Debian Testing install. Runs in 9
 | 1 — Dependencies | `build-essential`, `linux-headers-amd64`, `linux-source`, `dkms`, `git`, `patch`, `wget`, `curl`, `cpio`, `xz-utils`, `libssl-dev`, `rfkill`, `iw` |
 | 2 — Audio driver | [davidjo/snd_hda_macbookpro](https://github.com/davidjo/snd_hda_macbookpro) — Cirrus CS8409 patched driver via DKMS, versioned from git (`0.1-<commit>`) and built for every kernel with headers |
 | 3 — Camera firmware | [patjak/facetimehd-firmware](https://github.com/patjak/facetimehd-firmware) — extracted from Apple OS X driver |
-| 4 — Camera driver | [patjak/facetimehd](https://github.com/patjak/facetimehd) — kernel module via DKMS |
+| 4 — Camera driver | [patjak/facetimehd](https://github.com/patjak/facetimehd) — kernel module via DKMS, versioned from git and built for every kernel with headers |
 | 5 — System fixes | Backlight (`acpi_backlight=native`) + `reboot=pci` + sleep targets masked (suspend/hibernate blocked — see below) + Bluetooth rfkill unblock at boot + `AutoEnable` ([see below](#bluetooth)) + WiFi stability: power-save off + `kernel.panic=10` ([see below](#wifi-bcm4350--chronic-firmware-desync--the-july-2026-kernel-panic-mitigated-by-stage-5g)) + fixed brightness: ALS auto-brightness + idle-dim off (5h) |
 | 6 — VA-API | `intel-media-va-driver` + `i965-va-driver` — hardware video acceleration for Intel Iris Plus 640 |
 | 7 — Touchpad UX | `tap-to-click` + `natural-scroll` + `disable-while-typing` via gsettings — macOS-like out of the box |
@@ -313,8 +313,8 @@ Full setup for MacBook Pro 13" 2017 on a fresh Debian Testing install. Runs in 9
 | 9 — Cosmetic / journal | GNOME media-keys (`hibernate`/`playback-repeat`) + `usb-protection` off + `applespi fnmode=1` — silences benign per-boot log errors |
 
 The two DKMS modules (audio, camera) auto-rebuild on kernel updates. On a re-run, each stage checks what
-is already in place, and Stage 2 updates the audio driver to the commit checked out in
-`~/macbook-setup/snd_hda_macbookpro` after `git pull`:
+is already in place, and Stages 2 and 4 update both drivers to the commit checked out in their clones
+under `~/macbook-setup` after `git pull`:
 - the DKMS version changes with the commit, so `sudo dkms status` shows which code is installed; the
   source is exported from that commit, without local changes to the clone;
 - the new version is built for every kernel with headers before anything is replaced; if a build
