@@ -717,7 +717,6 @@ SND_HDA_KERNELS=$(kernels_with_headers)
 
 # Se construieste commitul `master` preluat din depozitul oficial in depozitul git al scriptului, exportat cu
 # git archive. O clona tinuta de utilizator in $WORKDIR nu se foloseste.
-cd "$WORKDIR"
 info "Preiau master din $SND_HDA_URL..."
 if SND_HDA_SHA=$(git_fetch_master "$SND_HDA_REPO" "$SND_HDA_URL"); then
     git_log_commit "$SND_HDA_REPO" "$SND_HDA_SHA"
@@ -746,11 +745,13 @@ else
     fail "Preluarea master din $SND_HDA_URL a esuat, iar driverul audio nu e instalat si verificat pe toate kernelurile."
 fi
 
-if lsmod | grep -q "snd_hda_codec_cs8409" || \
-   ls /lib/modules/"$KERNEL"/updates/dkms/ 2>/dev/null | grep -q "snd"; then
-    ok "Modulul snd_hda_codec_cs8409 este disponibil."
+# Pana aici, etapa a verificat driverul audio, cu fisierele instalate comparate cu cele construite de DKMS, pe fiecare
+# kernel din SND_HDA_KERNELS; altfel s-ar fi oprit. Ramane de spus daca printre ele e si kernelul pornit. Daca modulul
+# incarcat e cel din DKMS nu se vede din `lsmod`: si modulul din kernel se numeste snd_hda_codec_cs8409.
+if grep -qxF "$KERNEL" <<< "$SND_HDA_KERNELS"; then
+    ok "Modulul audio din DKMS e verificat pe disc si pentru kernelul pornit ($KERNEL); incarcarea lui ramane de verificat dupa reboot."
 else
-    warn "Modulul nu e inca incarcat — va fi activ dupa reboot."
+    warn "Etapa a verificat driverul audio pentru kernelurile cu headere ($(echo "$SND_HDA_KERNELS" | paste -sd ' ' -)); kernelul pornit ($KERNEL) nu e printre ele."
 fi
 
 
@@ -770,7 +771,6 @@ if [ -f "${FIRMWARE_PATH}/firmware.bin" ]; then
 else
     # Se construieste commitul `master` preluat din depozitul oficial, exportat intr-un director separat:
     # ramurile si modificarile locale ale clonei nu intra in firmware.
-    cd "$WORKDIR"
     info "Preiau master din $FW_URL..."
     FW_REPO="$WORKDIR/git-oficial/facetimehd-firmware.git"
     FW_SHA=$(git_fetch_master "$FW_REPO" "$FW_URL") \
@@ -781,12 +781,10 @@ else
     git_curat "$FW_REPO" archive "$FW_SHA" | tar -x -C "$FW_BUILD" \
         || fail "Nu am putut exporta commitul $FW_SHA in $FW_BUILD."
 
-    cd "$FW_BUILD" || fail "Nu am putut intra in directorul $FW_BUILD."
     info "Extragere firmware din driverul Apple OS X (descarca automat ~50MB)..."
-    make || fail "make firmware a esuat. Verifica conexiunea la internet."
+    make -C "$FW_BUILD" || fail "make firmware a esuat. Verifica conexiunea la internet."
     info "Instalare firmware..."
-    sudo make install || fail "sudo make install firmware a esuat."
-    cd "$WORKDIR"
+    sudo make -C "$FW_BUILD" install || fail "sudo make install firmware a esuat."
 fi
 
 if [ -f "${FIRMWARE_PATH}/firmware.bin" ]; then
@@ -813,7 +811,6 @@ FTIMEHD_KERNELS=$(kernels_with_headers)
 # Ca la audio (etapa 2): se construieste commitul `master` preluat din depozitul oficial, exportat cu git
 # archive; `dkms build` il compileaza pentru fiecare kernel, iar ramurile si modificarile locale ale clonei
 # nu intra in modul.
-cd "$WORKDIR"
 info "Preiau master din $FTIMEHD_URL..."
 if FTIMEHD_SHA=$(git_fetch_master "$FTIMEHD_REPO" "$FTIMEHD_URL"); then
     git_log_commit "$FTIMEHD_REPO" "$FTIMEHD_SHA"
@@ -1061,13 +1058,13 @@ fi
 # declansa). Reversibil cu: sudo systemctl unmask sleep.target suspend.target ...
 info "Mask sleep targets (blocare totala suspend/hibernate — S3 nefiabil pe acest hardware)..."
 
-SLEEP_TARGETS="sleep.target suspend.target hibernate.target suspend-then-hibernate.target"
-sudo systemctl mask $SLEEP_TARGETS >/dev/null 2>&1 \
+SLEEP_TARGETS=(sleep.target suspend.target hibernate.target suspend-then-hibernate.target)
+sudo systemctl mask "${SLEEP_TARGETS[@]}" >/dev/null 2>&1 \
     || warn "Mask sleep targets a returnat eroare."
 
 MASKED_OK=true
-for t in $SLEEP_TARGETS; do
-    [ "$(systemctl is-enabled $t 2>/dev/null)" = "masked" ] || MASKED_OK=false
+for t in "${SLEEP_TARGETS[@]}"; do
+    [ "$(systemctl is-enabled "$t" 2>/dev/null)" = "masked" ] || MASKED_OK=false
 done
 if [ "$MASKED_OK" = true ]; then
     ok "Sleep targets masked: niciun suspend/hibernate posibil (S3 hang prevenit)."
