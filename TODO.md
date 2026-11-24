@@ -1,3 +1,195 @@
+## Starea pe componente
+
+> Verificată pe **23 noiembrie 2026**, prin API, între 12:56 și 18:25 EET. Datele sunt în
+> [`revizie-scripts-23nov/stare-componente/`](revizie-scripts-23nov/stare-componente/) și
+> [`pipewire-5363/rezultate/urmarire-pr-23nov/`](pipewire-5363/rezultate/urmarire-pr-23nov/).
+> **„În release”** e stabilit după titlul commitului în diferențele dintre tag-uri; un cherry-pick cu titlu schimbat
+> n-ar fi prins. Mai jos de secțiunea asta e jurnalul datat; tablourile din [0.1](#01-rapoarte-trimise-upstream--tablou)
+> sunt arhivă.
+
+### Pe MacBook, acum
+- **Debian forky**, kernel `7.3.5+deb14-amd64`, cu `7.2.15+deb14-amd64` drept rezervă.
+- **Audio:** DKMS `snd_hda_macbookpro/0.1-1931615d72` (davidjo `master` din 14 nov), din 23 nov, pe ambele kerneluri.
+- **Camera:** DKMS `facetimehd/0.7.2-master-4e588ae9` și firmware 5.60.0.
+  - `facetimehd/0.7.2` (tag 54fb8f25) e **rezerva păstrată intenționat**: doar înregistrată, nereconstruită pe 7.2.15. Decizie
+    amânată pe 16 nov.
+  - O re-rulare a etapei 4 din setup ar lăsa rezerva neatinsă: o versiune doar înregistrată, care nu e activă pe niciun
+    kernel, e doar listată (bancul `revizie-scripts-23nov/banc-etapa2/`, scenariul F1). Ar înlocui însă
+    `0.7.2-master-4e588ae9` cu `master`-ul curent al lui patjak.
+- **PipeWire:** 1.6.9-2 (forky).
+- **De testat:**
+  - audio: jack-ul, microfonul headset-ului, un boot complet cu modulul nou, rularea pe 7.2.15;
+  - camera: înghețarea din Snapshot pe 1.6.9, nemăsurată din nou.
+
+### Driverul audio: [davidjo/snd_hda_macbookpro](https://github.com/davidjo/snd_hda_macbookpro)
+- **Deschis:**
+  - [#189](https://github.com/davidjo/snd_hda_macbookpro/pull/189), al nostru, din 14 iun, `mergeable`: scriptul folosește
+    întâi sursa locală `linux-source-<X.Y>`, nu descărcarea de pe kernel.org;
+  - [#233](https://github.com/davidjo/snd_hda_macbookpro/pull/233), al lui dmcken: `dkms.conf` alege numele și locul modulului
+    după kernel. Fără el, pe trixie (6.12) build-ul DKMS pică, inclusiv cu un kernel 7.3.4 din backports alături. Cu el,
+    compilează pe ambele (testat în chroot, `revizie-scripts-23nov/trixie/`). Comentariul nostru de sprijin e postat pe 24 nov
+    ([#233](https://github.com/davidjo/snd_hda_macbookpro/pull/233#issuecomment-7126078342)).
+- **Închis:** [#187](https://github.com/davidjo/snd_hda_macbookpro/issues/187), închis de Viorel pe 6 oct.
+- **Corectat pe 23 nov, precizat pe 24 nov:** afirmația „kernel.org dă 404 pentru seriile EOL”, pe
+  [#187](https://github.com/davidjo/snd_hda_macbookpro/issues/187#issuecomment-7105924092) și
+  [#189](https://github.com/davidjo/snd_hda_macbookpro/pull/189#issuecomment-4881034632). Vezi
+  [7.9](#79-️-sursele-sunetului-la-fiecare-upgrade-de-kernel).
+
+### Camera: [patjak/facetimehd](https://github.com/patjak/facetimehd)
+**Release:** niciunul după 0.7.2 (tag 54fb8f25, 25 aug). Din cele 20 de PR-uri integrate, **#328 și #330 sunt în 0.7.2**;
+restul sunt doar în `master` (verificat cu compare față de tag).
+
+**Integrate:**
+
+| PR | Ce repară | Integrat |
+|---|---|---|
+| [#328](https://github.com/patjak/facetimehd/pull/328) | un `break` lipsă și numărul de buffere fixat în cod | 25 aug |
+| [#329](https://github.com/patjak/facetimehd/pull/329) | controalele setate înainte de STREAMON se aplică | 4 sep |
+| [#330](https://github.com/patjak/facetimehd/pull/330) | `y1` în comanda de crop | 25 aug |
+| [#331](https://github.com/patjak/facetimehd/pull/331) | ENUM_FRAMESIZES raportează dimensiunile acceptate; Chromium și libwebrtc nu suportă intervalul, de unde #364 (alt autor, 20 nov) | 5 oct |
+| [#332](https://github.com/patjak/facetimehd/pull/332) | un timeout de firmware nu mai omoară camera până la reîncărcarea modulului | 4 sep |
+| [#333](https://github.com/patjak/facetimehd/pull/333) | refuzul USERPTR care pierdea offsetul | 5 sep |
+| [#334](https://github.com/patjak/facetimehd/pull/334) | așteptarea AE: 200 ms în loc de o secundă | 26 sep |
+| [#338](https://github.com/patjak/facetimehd/pull/338) | crop centrat, cu aspectul ieșirii | 26 sep |
+| [#340](https://github.com/patjak/facetimehd/pull/340) | așteptarea blocării PLL S2 și propagarea erorilor de inițializare | 25 sep |
+| [#342](https://github.com/patjak/facetimehd/pull/342) | CREATE_BUFS cu limite | 5 oct |
+| [#343](https://github.com/patjak/facetimehd/pull/343) | rate ISP limitate, parametri raportați corect | 5 oct |
+| [#344](https://github.com/patjak/facetimehd/pull/344) | AE poate reduce rata în lumină slabă | 5 oct |
+| [#345](https://github.com/patjak/facetimehd/pull/345) | plafonul de buffere de captură: 4 → 8 | 5 oct |
+| [#347](https://github.com/patjak/facetimehd/pull/347) | dreptunghiul senzorului prin G_SELECTION | 5 oct |
+| [#348](https://github.com/patjak/facetimehd/pull/348) | calibrarea senzorului 0x248 | 26 sep |
+| [#350](https://github.com/patjak/facetimehd/pull/350) | un mesaj când lipsește fișierul de calibrare | 29 sep |
+| [#351](https://github.com/patjak/facetimehd/pull/351) | calibrarea MacBook Air aleasă după numele produsului | 26 sep |
+| [#352](https://github.com/patjak/facetimehd/pull/352) | refuzul ferestrelor de crop pe care interfața senzorului nu le acceptă | 26 sep |
+| [#353](https://github.com/patjak/facetimehd/pull/353) | curățarea după un `start_streaming()` eșuat | 5 oct |
+| [#354](https://github.com/patjak/facetimehd/pull/354) | declararea fișierelor de calibrare, pentru initramfs | 29 sep |
+
+**Deschise:**
+- [#360](https://github.com/patjak/facetimehd/pull/360): ENUM_FRAMEINTERVALS listează ratele acceptate de S_PARM;
+- [#356](https://github.com/patjak/facetimehd/pull/356), Draft: aruncă primele două cadre în loc să blocheze STREAMON.
+
+**Issue-uri deschise ale noastre sau cu răspunsul nostru:** [#361](https://github.com/patjak/facetimehd/issues/361)
+(versiunea din `dkms.conf`), [#369](https://github.com/patjak/facetimehd/issues/369) (raportorul confirmă că merge),
+[#370](https://github.com/patjak/facetimehd/issues/370), [#253](https://github.com/patjak/facetimehd/issues/253),
+[#299](https://github.com/patjak/facetimehd/issues/299).
+
+**Firmware ([patjak/facetimehd-firmware](https://github.com/patjak/facetimehd-firmware)):**
+- integrate pe 6 nov:
+  - [#14](https://github.com/patjak/facetimehd-firmware/pull/14): avertismentele shellcheck și fișierele de calibrare
+    extrase și din Boot Camp;
+  - [#16](https://github.com/patjak/facetimehd-firmware/pull/16): mesaj clar când cpio nu poate despacheta driverul 1.43.0;
+- release: niciunul după v1.1.0;
+- `make` instalează implicit 5.60.0.
+
+### PipeWire ([pipewire/pipewire](https://gitlab.freedesktop.org/pipewire/pipewire))
+**Bilanț:** 26 de MR-uri integrate, 0 deschise, 3 închise fără integrare. Ultimul release stabil e **1.6.11** (29 oct);
+forky are 1.6.9, sid 1.6.11.
+
+**În release:**
+- [!2950](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2950), din 1.6.9: v4l2 oferă dimensiunea de cadru
+  pe care sursa o produce nativ;
+- [!2963](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2963), din 1.6.9: v4l2 continuă cu celelalte
+  controale când unul nu se poate citi;
+- [!2986](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2986), din 1.6.9: v4l2 păstrează tipul media al
+  filtrului când acesta nu numește un format;
+- [!2964](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2964), din 1.6.11 (backport
+  [!3078](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/3078)): v4l2 raportează pasul unei dimensiuni
+  stepwise, nu maximul;
+- [!3079](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/3079), din 1.6.11: tipurile argumentelor
+  `SPA_POD_Long` și tipul câmpului `props.volume`.
+
+**În ramura 1.6, încă nelansate:**
+- [!2934](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2934): v4l2 nu mai citește dincolo de bufferele
+  primite;
+- [!2954](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2954): un singur control care nu se poate citi nu
+  mai strică toată enumerarea Props;
+- [!2965](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2965) (cu !2966): două defecte la conversia unei
+  alegeri SPA în GstCaps;
+- [!3013](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/3013): v4l2 sare peste un buffer scos din coadă
+  care n-a fost pus în ea;
+- [!3077](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/3077): conversia formatelor video și potrivirea
+  la enumerare;
+- [!3097](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/3097): testul DMA-BUF și modificatorii pe 32 de
+  biți;
+- toate prin backport-ul [!3098](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/3098), integrat pe 3 nov;
+- plus [!3191](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/3191): `stream` nu mai crapă când ieșirea
+  „reliable” n-are buffer I/O. A intrat ca `79335396e`, adus de Wim: doar corectura, fără test.
+
+**Doar în master:**
+- [!2933](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2933): client-node verifică flag-ul READ la
+  enumerarea parametrilor;
+- [!2935](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2935),
+  [!2941](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2941),
+  [!2951](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951): `pipewiresrc`, adică reparațiile pentru
+  înghețarea camerei:
+  - copiază ultimul buffer liber în loc să blocheze;
+  - nu reciclează un buffer ținând lacătul buclei;
+  - nu repornește fluxul când caps-urile încă se potrivesc;
+- [!2985](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2985): pe legăturile de captură decide numărul de
+  buffere al consumatorului;
+- [!2998](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2998): v4l2 enumeră formatele, apoi filtrează;
+- [!3044](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/3044) și
+  [!3045](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/3045): impl-port cade pe nod când cache-ul de
+  parametri nu poate răspunde (repară #5517), plus comentariul de documentație;
+- [!3185](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/3185),
+  [!3189](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/3189): bufferele de ieșire reciclate se întorc la
+  producător, în `stream` (P02) și în `filter`;
+- [!3198](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/3198): referințele Busy echilibrate pentru
+  fluxurile de intrare (P01);
+- [!3199](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/3199): `videotestsrc` distruge timerul prin bucla
+  care îl deține (P07).
+
+**Închise fără integrare:**
+- [!2966](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2966): absorbit în !2965;
+- [!2980](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2980): retras; !2985 repară negocierea;
+- [!3046](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/3046): Wim a integrat propria variantă,
+  `f2ce6ab0a` + `c04bf4fd8`.
+
+**De făcut / de testat:**
+- înghețarea Snapshot pe 1.6.9 și 1.6.11, nemăsurată din nou. De ce mai multe buffere doar amână blocarea:
+  [3.1](#31-cauza-rădăcină-așa-cum-e-ea);
+- patch-uri locale rămase: P08 (decizii deschise), P04/P10 (cu Wim), P05, P11. Rebazarea pe master e neverificată;
+- [!3117](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/3117) (Cryolitia) atinge `bf3951eb0` (!2935): de
+  citit de Viorel.
+
+### WirePlumber ([pipewire/wireplumber](https://gitlab.freedesktop.org/pipewire/wireplumber))
+- **În release:** [!934](https://gitlab.freedesktop.org/pipewire/wireplumber/-/merge_requests/934): spa-device rulează
+  teardown-ul pe contextul clientului care îl deține. Integrat în master pe 22 oct; același commit e în **0.5.19**, așa că
+  backport-ul nostru [!936](https://gitlab.freedesktop.org/pipewire/wireplumber/-/merge_requests/936) a fost închis.
+- **Doar în master:**
+  - [!964](https://gitlab.freedesktop.org/pipewire/wireplumber/-/merge_requests/964): stream-link refă legătura după
+    înlocuirea externă a portului (23 nov);
+  - [!965](https://gitlab.freedesktop.org/pipewire/wireplumber/-/merge_requests/965): find-defined-target respectă țintele de
+    mutare explicite (23 nov);
+  - `74e49995` (2 nov, prin [!895](https://gitlab.freedesktop.org/pipewire/wireplumber/-/merge_requests/895) al lui Julian):
+    activează fluxurile video fără EnumFormat.
+- **Deschis:** [!963](https://gitlab.freedesktop.org/pipewire/wireplumber/-/merge_requests/963): object anulează
+  feature-urile la o activare anulată.
+- **De făcut:** B2 pe 0.5 cere o variantă separată, dacă se dorește.
+
+### Browsere
+- **Chromium/WebRTC:**
+  - integrate: [8648509](https://chromium-review.googlesource.com/c/chromium/src/+/8648509),
+    [511140](https://webrtc-review.googlesource.com/c/src/+/511140), [511141](https://webrtc-review.googlesource.com/c/src/+/511141),
+    [511160](https://webrtc-review.googlesource.com/c/src/+/511160); în Chrome M159, stable pe 8 dec (verificat după
+    pozițiile commit-urilor, 20 nov);
+  - [518261](https://webrtc-review.googlesource.com/c/src/+/518261), 0001, integrat pe 23 nov (main@{#49360});
+  - [517620](https://webrtc-review.googlesource.com/c/src/+/517620), al lui Jan Grulich, integrat pe 23 nov.
+- **În review:** [518440](https://webrtc-review.googlesource.com/c/src/+/518440), PS3 urcat pe 23 nov, după recenzia lui Jan:
+  `RoundedUpRate()` comun, `GetPipeWireEnumFrameRate()`. Răspunsul lui Viorel e postat, iar comentariul rezolvat. Așteaptă
+  Code-Review de la Ilya și Jan.
+  - De testat: proba Chromium (exact 30 pe 15–60, 90 pe 30–120) și captura cu WirePlumber 0.5/master.
+- **Firefox:** [bug 2085509](https://bugzilla.mozilla.org/show_bug.cgi?id=2085509), FIXED în Firefox 163: D343945 integrat.
+  D343942 și D343946 sunt Accepted, neintegrate (12:56).
+
+### Kernel și Debian
+- **x86/KMSAN v2** (4 patch-uri, 1 nov): Acked-by de la Hildenbrand și Rapoport pe 3/4. Niciun răspuns x86/KMSAN; nu e în
+  mainline sau linux-next (12:56).
+- **Debian dkms:** [!8](https://salsa.debian.org/debian/dkms/-/merge_requests/8), 3.4.4, deschis (ultima actualizare 8 nov).
+  [#1076269](https://bugs.debian.org/1076269) și [#1035707](https://bugs.debian.org/1035707) sunt neschimbate (12:56).
+
+---
+
 ## Stare upstream verificată — 23 noiembrie 2026, 12:56 EET
 
 Citire live, doar GET, pornită la 10:56:47 UTC. „Nou” înseamnă după 20 nov 17:21 EET (15:21:44 UTC), ultima citire.

@@ -88,41 +88,15 @@ sudo modinfo facetimehd | head -10                   # Driver metadata (version,
 Quick live test: `sudo apt install cheese && cheese` — webcam preview should appear in 1-2 seconds. If `/dev/video0` is missing right after boot, try `sudo modprobe facetimehd` manually.
 
 > ⚠️ **Known issue: apps that go through PipeWire can freeze on the first frame.** GNOME Snapshot is
-> the usual victim — the viewfinder shows one frame and stops, recordings come out empty. The camera
-> itself is fine; `guvcview` and Chrome talk to V4L2 directly and work.
+> the usual victim: the viewfinder shows one frame and stops, recordings come out empty. The camera
+> itself is fine. To check it without PipeWire, through V4L2 directly:
+> `sudo apt install guvcview && guvcview -d /dev/video0`.
 >
-> Cause: `pipewiresrc` hands downstream memory that is **shared** with a buffer the producer reuses
-> in the same graph cycle. The mechanism that would make that safe, `SPA_META_Busy`, is implemented
-> by no SPA plugin. With the four buffers a V4L2 source negotiates, a client that holds four stops
-> the stream. Raising the driver's buffer count only moves the threshold, which is why the old
-> `FTHD_BUFFERS 4→8` patch that used to live here was dropped.
->
-> Reported and being fixed upstream. **Eleven patches are in PipeWire master**
-> ([!2933](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2933),
-> [!2934](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2934),
-> [!2935](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2935),
-> [!2941](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2941),
-> [!2950](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2950),
-> [!2954](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2954),
-> [!2963](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2963),
-> [!2964](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2964),
-> [!2965](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2965),
-> [!2985](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2985),
-> [!2986](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2986)) and **two are
-> open** ([!2951](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2951),
-> [!2998](https://gitlab.freedesktop.org/pipewire/pipewire/-/merge_requests/2998)). On the driver
-> side, [patjak/facetimehd](https://github.com/patjak/facetimehd/pulls) has **five merged**
-> (#328, #329, #330, #332, #333) and **nine open** (#331, #334, #338, #340, #342, #343, #344,
-> #345, #347). *(Counts verified against the forge APIs on 2026-09-12.)*
->
-> **Part of the PipeWire side has now reached the stable branch.** Debian forky still ships `1.6.8`,
-> but three of the merged patches were cherry-picked into upstream's `1.6` branch and will arrive
-> with 1.6.9: the native frame size (!2950), the non-fatal control read (!2963) and the media-type
-> filter (!2986). The rest are master-only. **The driver side partially has too**: a fresh install of
-> this script pulls patjak's current `master`, which now includes five of them; the rest is still
-> under review.
-> Use the workaround above regardless.
-> Status and evidence: [TODO.md, section 3](TODO.md#3--camera-facetime-hd--partajare-de-buffere-nesigură).
+> The fixes (the `pipewiresrc` changes !2935, !2941 and !2951) are in PipeWire `master`, not in the
+> stable releases checked on 2026-11-23: neither 1.6.9 (forky) nor 1.6.11 (sid) has them. The freeze
+> has not been re-measured on those versions. Cause, the investigation, and the state of every patch:
+> [TODO.md, Starea pe componente](TODO.md#starea-pe-componente) and
+> [section 3](TODO.md#3--camera-facetime-hd--partajare-de-buffere-nesigură).
 
 ### System fixes (backlight, suspend, lid behavior)
 
