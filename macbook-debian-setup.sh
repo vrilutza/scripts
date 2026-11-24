@@ -51,6 +51,546 @@ fail()  {
     exit 1
 }
 
+# O singura rulare a scriptului odata, pe masina: flock pe /run/lock/macbook-setup.lock, tinut pana iese scriptul.
+# Se ia inainte de etapa 1: instalarea headerelor de acolo poate porni `dkms autoinstall`, care ar instala sau ar scoate
+# module in timp ce alta rulare e in etapele 2-4. Un `apt` pornit in afara scriptului nu e oprit de ea. Intoarce 1
+# daca blocarea e ocupata sau nu se poate deschide.
+setup_lock() {
+    local lock=/run/lock/macbook-setup.lock
+    # Redirectarea lui stderr e pe grup: pe `exec` insusi ar ramane pentru tot scriptul.
+    { exec {SETUP_LOCK_FD}<>"$lock"; } 2>/dev/null || { exec {SETUP_LOCK_FD}<"$lock"; } 2>/dev/null \
+        || { warn "Nu pot deschide blocarea $lock."; return 1; }
+    flock -n "$SETUP_LOCK_FD" \
+        || { warn "O alta rulare a scriptului e in curs (blocare: $lock); reia dupa ce se termina."; return 1; }
+}
+
+# --- DKMS: un modul instalat din git (etapele 2 si 4) ---
+# Kernelurile cu headere instalate. Modulele se construiesc pentru toate, nu doar pentru cel pornit:
+# altfel kernelul de rezerva ramane fara driver.
+kernels_with_headers() {
+    for b in /lib/modules/*/build; do
+        [ -e "$b/Makefile" ] && basename "$(dirname "$b")"
+    done
+}
+
+# `dkms status` cu argumentele date. Intoarce 1, cu un avertisment, doar daca interogarea insasi esueaza;
+# o versiune neinregistrata da un raspuns gol si rc 0. Se foloseste unde un raspuns "neinregistrat" sau
+# "neinstalat" duce la o stergere, ca o eroare sa nu fie citita drept un astfel de raspuns.
+dkms_st() {
+    local out
+    out=$(sudo dkms status "$@" 2>/dev/null) \
+        || { warn "dkms status $* a esuat; nu sterg si nu inlocuiesc nimic pe baza ei." >&2; return 1; }
+    [ -z "$out" ] || printf '%s\n' "$out"
+}
+
+# Versiunea modulului $1 activa ("installed") pe kernelul $2; nimic daca nu e niciuna. DKMS tine o singura
+# versiune activa pe kernel. Intoarce 1 daca interogarea esueaza: fara raspuns nu se poate nota versiunea la
+# care se revine, iar `dkms install` ar inlocui-o oricum.
+dkms_active() {
+    local st
+    st=$(dkms_st -m "$1" -k "$2") || return 1
+    sed -n "s#^$1/\([^,]*\), $2, [^:]*: installed.*#\1#p" <<< "$st" | head -n 1
+}
+
+# Versiunile modulului $1 inregistrate in DKMS. Se iau doar liniile modulului:
+# "<modul>/<v>, <kernel>, ..." si "<modul>/<v>: added".
+dkms_versions() {
+    local st
+    st=$(dkms_st -m "$1") || return 1
+    sed -n "s#^$1/\([^,:]*\).*#\1#p" <<< "$st" | sort -u
+}
+
+# Calea $1 lipseste, constatat din continutul unui director: directorul ei, sau primul director parinte care
+# se poate lista, nu contine numele urmator din cale. `test -e` nu ajunge: intoarce fals la orice eroare a
+# lui stat (de exemplu EIO), iar atunci fisierul poate exista. Se listeaza "$d/.", nu "$d": `find` nu
+# urmeaza un link simbolic dat ca punct de pornire, iar lista ar iesi goala.
+path_absent() {
+    local p=$1 d names
+    while [ "$p" != / ]; do
+        d=$(dirname "$p")
+        if names=$(sudo find "$d/." -mindepth 1 -maxdepth 1 -printf '%f\n' 2>/dev/null); then
+            ! grep -qxF -- "$(basename "$p")" <<< "$names"
+            return
+        fi
+        p=$d
+    done
+    return 1
+}
+
+# Modulele construite de DKMS pentru modulul $1, versiunea $2, kernelul $3 (fisiere regulate .ko, .ko.gz, .ko.xz
+# sau .ko.zst din directorul module/ al arhitecturii), cate unul pe linie. Intoarce 1 daca `find` esueaza.
+dkms_built_files() {
+    sudo find "/var/lib/dkms/$1/$2/$3/$(uname -m)/module" -maxdepth 1 -type f \
+        \( -name '*.ko' -o -name '*.ko.gz' -o -name '*.ko.xz' -o -name '*.ko.zst' \) 2>/dev/null
+}
+
+# DKMS are copia construita pe care `dkms install` o poate folosi pentru modulul $1, versiunea $2, pe kernelul $3.
+# Doua verificari, ambele dupa regulile DKMS 3.2.2:
+#   - `dkms status` cauta fiecare modul din dkms.conf in arborele construit, dupa nume si extensie, si adauga
+#     "(Built modules are missing ...)" cand nu il gaseste;
+#   - status verifica doar ca fisierul exista, iar install cere un fisier regulat. DKMS alege <nume>.ko daca exista
+#     (`-e`), altfel <nume>.ko<compresie>, apoi cere `-f`. In module/ se verifica deci, cu aceleasi teste: orice
+#     *.ko existent, si orice *.ko.gz|xz|zst fara *.ko-ul lui, trebuie sa fie fisier regulat. Numele modulelor nu
+#     se citesc din dkms.conf, asa ca un *.ko nefolosit care nu e fisier regulat opreste si el.
+# Intoarce 0 daca versiunea apare "built" sau "installed" pe $3, fara mesaj si fara intrari nepotrivite, 1 altfel
+# si 2 daca o verificare nu se poate face.
+dkms_built_ok() {
+    local st bad
+    st=$(dkms_st -m "$1" -v "$2" -k "$3") || return 2
+    grep -q ': \(built\|installed\)' <<< "$st" || return 1
+    grep -q 'Built modules are missing' <<< "$st" && return 1
+    # shellcheck disable=SC2016 # variabilele sunt ale lui sh -c
+    bad=$(sudo sh -c 'cd "$1" || exit 1
+        for e in *.ko *.ko.gz *.ko.xz *.ko.zst; do
+            [ -e "$e" ] || continue
+            case $e in *.ko) ;; *) [ -e "${e%.*}" ] && continue ;; esac
+            [ -f "$e" ] || echo "$e"
+        done
+        echo sfarsit' sh "/var/lib/dkms/$1/$2/$3/$(uname -m)/module" 2>/dev/null)
+    [ "${bad##*$'\n'}" = sfarsit ] || return 2
+    [ "$bad" = sfarsit ]
+}
+
+# Fisierele modulului $1, versiunea $2, din /lib/modules/$3 sunt chiar cele construite de DKMS. Intoarce 0
+# daca toate se potrivesc, 1 daca unul difera sau lipseste (constatat cu path_absent) si 2 daca verificarea
+# nu s-a putut face: find, cmp sau sudo au esuat, ori nu exista niciun modul construit cu care sa compar.
+# La 2 nu se inlocuieste nimic. Un sudo esuat intoarce 1, ca un `cmp` care gaseste o diferenta, de aceea
+# comparatia ruleaza intr-o singura comanda sudo, care tipareste codul lui `cmp`.
+dkms_files_ok() {
+    local files f t r
+    files=$(dkms_built_files "$1" "$2" "$3") \
+        || { warn "Nu pot lista modulele construite din /var/lib/dkms/$1/$2/$3." >&2; return 2; }
+    if [ -z "$files" ]; then
+        warn "Nu gasesc modulele construite in /var/lib/dkms/$1/$2/$3; nu am cu ce compara fisierele instalate." >&2
+        return 2
+    fi
+    for f in $files; do
+        t="/lib/modules/$3/updates/dkms/$(basename "$f")"
+        # shellcheck disable=SC2016 # $1 si $2 sunt ale lui sh -c
+        r=$(sudo sh -c 'cmp -s "$1" "$2"; echo "$?"' sh "$f" "$t" 2>/dev/null)
+        case $r in
+            0) ;;
+            1) return 1 ;;
+            2) path_absent "$t" && return 1
+               warn "Nu pot compara $t cu $f." >&2; return 2 ;;
+            *) warn "Nu pot compara $t cu $f." >&2; return 2 ;;
+        esac
+    done
+    return 0
+}
+
+# Modulul $1, versiunea $2, e versiunea activa pe kernelul $3 si fisierele ei sunt verificate. `dkms status`
+# poate spune "installed" si cand un .ko lipseste. Intoarce 0, 1 sau 2 ca dkms_files_ok; 2 si daca
+# interogarea `dkms status` esueaza.
+dkms_installed_ok() {
+    local act
+    act=$(dkms_active "$1" "$3") || return 2
+    [ "$act" = "$2" ] || return 1
+    dkms_files_ok "$1" "$2" "$3"
+}
+
+# Kernelurile din lista $3 pe care modulul $1, versiunea $2, nu e instalat si verificat. Intoarce 2 daca pe
+# vreunul verificarea nu s-a putut face.
+dkms_missing() {
+    local k r rc=0
+    for k in $3; do
+        dkms_installed_ok "$1" "$2" "$k"; r=$?
+        [ "$r" -eq 0 ] && continue
+        echo "$k"
+        [ "$r" -eq 2 ] && rc=2
+    done
+    return "$rc"
+}
+
+# Ce versiune a modulului $1 e instalata si verificata pe fiecare kernel din lista $2.
+dkms_report() {
+    local k v found
+    for k in $2; do
+        found=""
+        for v in $(dkms_versions "$1"); do
+            dkms_installed_ok "$1" "$v" "$k" && { found=$v; break; }
+        done
+        if [ -n "$found" ]; then
+            info "  $k: $1 $found"
+        else
+            warn "  $k: niciun $1 instalat cu fisierele verificate"
+        fi
+    done
+}
+
+# Starea DKMS pastrata intre rulari, in $WORKDIR/dkms-stare, ca o rulare intrerupta sa poata fi reluata.
+# Fiecare nota se scrie inainte de pasul pe care il protejeaza; daca scrierea esueaza, pasul nu se face.
+#   <modul>.activ      "<kernel> <versiunea de dinainte> <versiunea tinta>": scrisa inainte ca versiunea de
+#                      dinainte sa fie dezinstalata de pe kernel. Se inchide cand tinta (sau, dupa o
+#                      revenire, versiunea de dinainte) e instalata si verificata pe acel kernel.
+#   <modul>.candidati  versiunile pe care acest script le exporta si le inregistreaza in DKMS, notate inainte
+#                      de export. Un candidat ramas neinstalat ar putea fi ales de `dkms autoinstall` la
+#                      urmatorul kernel, asa ca se scoate; versiunile inregistrate de mana (rezervele) nu
+#                      sunt aici si nu se ating.
+#   <modul>.inlocuite  versiunile de dinainte ale inlocuirilor terminate, notate inainte ca nota din .activ
+#                      sa se inchida. Raman aici pana sunt scoase din DKMS, si peste o rulare intrerupta.
+dkms_state() { echo "$WORKDIR/dkms-stare/$1"; }
+activ_kernels() { awk '{ print $1 }' "$(dkms_state "$1.activ")" 2>/dev/null; }
+activ_get() { awk -v k="$2" '$1 == k { print $2; exit }' "$(dkms_state "$1.activ")" 2>/dev/null; }
+activ_target() { awk -v k="$2" '$1 == k { print $3; exit }' "$(dkms_state "$1.activ")" 2>/dev/null; }
+activ_versions() { awk '{ print $2 }' "$(dkms_state "$1.activ")" 2>/dev/null | sort -u; }
+activ_clear() {
+    local f; f=$(dkms_state "$1.activ")
+    [ -f "$f" ] || return 0
+    awk -v k="$2" '$1 != k' "$f" > "$f.nou" && mv "$f.nou" "$f"
+}
+# Noteaza (sau corecteaza) pentru kernelul $2: versiunea activa $3 si tinta $4. Intoarce 1 daca nu poate scrie.
+activ_set() {
+    local f; f=$(dkms_state "$1.activ")
+    mkdir -p "$WORKDIR/dkms-stare" || return 1
+    { awk -v k="$2" '$1 != k' "$f" 2>/dev/null; echo "$2 $3 $4"; } > "$f.nou" && mv "$f.nou" "$f" \
+        && [ "$(activ_get "$1" "$2")" = "$3" ]
+}
+# Listele <modul>.candidati si <modul>.inlocuite ($2), cu o versiune pe linie. lista_add reciteste lista
+# si intoarce 1 daca versiunea nu a ajuns in ea.
+lista_get() { cat "$(dkms_state "$1.$2")" 2>/dev/null; }
+lista_add() {
+    local f; f=$(dkms_state "$1.$2")
+    mkdir -p "$WORKDIR/dkms-stare" || return 1
+    lista_get "$1" "$2" | grep -qxF -- "$3" && return 0
+    echo "$3" >> "$f" && lista_get "$1" "$2" | grep -qxF -- "$3"
+}
+lista_del() {
+    local f; f=$(dkms_state "$1.$2")
+    [ -f "$f" ] || return 0
+    grep -vxF -- "$3" "$f" > "$f.nou"; mv "$f.nou" "$f"
+}
+
+# Scoate versiunea $2 a modulului $1 din DKMS. Sursa se sterge doar daca `dkms remove` a reusit, iar un link
+# (0.1 de la install.cirrus.driver.sh -i duce in clona) se sterge doar ca link.
+dkms_remove_version() {
+    info "Scot versiunea DKMS $1 $2..."
+    if sudo dkms remove -m "$1" -v "$2" --all; then
+        if [ -L "/usr/src/$1-$2" ]; then
+            sudo rm -f "/usr/src/$1-$2"
+        else
+            sudo rm -rf "/usr/src/$1-$2"
+        fi
+    else
+        warn "dkms remove $1 $2 a esuat; sursa /usr/src/$1-$2 ramane."
+        return 1
+    fi
+}
+
+# Un candidat creat de script care n-a ajuns instalat nicaieri se scoate, ca DKMS sa nu-l aleaga singur
+# la urmatorul kernel. Daca rularea s-a oprit inainte de `dkms add`, ramane doar sursa exportata. Daca
+# `dkms status` esueaza, nu se sterge nimic si candidatul ramane notat.
+dkms_drop_candidate() {
+    local st
+    lista_get "$1" candidati | grep -qxF -- "$2" || return 0
+    activ_versions "$1" | grep -qxF -- "$2" && return 0
+    st=$(dkms_st -m "$1" -v "$2") || return 1
+    grep -q ': installed' <<< "$st" && return 0
+    if [ -n "$st" ]; then
+        dkms_remove_version "$1" "$2" || return 1
+    elif [ -d "/usr/src/$1-$2" ] && [ ! -L "/usr/src/$1-$2" ]; then
+        info "Sterg sursa exportata, neinregistrata, /usr/src/$1-$2..."
+        sudo rm -rf "/usr/src/$1-$2" || return 1
+    fi
+    lista_del "$1" candidati "$2"
+}
+
+# Scoate din DKMS versiunile din <modul>.inlocuite care nu mai sunt instalate nicaieri si nu sunt cerute de
+# o nota din <modul>.activ; $2, tinta instalata acum peste tot, doar iese din lista. O versiune inca
+# instalata (pe un kernel fara headere) ramane in lista, la fel una pentru care `dkms status` sau
+# `dkms remove` esueaza: se reincearca la urmatoarea rulare.
+dkms_drop_replaced() {
+    local v st
+    for v in $(lista_get "$1" inlocuite); do
+        if [ "$v" = "$2" ]; then
+            lista_del "$1" inlocuite "$v"
+            continue
+        fi
+        activ_versions "$1" | grep -qxF -- "$v" && continue
+        st=$(dkms_st -m "$1" -v "$v") || continue
+        if grep -q ': installed' <<< "$st"; then
+            info "Pastrez $1 $v: e inca instalat pe $(sed -n 's#^[^,]*, \([^,]*\),.*: installed.*#\1#p' <<< "$st" | paste -sd ' ' -), kernel fara headere."
+            continue
+        fi
+        if [ -n "$st" ]; then
+            dkms_remove_version "$1" "$v" || continue
+        fi
+        lista_del "$1" inlocuite "$v"
+    done
+}
+
+# Pune la loc pe kernelul $2 versiunea $3 a modulului $1, cea notata in <modul>.activ, dupa ce scoate de pe
+# kernel versiunea $4 (lipsa sau stricata, constatat), daca DKMS o arata activa acolo. Daca interogarea
+# esueaza sau e activa alta versiune, nu schimba nimic. Nota se inchide doar daca $3 se verifica.
+dkms_restore() {
+    local act r
+    act=$(dkms_active "$1" "$2") || return 1
+    if [ -n "$3" ]; then
+        dkms_built_ok "$1" "$3" "$2"; r=$?
+        if [ "$r" -eq 2 ]; then
+            warn "Nu pot afla daca DKMS are copia construita a lui $1 $3 pe $2; nu dezinstalez nimic, nota ramane."
+            return 1
+        fi
+        if [ "$r" -ne 0 ]; then
+            warn "Nu pot pune la loc $1 $3 pe $2: DKMS nu are o copie construita utilizabila a lui; nu dezinstalez nimic."
+            warn "Se reconstruieste cu: sudo dkms build -m $1 -v $3 -k $2 --force; nota ramane in $(dkms_state "$1.activ")."
+            return 1
+        fi
+    fi
+    if [ -n "$act" ]; then
+        if [ "$act" != "$4" ]; then
+            warn "Pe $2 e activ acum $1 $act, pe care nu l-am verificat; nu il inlocuiesc."
+            return 1
+        fi
+        sudo dkms uninstall -m "$1" -v "$4" -k "$2" || warn "Nu am putut dezinstala $1 $4 de pe $2."
+    fi
+    if [ -z "$3" ]; then
+        warn "Pe $2 nu era instalata alta versiune inainte."
+        return 1
+    fi
+    warn "Reinstalez pe $2 versiunea de dinainte, $3."
+    if sudo dkms install -m "$1" -v "$3" -k "$2"; then
+        dkms_installed_ok "$1" "$3" "$2"; r=$?
+    else
+        r=1
+    fi
+    if [ "$r" -eq 0 ]; then
+        activ_clear "$1" "$2" || warn "Nu pot inchide nota pentru $2; se inchide la urmatoarea rulare."
+        return 0
+    fi
+    if [ "$r" -eq 2 ]; then
+        warn "Nu pot verifica $1 $3 pe $2; ramane notat in $(dkms_state "$1.activ") pentru reluare."
+    else
+        warn "Nici $3 nu s-a putut verifica pe $2; ramane notat in $(dkms_state "$1.activ") pentru reluare."
+    fi
+    return 1
+}
+
+# Inchide notele din <modul>.activ lasate de o rulare intrerupta, dupa versiunea activa acum pe kernelul
+# notei (intoarce 1 daca nu se poate afla):
+#   - versiunea de dinainte, verificata: revenirea s-a terminat;
+#   - tinta sau o alta versiune (instalata intre timp, de exemplu de `dkms autoinstall`), verificata:
+#     inlocuirea s-a terminat, iar versiunea de dinainte trece in <modul>.inlocuite;
+#   - o versiune ale carei fisiere nu se pot verifica: intoarce 1, fara sa o inlocuiasca, iar nota ramane;
+#   - niciuna, sau una cu un fisier lipsa sau diferit: versiunea de dinainte se pune la loc inainte de orice
+#     build. Daca nu se poate, intoarce 1 si nota ramane, ca rularea sa nu continue cu un kernel fara driver.
+activ_reconcile() {
+    local k p t act r
+    for k in $(activ_kernels "$1"); do
+        p=$(activ_get "$1" "$k")
+        t=$(activ_target "$1" "$k")
+        act=$(dkms_active "$1" "$k") || return 1
+        r=1
+        if [ -n "$act" ]; then
+            dkms_files_ok "$1" "$act" "$k"; r=$?
+        fi
+        if [ "$r" -eq 2 ]; then
+            warn "Ma opresc: pe $k e activ $1 $act, dar nu ii pot verifica fisierele; nu il inlocuiesc."
+            warn "Nota din $(dkms_state "$1.activ") ramane; reia scriptul cand verificarea merge."
+            return 1
+        fi
+        if [ "$r" -eq 0 ]; then
+            if [ "$act" = "$p" ]; then
+                activ_clear "$1" "$k"
+            else
+                [ "$act" = "$t" ] \
+                    || info "Pe $k e activ acum $1 $act, instalat dupa rularea intrerupta; nu pun la loc $p."
+                lista_add "$1" inlocuite "$p" && activ_clear "$1" "$k"
+            fi
+            continue
+        fi
+        warn "O rulare anterioara s-a oprit cu $k fara $1 verificat."
+        if ! dkms_restore "$1" "$k" "$p" "$act"; then
+            warn "Ma opresc: $k a ramas fara $1 verificat. Pune la loc o versiune (sudo dkms install -m $1 -v $p -k $k)"
+            warn "sau, daca nu mai folosesti $k, sterge linia lui din $(dkms_state "$1.activ"); apoi reia scriptul."
+            return 1
+        fi
+    done
+}
+
+# Ruleaza comanda $2... cat timp tine blocarea modulului $1, ca doua rulari care schimba starea DKMS a aceluiasi
+# modul sa nu se suprapuna. Arborele DKMS e al masinii, deci si blocarea: flock pe
+# /run/lock/macbook-setup-dkms-<modul>.lock, oricare ar fi $WORKDIR. Fisierul se deschide fara trunchiere (`<>`),
+# sau doar pentru citire daca e al altui utilizator; flock merge pe ambele. Blocarea tine cat ruleaza comanda: un
+# `sudo dkms ...` pornit din ea tine descriptorul deschis cat lucreaza (comanda lui nu-l primeste, sudo inchide
+# descriptorii de la 3 in sus), si dupa ce scriptul e omorat. Se asteapta pana la 10 s: un proces pornit fara sudo
+# (de exemplu `sleep 3`-ul ramas din bucla de progres a DKMS, cand dkms ruleaza fara sudo) poate tine descriptorul
+# cateva secunde. Daca blocarea nu se elibereaza, intoarce 1 fara sa ruleze comanda.
+dkms_with_lock() {
+    local fd rc lock="/run/lock/macbook-setup-dkms-$1.lock"
+    # Redirectarea lui stderr e pe grup: pe `exec` insusi ar ramane pentru tot scriptul.
+    { exec {fd}<>"$lock"; } 2>/dev/null || { exec {fd}<"$lock"; } 2>/dev/null \
+        || { warn "Nu pot deschide blocarea $lock; ma opresc fara sa schimb nimic."; return 1; }
+    if ! flock -w 10 "$fd"; then
+        warn "O alta rulare schimba deja $1 in DKMS (blocare: $lock); ma opresc fara sa schimb nimic."
+        exec {fd}>&-
+        return 1
+    fi
+    "${@:2}"; rc=$?
+    exec {fd}>&-
+    return "$rc"
+}
+
+# Instaleaza modulul $1, versiunea $2, din commitul HEAD al clonei $3, pentru kernelurile din lista $4,
+# fara sa lase un kernel fara driver daca ceva esueaza:
+#   0. Notele din <modul>.activ lasate de o rulare intrerupta se inchid, iar un kernel ramas fara modulul
+#      verificat primeste inapoi versiunea notata; daca nu se poate, functia se opreste. Candidatii lasati
+#      de o rulare anterioara, neinstalati nicaieri, se scot.
+#   1. Candidatul se noteaza, apoi sursa se exporta din commit (git archive), deci modificarile locale si
+#      fisierele neversionate ale clonei nu intra, iar versiunea numeste exact codul compilat. O sursa
+#      deja inregistrata pentru aceeasi versiune (de la o rulare intrerupta) nu se rescrie.
+#   2. Se construieste pentru toate kernelurile. La un esec se opreste fara sa schimbe ceva pe kerneluri,
+#      iar candidatul se scoate.
+#   3. Daca pe vreun kernel verificarea nu se poate face, sau lipseste copia construita a versiunii noi ori
+#      a celei active (necesara revenirii), functia se opreste inainte sa schimbe vreun kernel, iar
+#      candidatul se scoate. Altfel, pe fiecare kernel fara versiunea noua instalata si
+#      verificata: versiunea activa e aflata (daca
+#      interogarea esueaza, functia se opreste). Daca e alta decat cea noua, e notata in <modul>.activ
+#      (fara nota scrisa, nu se dezinstaleaza nimic); daca e chiar cea noua, se merge mai departe doar
+#      daca un fisier al ei lipseste sau difera. Versiunea activa e dezinstalata, cea noua e instalata si
+#      verificata, iar versiunea de dinainte trece in <modul>.inlocuite. Daca instalarea esueaza sau un
+#      fisier lipseste ori difera, candidatul e dezinstalat de pe acel kernel, iar versiunea notata e
+#      reinstalata si verificata; apoi functia se opreste. Daca verificarea nu se poate face (aici sau
+#      inainte de dezinstalare), functia se opreste fara sa inlocuiasca ceva, iar nota ramane.
+#   4. Abia cand versiunea noua e instalata si verificata pe toate kernelurile se scot versiunile din
+#      <modul>.inlocuite care nu mai sunt instalate nicaieri (un kernel fara headere o poate folosi
+#      inca). Celelalte versiuni inregistrate (o rezerva pastrata de mana) raman neatinse si sunt listate.
+# Intoarce 0 daca versiunea noua e instalata si verificata pe toate kernelurile. La 1, apelantul
+# tipareste ce versiune are fiecare kernel (dkms_report). Doua rulari pentru acelasi modul nu se suprapun
+# (dkms_with_lock): a doua se opreste fara sa schimbe ceva.
+dkms_install_from_git() { dkms_with_lock "$1" dkms_install_from_git_locked "$@"; }
+dkms_install_from_git_locked() {
+    local mod=$1 ver=$2 clone=$3 kernels=$4
+    local src="/usr/src/$1-$2" k v act prev st r missing
+
+    activ_reconcile "$mod" || return 1
+    for v in $(lista_get "$mod" candidati); do
+        [ "$v" = "$ver" ] || dkms_drop_candidate "$mod" "$v"
+    done
+
+    st=$(dkms_st -m "$mod" -v "$ver") || return 1
+    if [ -n "$st" ]; then
+        info "$mod $ver e deja inregistrat in DKMS; sursa din $src ramane cum e."
+    else
+        lista_add "$mod" candidati "$ver" \
+            || { warn "Nu pot scrie in $(dkms_state "$mod.candidati"); nu inregistrez $ver."; return 1; }
+        info "Export sursa $mod $ver din git in $src..."
+        { sudo rm -rf "$src" && sudo mkdir -p "$src"; } || return 1
+        git -C "$clone" archive HEAD | sudo tar -x -C "$src" || return 1
+        sudo sed -i "s/^PACKAGE_VERSION=.*/PACKAGE_VERSION=\"$ver\"/" "$src/dkms.conf" || return 1
+        sudo dkms add -m "$mod" -v "$ver" || { dkms_drop_candidate "$mod" "$ver"; return 1; }
+    fi
+
+    for k in $kernels; do
+        sudo dkms status -m "$mod" -v "$ver" -k "$k" 2>/dev/null | grep -qE ': (built|installed)' && continue
+        info "dkms build $mod $ver pentru $k..."
+        if ! sudo dkms build -m "$mod" -v "$ver" -k "$k"; then
+            warn "Build-ul $mod $ver pentru $k a esuat; nu schimb nimic pe kerneluri."
+            dkms_drop_candidate "$mod" "$ver"
+            return 1
+        fi
+    done
+
+    # Verificarea de pe toate kernelurile se face inainte de primul `uninstall`: o eroare cunoscuta pe un
+    # kernel nu trebuie sa apara abia dupa ce altul a fost schimbat.
+    missing=$(dkms_missing "$mod" "$ver" "$kernels") || {
+        warn "Ma opresc inainte sa schimb vreun kernel: $mod $ver nu se poate verifica pe toate kernelurile."
+        dkms_drop_candidate "$mod" "$ver"
+        return 1
+    }
+    # Tot inainte de primul `uninstall`: pe fiecare kernel de schimbat, DKMS are copia construita a versiunii noi
+    # (poate spune "built" si cand modulul lipseste) si, daca alta versiune e activa, copia construita a ei, din
+    # care o reinstaleaza la revenire (dkms_built_ok).
+    for k in $missing; do
+        act=$(dkms_active "$mod" "$k") || return 1
+        dkms_built_ok "$mod" "$ver" "$k"; r=$?
+        if [ "$r" -eq 2 ]; then
+            warn "Ma opresc inainte sa schimb vreun kernel: nu pot afla daca DKMS are $mod $ver construit pentru $k."
+            dkms_drop_candidate "$mod" "$ver"
+            return 1
+        fi
+        if [ "$r" -ne 0 ]; then
+            warn "Ma opresc inainte sa schimb vreun kernel: DKMS nu are o copie construita utilizabila a lui $mod $ver pentru $k."
+            dkms_drop_candidate "$mod" "$ver"
+            # Indicatia depinde de ce a facut curatarea: un candidat scos nu se mai poate reconstrui cu `dkms build`.
+            if st=$(dkms_st -m "$mod" -v "$ver"); then
+                if [ -n "$st" ]; then
+                    warn "Se reconstruieste cu: sudo dkms build -m $mod -v $ver -k $k --force"
+                else
+                    warn "Am scos candidatul $mod $ver; reia scriptul, care il exporta si il construieste din nou."
+                fi
+            fi
+            return 1
+        fi
+        [ -n "$act" ] && [ "$act" != "$ver" ] || continue
+        dkms_built_ok "$mod" "$act" "$k"; r=$?
+        if [ "$r" -eq 2 ]; then
+            warn "Ma opresc inainte sa schimb vreun kernel: nu pot afla daca DKMS are copia construita a lui $mod $act pentru $k, necesara revenirii."
+            dkms_drop_candidate "$mod" "$ver"
+            return 1
+        fi
+        if [ "$r" -ne 0 ]; then
+            warn "Ma opresc inainte sa schimb vreun kernel: DKMS nu are o copie construita utilizabila a lui $mod $act pentru $k, deci n-as putea reveni la ea."
+            warn "Se reconstruieste cu: sudo dkms build -m $mod -v $act -k $k --force"
+            dkms_drop_candidate "$mod" "$ver"
+            return 1
+        fi
+    done
+    for k in $missing; do
+        act=$(dkms_active "$mod" "$k") || return 1
+        prev=$(activ_get "$mod" "$k")
+        if [ "$act" = "$ver" ]; then
+            # Versiunea noua e deja activa: se reinstaleaza, fara nota, doar daca un fisier al ei lipseste sau difera.
+            dkms_files_ok "$mod" "$ver" "$k"; r=$?
+            [ "$r" -eq 0 ] && continue
+            if [ "$r" -eq 2 ]; then
+                warn "Ma opresc: nu pot verifica fisierele $mod $ver pe $k; nu il reinstalez."
+                return 1
+            fi
+        elif [ -n "$act" ]; then
+            # Versiunea activa reala are prioritate fata de o nota mai veche pentru acelasi kernel.
+            if ! activ_set "$mod" "$k" "$act" "$ver"; then
+                warn "Nu pot nota versiunea activa $act pentru $k in $(dkms_state "$mod.activ"); nu dezinstalez nimic."
+                dkms_drop_candidate "$mod" "$ver"
+                return 1
+            fi
+            prev=$act
+        fi
+        if [ -n "$act" ]; then
+            sudo dkms uninstall -m "$mod" -v "$act" -k "$k" || return 1
+        fi
+        info "dkms install $mod $ver pentru $k..."
+        if sudo dkms install -m "$mod" -v "$ver" -k "$k"; then
+            dkms_installed_ok "$mod" "$ver" "$k"; r=$?
+        else
+            r=1
+        fi
+        if [ "$r" -eq 0 ]; then
+            if [ -n "$prev" ] && ! lista_add "$mod" inlocuite "$prev"; then
+                warn "Nu pot nota $prev in $(dkms_state "$mod.inlocuite"); nota pentru $k se inchide la urmatoarea rulare."
+            else
+                activ_clear "$mod" "$k" || warn "Nu pot inchide nota pentru $k; se inchide la urmatoarea rulare."
+            fi
+            continue
+        fi
+        if [ "$r" -eq 2 ]; then
+            warn "Ma opresc: nu pot verifica $mod $ver pe $k dupa instalare; nu inlocuiesc nimic."
+            [ -n "$prev" ] && warn "Nota din $(dkms_state "$mod.activ") ramane; reia scriptul cand verificarea merge."
+            return 1
+        fi
+        warn "Instalarea $mod $ver pentru $k nu s-a putut verifica."
+        dkms_restore "$mod" "$k" "$prev" "$ver"
+        dkms_drop_candidate "$mod" "$ver"
+        return 1
+    done
+
+    lista_del "$mod" candidati "$ver"
+    dkms_drop_replaced "$mod" "$ver"
+    v=$(dkms_versions "$mod" | grep -vxF -- "$ver" | paste -sd ' ' -)
+    [ -n "$v" ] && info "Alte versiuni $mod inregistrate, lasate neatinse: $v"
+    [ -z "$(dkms_missing "$mod" "$ver" "$kernels")" ]
+}
+
 CURRENT_STEP="initializare"
 WORKDIR="$HOME/macbook-setup"
 KERNEL="$(uname -r)"
@@ -67,6 +607,7 @@ exec > >(tee -a "$LOGFILE") 2>&1
 if ! sudo -v 2>/dev/null; then
     fail "Ai nevoie de acces sudo pentru a continua."
 fi
+setup_lock || fail "Nu pornesc: scriptul ruleaza o singura data odata."
 
 echo -e "${BOLD}"
 echo "  ╔══════════════════════════════════════════════════════╗"
@@ -111,30 +652,47 @@ CURRENT_STEP="ETAPA 2/9 — Driver audio"
 step "$CURRENT_STEP"
 info "Proiect: https://github.com/davidjo/snd_hda_macbookpro"
 
-if sudo dkms status 2>/dev/null | grep -q "snd_hda_macbookpro"; then
-    warn "Driver-ul audio este deja inregistrat in DKMS. Sar aceasta etapa."
-else
-    cd "$WORKDIR"
-    if [ -d "snd_hda_macbookpro" ]; then
-        info "Repo exista, actualizez..."
-        git -C snd_hda_macbookpro pull || warn "git pull a esuat, continui cu versiunea existenta."
-    else
-        info "Clonez repo-ul..."
-        git clone https://github.com/davidjo/snd_hda_macbookpro.git \
-            || fail "git clone snd_hda_macbookpro a esuat."
+cd "$WORKDIR"
+if [ -d "snd_hda_macbookpro" ]; then
+    info "Repo exista, actualizez..."
+    # Modificarile locale din clona nu se ating si nici nu intra in modulul construit: sursa DKMS se
+    # exporta din commit. Versiunile vechi ale install.cirrus.driver.sh editau dkms.conf pe loc
+    # (sed -i.orig), iar o asemenea editare blocheaza `git pull`.
+    SND_HDA_DIRTY=$(git -C snd_hda_macbookpro status --porcelain --untracked-files=no 2>/dev/null \
+        | awk '{print $2}' | paste -sd ' ' -)
+    if [ -n "$SND_HDA_DIRTY" ]; then
+        warn "Clona are modificari locale, pe care nu le ating: $SND_HDA_DIRTY"
+        warn "Daca e doar dkms.conf editat de vechiul install.cirrus.driver.sh, il refaci cu: git -C $WORKDIR/snd_hda_macbookpro checkout -- dkms.conf"
     fi
-
-    cd snd_hda_macbookpro || fail "Nu am putut intra in directorul snd_hda_macbookpro."
-    info "Instalare driver audio cu DKMS (poate dura cateva minute)..."
-    sudo ./install.cirrus.driver.sh -i || fail "install.cirrus.driver.sh a esuat."
-    cd "$WORKDIR"
-fi
-
-if sudo dkms status 2>/dev/null | grep -q "snd_hda_macbookpro"; then
-    ok "Driver audio inregistrat in DKMS."
+    git -C snd_hda_macbookpro pull --quiet || warn "git pull a esuat, continui cu commitul existent."
 else
-    fail "Driver-ul audio nu apare in dkms status. Verifica cu: sudo dkms status"
+    info "Clonez repo-ul..."
+    git clone https://github.com/davidjo/snd_hda_macbookpro.git \
+        || fail "git clone snd_hda_macbookpro a esuat."
 fi
+
+# Ca la camera (etapa 4): dkms.conf spune 0.1 pentru orice revizie, iar install.cirrus.driver.sh -i
+# inregistreaza in DKMS un link spre clona, deci un `git pull` ar schimba codul compilat la urmatorul
+# kernel fara sa se vada nicaieri. Versiunea se ia din git, iar sursa se exporta din commit.
+SND_HDA_REV=$(git -C "$WORKDIR/snd_hda_macbookpro" rev-parse --short=10 HEAD 2>/dev/null)
+[ -z "$SND_HDA_REV" ] && fail "Nu am putut citi revizia git din $WORKDIR/snd_hda_macbookpro."
+SND_HDA_VER="0.1-$SND_HDA_REV"
+info "Versiune driver audio: $SND_HDA_VER"
+
+SND_HDA_KERNELS=$(kernels_with_headers)
+[ -z "$SND_HDA_KERNELS" ] && fail "Nu am gasit headere de kernel in /lib/modules/*/build."
+
+if [ -z "$(dkms_missing snd_hda_macbookpro "$SND_HDA_VER" "$SND_HDA_KERNELS")" ]; then
+    info "Driver-ul audio $SND_HDA_VER e deja instalat pentru toate kernelurile."
+fi
+# Pentru fiecare kernel, PRE_BUILD (install.cirrus.driver.sh --dkms) descarca sursele sound/hda
+# ale kernelului de pe kernel.org (poate dura cateva minute).
+if ! dkms_install_from_git snd_hda_macbookpro "$SND_HDA_VER" "$WORKDIR/snd_hda_macbookpro" "$SND_HDA_KERNELS"; then
+    warn "Starea pe kerneluri:"
+    dkms_report snd_hda_macbookpro "$SND_HDA_KERNELS"
+    fail "Driver-ul audio $SND_HDA_VER nu e instalat pentru toate kernelurile. Verifica cu: sudo dkms status"
+fi
+ok "Driver audio $SND_HDA_VER instalat prin DKMS pentru: $(echo "$SND_HDA_KERNELS" | paste -sd ' ' -)."
 
 if lsmod | grep -q "snd_hda_codec_cs8409" || \
    ls /lib/modules/"$KERNEL"/updates/dkms/ 2>/dev/null | grep -q "snd"; then

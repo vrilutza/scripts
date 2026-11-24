@@ -303,7 +303,7 @@ Full setup for MacBook Pro 13" 2017 on a fresh Debian Testing install. Runs in 9
 | Stage | What it does |
 |---|---|
 | 1 — Dependencies | `build-essential`, `linux-headers-amd64`, `linux-source`, `dkms`, `git`, `patch`, `wget`, `curl`, `cpio`, `xz-utils`, `libssl-dev`, `rfkill`, `iw` |
-| 2 — Audio driver | [davidjo/snd_hda_macbookpro](https://github.com/davidjo/snd_hda_macbookpro) — Cirrus CS8409 patched driver via DKMS |
+| 2 — Audio driver | [davidjo/snd_hda_macbookpro](https://github.com/davidjo/snd_hda_macbookpro) — Cirrus CS8409 patched driver via DKMS, versioned from git (`0.1-<commit>`) and built for every kernel with headers |
 | 3 — Camera firmware | [patjak/facetimehd-firmware](https://github.com/patjak/facetimehd-firmware) — extracted from Apple OS X driver |
 | 4 — Camera driver | [patjak/facetimehd](https://github.com/patjak/facetimehd) — kernel module via DKMS |
 | 5 — System fixes | Backlight (`acpi_backlight=native`) + `reboot=pci` + sleep targets masked (suspend/hibernate blocked — see below) + Bluetooth rfkill unblock at boot + `AutoEnable` ([see below](#bluetooth)) + WiFi stability: power-save off + `kernel.panic=10` ([see below](#wifi-bcm4350--chronic-firmware-desync--the-july-2026-kernel-panic-mitigated-by-stage-5g)) + fixed brightness: ALS auto-brightness + idle-dim off (5h) |
@@ -312,8 +312,42 @@ Full setup for MacBook Pro 13" 2017 on a fresh Debian Testing install. Runs in 9
 | 8 — Thermal management | `thermald` + `lm-sensors` + RAPL PL1=22W / PL2=30W (Apple-like) via udev rule + thermald reinit + fan floor (`fan1_min=3500` RPM) |
 | 9 — Cosmetic / journal | GNOME media-keys (`hibernate`/`playback-repeat`) + `usb-protection` off + `applespi fnmode=1` — silences benign per-boot log errors |
 
-The two DKMS modules (audio, camera) auto-rebuild on kernel updates. The script is idempotent — safe
-to re-run, skips already completed stages.
+The two DKMS modules (audio, camera) auto-rebuild on kernel updates. On a re-run, each stage checks what
+is already in place, and Stage 2 updates the audio driver to the commit checked out in
+`~/macbook-setup/snd_hda_macbookpro` after `git pull`:
+- the DKMS version changes with the commit, so `sudo dkms status` shows which code is installed; the
+  source is exported from that commit, without local changes to the clone;
+- the new version is built for every kernel with headers before anything is replaced; if a build
+  fails, nothing on the kernels is changed;
+- each installed module file is compared with the one DKMS built, so a missing or changed `.ko` is not
+  reported as installed. A file counts as missing only when a directory listing shows it is not there.
+  If the check itself cannot be made (`dkms status`, `find`, `cmp` or `sudo` fails, or DKMS has no built
+  copy to compare with), the script stops before replacing or reinstalling anything and keeps its notes
+  for a re-run. Every kernel is checked before the first one is changed, so such an error stops the
+  script before any kernel is touched. That check also makes sure, by asking `dkms status`, that DKMS
+  still has the built modules it needs: the new version's, and the active version's, which a revert
+  reinstalls. A revert after an interrupted run checks the same before it uninstalls anything. An error
+  that shows up only after an install stops it there, with the new version left installed and noted.
+  Only one run of the script at a time: a second run stops at the start, before Stage 1, since the
+  kernel headers it installs can start `dkms autoinstall` (lock: `/run/lock/macbook-setup.lock`). An
+  `apt` run outside the script is not held back by it;
+- before replacing the version on a kernel, the script asks DKMS which version is active there (and
+  stops if that query fails) and notes it in `~/macbook-setup/dkms-stare/`. If the new one cannot be
+  installed and verified there, it tries to put the noted version back, then reports which version each
+  kernel has and stops. After an interrupted run, a re-run first puts the noted version back on any
+  kernel left without a verified module, before building anything, but not over another version found
+  active and verified there by then. If the noted version cannot be put back, the script stops;
+- once the new version is installed and verified everywhere, the versions it replaced on a kernel
+  (whichever was active there) are removed, unless one is still installed on a kernel without
+  headers. They stay listed in `dkms-stare/` until removed, so a run interrupted before that point
+  removes them on the next run. A version this script registered and could not install is removed,
+  so that DKMS cannot pick it for the next kernel; registered versions that were not active (a reserve
+  kept by hand) are left alone and only listed. A version is removed only after `dkms status` has
+  answered that it is not installed anywhere; if that query fails, nothing is removed.
+- after a run that stopped half-way, two versions can stay registered (the new one on some kernels,
+  the old one on others). Until a re-run completes, `dkms autoinstall` picks between them by version
+  string, and a kernel upgrade, including one pulled in by Stage 1 on that re-run, can trigger it
+  before Stage 2 checks the state.
 
 ### `macbook-debian-optimize.sh`
 
