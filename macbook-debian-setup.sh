@@ -64,6 +64,9 @@ setup_lock() {
         || { warn "O alta rulare a scriptului e in curs (blocare: $lock); reia dupa ce se termina."; return 1; }
 }
 
+# Pachetul $1 e instalat, inclusiv cand e pus pe hold: `dpkg -l | grep "^ii"` rateaza starea "hi".
+pkg_installed() { [ "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null)" = installed ]; }
+
 # --- DKMS: un modul instalat din git (etapele 2 si 4) ---
 # Kernelurile cu headere instalate. Modulele se construiesc pentru toate, nu doar pentru cel pornit:
 # altfel kernelul de rezerva ramane fara driver.
@@ -634,7 +637,7 @@ info "Instalare pachete necesare: ${PKGS[*]}"
 sudo apt-get install -y "${PKGS[@]}" || fail "Instalarea pachetelor a esuat."
 
 for pkg in "${PKGS[@]}"; do
-    if dpkg -l "$pkg" 2>/dev/null | grep -q "^ii"; then
+    if pkg_installed "$pkg"; then
         ok "$pkg"
     else
         fail "Pachetul '$pkg' nu a putut fi instalat."
@@ -1167,7 +1170,7 @@ info "Instalare pachete VA-API: ${VAAPI_PKGS[*]}"
 sudo apt-get install -y "${VAAPI_PKGS[@]}" || fail "Instalarea pachetelor VA-API a esuat."
 
 for pkg in "${VAAPI_PKGS[@]}"; do
-    if dpkg -l "$pkg" 2>/dev/null | grep -q "^ii"; then
+    if pkg_installed "$pkg"; then
         ok "$pkg"
     else
         warn "Pachetul '$pkg' nu a putut fi instalat — poate nu e disponibil."
@@ -1264,7 +1267,7 @@ info "Instalare ${THERMAL_PKGS[*]}..."
 sudo apt-get install -y "${THERMAL_PKGS[@]}" || fail "Instalarea pachetelor thermald a esuat."
 
 for pkg in "${THERMAL_PKGS[@]}"; do
-    if dpkg -l "$pkg" 2>/dev/null | grep -q "^ii"; then
+    if pkg_installed "$pkg"; then
         ok "$pkg"
     else
         fail "$pkg nu a putut fi instalat."
