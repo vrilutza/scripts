@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-#  MacBook Pro 13" 2017 (A1708) — Debian Testing — Optimizare RAM + boot
+#  MacBook Pro 13" 2017 (A1708) — Debian trixie / forky / sid — Optimizare RAM + boot
 # =============================================================================
 #
 #  Companion pentru macbook-debian-setup.sh — dezactiveaza serviciile care nu

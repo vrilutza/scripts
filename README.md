@@ -1,13 +1,15 @@
 # scripts
 > **CONVENȚII** · ce e în depozitul ăsta și cum se folosește. Starea reală a lucrului e în [TODO.md](TODO.md).
 
-Setup scripts for **MacBook Pro 13" 2017 (A1708)** running **Debian Testing**.
+Setup scripts for **MacBook Pro 13" 2017 (A1708)** running **Debian trixie (stable), forky (testing) or sid
+(unstable)**. Older releases are not supported. Daily use and full testing are on forky; on trixie,
+read the note under [Usage](#usage) first.
 
-## Prerequisites — fresh Debian Testing install
+## Prerequisites — fresh Debian install
 
 Before running this script:
 
-1. **Install Debian Testing with non-free firmware enabled** — the Debian installer must include
+1. **Install Debian with non-free firmware enabled** — the Debian installer must include
    `firmware-iwlwifi`, `firmware-brcm80211` and friends. The graphical installer offers
    "non-free-firmware" as a checkbox; the netinst ISO from `cdimage.debian.org/cdimage/unofficial/non-free/firmware/`
    has them bundled. Without these, WiFi/Bluetooth will not work even after this script runs.
@@ -30,6 +32,12 @@ chmod +x macbook-debian-setup.sh
 ./macbook-debian-setup.sh
 sudo reboot
 ```
+
+> ⚠️ **trixie: the audio driver does not build for trixie's own 6.12 kernel yet, and the setup stops
+> at Stage 2.** Stage 2 builds for every kernel with headers installed, and trixie has the 6.12 headers
+> by default; the stages after it do not run. The fix is upstream, in the still open
+> [snd_hda_macbookpro PR #233](https://github.com/davidjo/snd_hda_macbookpro/pull/233); with it, the
+> driver builds for 6.12 and for 7.3.4 from trixie-backports. Details in [Tested on](#tested-on).
 
 ## After reboot — quick stability check
 
@@ -298,7 +306,7 @@ If `systemctl --failed` lists anything, drill in with `systemctl status <unit>` 
 
 ### `macbook-debian-setup.sh`
 
-Full setup for MacBook Pro 13" 2017 on a fresh Debian Testing install. Runs in 9 stages, each with auto-verification before proceeding.
+Full setup for MacBook Pro 13" 2017 on a fresh Debian install. Runs in 9 stages, each with auto-verification before proceeding.
 
 | Stage | What it does |
 |---|---|
@@ -621,19 +629,37 @@ machine. The chronic desync remains a generic-firmware quirk, handled by the Sta
 
 ## Tested on
 
-Debian Testing/forky. **Currently `7.1.13+deb14-amd64`**, with `7.1.12` kept installed as a
-fallback and all three DKMS modules (`facetimehd/0.7.2`, `snd_hda_macbookpro`, `v4l2loopback`)
-built for both. Re-checked 2026-09-12: camera verified end to end, Bluetooth and WiFi up.
+**Debian forky, on the MacBook.** Currently `7.3.5+deb14-amd64`, with `7.2.15+deb14-amd64` kept
+installed as a fallback. DKMS modules, built for both:
+- `facetimehd/0.7.2-master-4e588ae9` (patjak `master` of 6 Nov 2026);
+- `snd_hda_macbookpro/0.1-1931615d72` (davidjo `master` of 14 Nov 2026, installed on 23 Nov by the
+  new Stage 2);
+- `v4l2loopback/0.15.4`.
 
-> A DKMS module is only built for the kernels it was installed against. After replacing one by
-> hand, check `dkms status` lists **every** kernel you might boot — on 2026-09-12 `facetimehd` was
-> briefly present for `7.1.13` only, which would have left the fallback kernel without a camera.
-> `sudo dkms install -m <module> -v <version> -k <kernel>` fills the gap.
+Re-checked on 2026-11-23, on 7.3.5: WiFi up, camera at `/dev/video0`, and audio measured: a 1 kHz
+tone played through the speakers reaches the internal microphone at −30.6 dBFS with the new driver,
+against −30.5 dBFS with the previous one. **The headphone jack was not tested** with the new audio
+driver.
 
-Nothing in this repo is pinned to a kernel version. The machine has run the whole `7.0.x` → `7.1.x`
-path since May 2026; the two DKMS modules rebuild themselves on upgrade and the camera stack was
-re-verified end to end after `7.1.3 → 7.1.6` (identical `v4l2-compliance` result, capture working
-from 320x240 to 1296x736). Newer 7.1.x releases are expected to be uneventful.
+**Debian trixie: build-tested only**, in clean chroots (mmdebstrap) with the headers of trixie's
+6.12 kernel and, from trixie-backports, 7.3.4. `facetimehd` builds for both. The audio driver from
+upstream `master` builds for 7.3.4 but **not for 6.12**: its `dkms.conf` now expects the source
+layout of 6.17 and later. With [PR #233](https://github.com/davidjo/snd_hda_macbookpro/pull/233) (open) it builds
+for 6.12 and 7.3.4 alike, one DKMS version built for both kernels side by side. Until #233 is merged, the audio
+driver does not install on trixie's own kernel.
+
+**Debian sid:** not tested separately. On 2026-11-23 it has the same kernel as forky (7.3.5).
+
+> DKMS builds a module only for the kernels it is installed against. Stages 2 and 4 install the audio
+> and camera drivers for every kernel with headers; anything replaced by hand covers only the kernels
+> it was installed against. Check that `dkms status` lists **every** kernel you might boot: on 2026-09-12
+> `facetimehd` was briefly present for `7.1.13` only, which would have left the fallback kernel
+> without a camera. `sudo dkms install -m <module> -v <version> -k <kernel>` fills the gap.
+
+Nothing in this repo is pinned to a kernel version. Since May 2026 the machine has run kernels from
+`7.0.x` to `7.3.5`; the DKMS modules rebuild themselves on upgrade. The camera stack was re-verified
+end to end after `7.1.3 → 7.1.6` (identical `v4l2-compliance` result, capture working from 320x240 to
+1296x736).
 
 > ⚠️ **One thing that bites at every kernel upgrade:** install `linux-source-<X.Y>` **before**
 > upgrading, or the audio DKMS build fails — the driver's install script falls back to downloading

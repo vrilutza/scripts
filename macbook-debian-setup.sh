@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-#  MacBook Pro 13" 2017 (A1708) — Debian Testing — Setup Script
+#  MacBook Pro 13" 2017 (A1708) — Debian trixie / forky / sid — Setup Script
 # =============================================================================
 #
 #  Ce instaleaza:
@@ -611,7 +611,7 @@ setup_lock || fail "Nu pornesc: scriptul ruleaza o singura data odata."
 
 echo -e "${BOLD}"
 echo "  ╔══════════════════════════════════════════════════════╗"
-echo "  ║   MacBook Pro 13\" 2017 — Debian Testing Setup       ║"
+echo "  ║   MacBook Pro 13\" 2017 — Debian Setup               ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 info "Kernel curent: $KERNEL"
@@ -1230,7 +1230,7 @@ fi
 # Plus: curba SMC stock tine fan-ul prea jos (lent), laptopul sta inutil cald.
 #
 # Fix in 3 parti:
-#   8a) thermald 2.5.10 din apt — daemon dinamic care reduce P-state cand
+#   8a) thermald din apt — daemon dinamic care reduce P-state cand
 #       temperaturile cresc. Plus lm-sensors pentru monitoring manual.
 #   8b) Regula udev (scrie RAPL via ATTR) + macbook-rapl-thermald.service:
 #         PL1 = 22 W sustained — match Apple macOS config (cTDP-up)
