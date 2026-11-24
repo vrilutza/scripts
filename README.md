@@ -10,9 +10,11 @@ read the note under [Usage](#usage) first.
 Before running this script:
 
 1. **Install Debian with non-free firmware enabled** — the Debian installer must include
-   `firmware-iwlwifi`, `firmware-brcm80211` and friends. The graphical installer offers
-   "non-free-firmware" as a checkbox; the netinst ISO from `cdimage.debian.org/cdimage/unofficial/non-free/firmware/`
-   has them bundled. Without these, WiFi/Bluetooth will not work even after this script runs.
+   `firmware-iwlwifi`, `firmware-brcm80211` and friends. Since Debian 12, the official images, such as the
+   [netinst ISO](https://www.debian.org/CD/netinst/), include the non-free firmware packages; the installer
+   installs the firmware packages it loads and adds the `non-free-firmware` section to APT's `sources.list`
+   ([Installation Guide, 6.4](https://www.debian.org/releases/trixie/amd64/ch06s04.en.html)). Without these,
+   WiFi/Bluetooth will not work even after this script runs.
 2. **Boot into GNOME, open a terminal**, then install `git`:
    ```bash
    sudo apt update
