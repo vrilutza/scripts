@@ -661,12 +661,13 @@ Nothing in this repo is pinned to a kernel version. Since May 2026 the machine h
 end to end after `7.1.3 → 7.1.6` (identical `v4l2-compliance` result, capture working from 320x240 to
 1296x736).
 
-> ⚠️ **One thing that bites at every kernel upgrade:** install `linux-source-<X.Y>` **before**
-> upgrading, or the audio DKMS build fails — the driver's install script falls back to downloading
-> kernel sources from kernel.org, which 404s for `-rc` and end-of-life series.
-> ```bash
-> sudo apt install linux-source-7.1     # match your kernel's X.Y
-> ```
-> Reported upstream ([issue #187](https://github.com/davidjo/snd_hda_macbookpro/issues/187),
-> [PR #189](https://github.com/davidjo/snd_hda_macbookpro/pull/189)); until that lands, the manual
-> step stays. Details in [TODO.md, section 7.9](TODO.md#79-️-capcana-de-la-fiecare-upgrade-de-kernel--linux-source-întâi).
+> ⚠️ **The audio DKMS build needs kernel.org at every kernel upgrade.** The driver's install script
+> downloads the kernel's sound sources from kernel.org for each kernel it builds against. That fails
+> for `-rc` kernels, which are not in the release directory it downloads from (kernel.org has them
+> only as git snapshots), and while kernel.org is unavailable, as during the 3–4
+> July 2026 outage ([#195](https://github.com/davidjo/snd_hda_macbookpro/issues/195),
+> [#196](https://github.com/davidjo/snd_hda_macbookpro/issues/196)). End-of-life series are still
+> served. When the build fails, the kernel package is left half-configured (no initramfs, no GRUB
+> entry); `sudo dpkg --configure -a` re-runs the build and the rest of the kernel installation.
+> [PR #189](https://github.com/davidjo/snd_hda_macbookpro/pull/189) would make the script use the
+> local `linux-source-<X.Y>` package instead; until it lands, the setup does not use `linux-source`.

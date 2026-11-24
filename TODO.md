@@ -1091,8 +1091,8 @@ Fișier unic: **ce e rezolvat**, **ce e deschis și se poate repara**, **ce e wo
 *(Scos din listă pe 8 august: „persistența patch-ului `FTHD_BUFFERS=8`". Patch-ul nu mai există —
 vezi [secțiunea 3](#3--camera-facetime-hd--partajare-de-buffere-nesigură).)*
 
-**Nu e în tabelul de mai sus, dar e deschis:** [secțiunea 7.9](#79-️-capcana-de-la-fiecare-upgrade-de-kernel--linux-source-întâi) — capcana `linux-source` de la fiecare upgrade
-de kernel. Stă în [secțiunea 7](#7--rezolvate-arhivă-tehnică) fiindcă acolo o cauți, la upgrade, nu în lista de probleme active.
+**Nu e în tabelul de mai sus, dar e deschis:** [secțiunea 7.9](#79-️-sursele-sunetului-la-fiecare-upgrade-de-kernel) — descărcarea surselor sunetului de pe kernel.org la
+fiecare upgrade de kernel. Stă în [secțiunea 7](#7--rezolvate-arhivă-tehnică) fiindcă acolo o cauți, la upgrade, nu în lista de probleme active.
 
 ---
 
@@ -1491,8 +1491,8 @@ bugul altcuiva pe baza unei deduceri, fără să-l fi testat pe hardware-ul lui,
 afirmație care strică încrederea într-un patch bun.
 
 ⚠️ **Ultimele două nu erau consemnate nicăieri în acest repo** până pe 8 august, deși
-`#187` descrie exact capcana de la **fiecare** upgrade de kernel pe mașina asta: dacă
-`linux-source-<X.Y>` nu e instalat **înainte**, build-ul DKMS al audio-ului pică. Vezi [secțiunea 7.9](#79-️-capcana-de-la-fiecare-upgrade-de-kernel--linux-source-întâi).
+`#187` descrie descărcarea surselor de pe kernel.org la **fiecare** upgrade de kernel: pică pentru `-rc` și cât
+timp kernel.org nu răspunde. Vezi [secțiunea 7.9](#79-️-sursele-sunetului-la-fiecare-upgrade-de-kernel).
 
 ---
 
@@ -5159,7 +5159,7 @@ DMAR: ANDD device: 9 name: \_SB.PCI0.UA00     ← nu se rezolvă
 
 Probleme închise. Păstrate cu detaliul tehnic care contează, ca să nu fie re-deschise sau re-diagnosticate.
 
-⚠️ **Excepție: [secțiunea 7.9](#79-️-capcana-de-la-fiecare-upgrade-de-kernel--linux-source-întâi) nu e o problemă închisă.** E o capcană recurentă, care se manifestă doar la
+⚠️ **Excepție: [secțiunea 7.9](#79-️-sursele-sunetului-la-fiecare-upgrade-de-kernel) nu e o problemă închisă.** E o capcană recurentă, care se manifestă doar la
 upgrade de kernel; stă aici pentru că acolo o cauți, nu în lista de probleme active.
 
 ### 7.1 NVRAM `AutoBoot` — pornire nedorită la ridicarea capacului (PASUL 17 din optimize)
@@ -5201,8 +5201,8 @@ Pe 12 septembrie, după trecerea driverului camerei pe `0.7.2`, el exista doar p
 kernelul de rezervă `7.1.12` ar fi pornit **fără cameră**, și s-ar fi văzut abia când ai fi avut
 nevoie de el. Reparat cu `sudo dkms install -m facetimehd -v 0.7.2 -k 7.1.12+deb14-amd64`.
 
-⚠️ **Înainte de orice upgrade de kernel: `apt install linux-source-<X.Y>`** — altfel build-ul DKMS al
-audio-ului pică. Vezi [secțiunea 7.9](#79-️-capcana-de-la-fiecare-upgrade-de-kernel--linux-source-întâi).
+⚠️ **La fiecare upgrade de kernel, build-ul DKMS al audio-ului descarcă sursele de pe kernel.org**; pică pentru
+`-rc` și cât timp kernel.org nu răspunde. Vezi [secțiunea 7.9](#79-️-sursele-sunetului-la-fiecare-upgrade-de-kernel).
 
 ### 7.3 Curățenie repo experimental — **deja făcută** (reverificat 8 aug)
 
@@ -5257,35 +5257,32 @@ nu `platform-applespi:bluetooth`, cum apare prin unele documentații.)*
 - **`udevadm settle` hang pe 7.0.10** — bound `--timeout=5` (ETAPA 8b); era efect al bug-ului audio.
 - **BT „down" după upgrade 7.0.10** — era stare Broadcom după repornire, **nu** kernel (vezi [secțiunea 1](#1--bluetooth-bcm4350c0--init-eșuat-la-14-din-boot-uri)).
 
-### 7.9 ⚠️ Capcana de la fiecare upgrade de kernel — `linux-source` întâi
+### 7.9 ⚠️ Sursele sunetului la fiecare upgrade de kernel
 
-**Nu e rezolvată, dar nici nu era scrisă nicăieri până pe 8 august.** Se pune aici pentru că se
-manifestă doar la upgrade și e ușor de uitat exact atunci.
+> **Rescrisă pe 23 noiembrie 2026, precizată pe 24 noiembrie.** Varianta veche spunea că kernel.org dă 404 pentru seriile
+> EOL. Era greșit: seriile EOL se servesc în continuare. Cauza probabilă a 404-ului din 4 iulie e pana kernel.org din 3–4
+> iulie, când `v6.x` și `v7.x` nu răspundeau ([#195](https://github.com/davidjo/snd_hda_macbookpro/issues/195),
+> [#196](https://github.com/davidjo/snd_hda_macbookpro/issues/196)); log-ul nostru de build e din 4 iulie, din timpul penei.
+> Pana ne-o semnalase chiar davidjo pe #187, la două ore după comentariul nostru. Pe 23 noiembrie, kernel.org dă 200
+> pentru 7.0, 7.0.13, 7.1, 7.2, 6.13, 6.11, 6.1 și 5.4, și 404 doar pentru `linux-7.4-rc4.tar.xz` din directorul de release.
+> Kernelurile `-rc` există acolo doar ca snapshot git
+> (`git.kernel.org/torvalds/t/linux-7.4-rc4.tar.gz`: 200), din care instalatorul nu descarcă. Primul control, cu
+> `linux-7.4-rc5`, nu dovedea nimic: rc5 nu era încă lansat (ultimul e rc4, 22 noiembrie). Corectura e publicată pe [#187](https://github.com/davidjo/snd_hda_macbookpro/issues/187#issuecomment-7105924092)
+> și în comentariul nostru de pe [#189](https://github.com/davidjo/snd_hda_macbookpro/pull/189#issuecomment-4881034632).
 
-`install.cirrus.driver.sh` din `snd_hda_macbookpro` are nevoie de sursele `sound/hda` ale kernelului.
-Preferă `/usr/src/linux-source-<X.Y>.tar.xz` (pachetul Debian `linux-source-<X.Y>`) și, dacă lipsește,
-încearcă să descarce `linux-<X.Y>.tar.xz` de pe kernel.org — care **dă 404 și pentru `-rc`, și pentru
-seriile EOL**. S-a întâmplat pe 4 iulie 2026 cu 7.0.13, când seria 7.0 a ieșit din suport.
+`install.cirrus.driver.sh` din `snd_hda_macbookpro` are nevoie de sursele `sound/hda` ale kernelului. Codul din upstream
+`master`, pe care îl instalează setup-ul și care rulează pe MacBook din 23 noiembrie, le descarcă de pe kernel.org: întâi
+`linux-<versiunea întreagă>.tar.xz`, apoi `linux-<X.Y>.tar.xz`. Descărcarea eșuează pentru kernelurile `-rc` și cât timp
+kernel.org nu răspunde. Pachetul de kernel rămâne atunci configurat pe jumătate (`iF`, fără initramfs și fără intrare GRUB);
+`sudo dpkg --configure -a` reia build-ul și restul instalării.
 
-```
-# ÎNAINTE de orice upgrade de kernel:
-sudo apt install linux-source-<X.Y>
-
-# dacă build-ul a picat deja (pachete blocate în starea iF):
-sudo apt install linux-source-<X.Y> && sudo dpkg --configure -a
-```
+[PR #189](https://github.com/davidjo/snd_hda_macbookpro/pull/189), scris de aici, face scriptul să folosească întâi sursa
+locală, pachetul Debian `linux-source-<X.Y>`. E deschis din 14 iunie, `mergeable`. Până se acceptă, `linux-source` nu e
+folosit. Până pe 23 noiembrie, pe MacBook rula codul din acest PR, iar regula „instalează `linux-source-<X.Y>` înainte de
+upgrade” era necesară doar pentru el. [Issue #187](https://github.com/davidjo/snd_hda_macbookpro/issues/187) e închis de
+Viorel din 6 octombrie.
 
 `facetimehd` nu e afectat (nu descarcă nimic).
-
-Raportat upstream, ambele scrise de aici, **ambele încă deschise** *(verificat 13 sep, neschimbate)*:
-[issue #187](https://github.com/davidjo/snd_hda_macbookpro/issues/187) (7 comentarii) și
-[PR #189](https://github.com/davidjo/snd_hda_macbookpro/pull/189), care face scriptul să prefere
-sursa distribuției. Până se acceptă, pasul manual de mai sus rămâne obligatoriu.
-
-- [ ] `⏳` De adăugat `linux-source-$(uname -r | cut -d. -f1,2)` în etapa 1 din
-      `macbook-debian-setup.sh`, ca să nu depindă de memoria nimănui.
-
----
 
 ## 8. 🟡 Opriri spontane — cauză nedeterminată
 
