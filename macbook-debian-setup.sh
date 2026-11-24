@@ -653,7 +653,8 @@ UPDATE_FAILED=()   # actualizarile din git care nu s-au facut; la final, exit 1
 KERNEL="$(uname -r)"
 
 mkdir -p "$WORKDIR"
-LOGFILE="$WORKDIR/setup-$(date +%Y%m%d-%H%M%S).log"
+# PID-ul in nume: doua rulari pornite in aceeasi secunda nu scriu in acelasi log.
+LOGFILE="$WORKDIR/setup-$(date +%Y%m%d-%H%M%S)-$$.log"
 exec > >(tee -a "$LOGFILE") 2>&1
 
 # =============================================================================

@@ -119,7 +119,8 @@ fail()  {
 CURRENT_STEP="initializare"
 WORKDIR="$HOME/macbook-setup"
 mkdir -p "$WORKDIR"
-LOGFILE="$WORKDIR/optimize-$(date +%Y%m%d-%H%M%S).log"
+# PID-ul in nume: doua rulari pornite in aceeasi secunda nu scriu in acelasi log.
+LOGFILE="$WORKDIR/optimize-$(date +%Y%m%d-%H%M%S)-$$.log"
 exec > >(tee -a "$LOGFILE") 2>&1
 
 [ "$EUID" -eq 0 ] && fail "Nu rula ca root. Foloseste un user normal cu sudo."
