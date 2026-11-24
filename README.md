@@ -158,7 +158,7 @@ gsettings set org.gnome.settings-daemon.plugins.power idle-dim true          # o
 ```bash
 LIBVA_DRIVER_NAME=iHD vainfo 2>&1 | head -10    # iHD driver (Kaby Lake native) profiles
 vainfo 2>&1 | grep VAProfile                    # All profiles available (any driver)
-dpkg -l intel-media-va-driver i965-va-driver    # Both VA-API packages installed?
+dpkg -l 'intel-media-va-driver*'                # iHD installed (main, or -non-free if you had it)?
 ```
 
 Browser-side check: open `chrome://gpu` in Chrome/Chromium and look for **Video Decode: Hardware accelerated**. In Firefox, `about:support` → search "Decoder" → should show VAAPI for H.264/HEVC.
@@ -315,7 +315,7 @@ Full setup for MacBook Pro 13" 2017 on a fresh Debian install. Runs in 9 stages,
 | 3 — Camera firmware | [patjak/facetimehd-firmware](https://github.com/patjak/facetimehd-firmware) — extracted from Apple OS X driver |
 | 4 — Camera driver | [patjak/facetimehd](https://github.com/patjak/facetimehd) — kernel module via DKMS, versioned from git and built for every kernel with headers |
 | 5 — System fixes | Backlight (`acpi_backlight=native`) + `reboot=pci` + sleep targets masked (suspend/hibernate blocked — see below) + Bluetooth rfkill unblock at boot + `AutoEnable` ([see below](#bluetooth)) + WiFi stability: power-save off + `kernel.panic=10` ([see below](#wifi-bcm4350--chronic-firmware-desync--the-july-2026-kernel-panic-mitigated-by-stage-5g)) + fixed brightness: ALS auto-brightness + idle-dim off (5h) |
-| 6 — VA-API | `intel-media-va-driver` + `i965-va-driver` — hardware video acceleration for Intel Iris Plus 640 |
+| 6 — VA-API | `intel-media-va-driver` + `vainfo` — hardware video acceleration for Intel Iris Plus 640; an installed `intel-media-va-driver-non-free` (adds encoding and video processing) is kept |
 | 7 — Touchpad UX | `tap-to-click` + `natural-scroll` + `disable-while-typing` via gsettings — macOS-like out of the box |
 | 8 — Thermal management | `thermald` + `lm-sensors` + RAPL PL1=22W / PL2=30W (Apple-like) via udev rule + thermald reinit + fan floor (`fan1_min=3500` RPM) |
 | 9 — Cosmetic / journal | GNOME media-keys (`hibernate`/`playback-repeat`) + `usb-protection` off + `applespi fnmode=1` — silences benign per-boot log errors |

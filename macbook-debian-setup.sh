@@ -1158,18 +1158,27 @@ fi
 # ETAPA 6/9 — Accelerare video hardware VA-API (Intel Iris Plus 640)
 # Problema: "vaInitialize failed: unknown libva error" in VS Code / Chrome
 # Cauza:    driver-ele VA-API pentru Intel Kaby Lake nu sunt instalate
-# Fix:      intel-media-va-driver (iHD, Kaby Lake+) + i965-va-driver (fallback)
+# Fix:      intel-media-va-driver (iHD, Kaby Lake+); intel-media-va-driver-non-free ramane, daca e deja instalat
 # =============================================================================
 CURRENT_STEP="ETAPA 6/9 — Accelerare video hardware VA-API"
 step "$CURRENT_STEP"
 info "Intel Iris Plus 640 (Kaby Lake) — instalare drivere VA-API..."
 
-VAAPI_PKGS=(intel-media-va-driver i965-va-driver vainfo)
+# intel-media-va-driver-non-free (din non-free) adauga codare si procesare video; e o alternativa la
+# intel-media-va-driver (Conflicts), deci instalarea variantei din main ar scoate-o.
+if pkg_installed intel-media-va-driver-non-free; then
+    info "intel-media-va-driver-non-free e deja instalat; il pastrez."
+    VAAPI_DRIVER=intel-media-va-driver-non-free
+    VAAPI_PKGS=(vainfo)
+else
+    VAAPI_DRIVER=intel-media-va-driver
+    VAAPI_PKGS=(intel-media-va-driver vainfo)
+fi
 
 info "Instalare pachete VA-API: ${VAAPI_PKGS[*]}"
 sudo apt-get install -y "${VAAPI_PKGS[@]}" || fail "Instalarea pachetelor VA-API a esuat."
 
-for pkg in "${VAAPI_PKGS[@]}"; do
+for pkg in "$VAAPI_DRIVER" vainfo; do
     if pkg_installed "$pkg"; then
         ok "$pkg"
     else
@@ -1183,12 +1192,7 @@ if command -v vainfo &>/dev/null; then
     if [ "$VAAPI_iHD" -gt 0 ]; then
         ok "VA-API functional cu driver iHD (Intel Media Driver — Kaby Lake)."
     else
-        VAAPI_i965=$(LIBVA_DRIVER_NAME=i965 vainfo 2>&1 | grep -c "VAProfile" || true)
-        if [ "$VAAPI_i965" -gt 0 ]; then
-            ok "VA-API functional cu driver i965 (fallback)."
-        else
-            warn "VA-API instalat dar neactivat inca — va fi activ dupa reboot."
-        fi
+        warn "VA-API instalat dar neactivat inca — va fi activ dupa reboot."
     fi
 else
     warn "vainfo nu este disponibil pentru verificare — reboot si verifica manual cu: vainfo"
@@ -1546,7 +1550,7 @@ echo -e "  ${GREEN}✓${NC}  Lid close = lock screen (logind), nu suspend"
 echo -e "  ${GREEN}✓${NC}  Sleep hooks (facetimehd + brcmfmac PCI unbind) — defensive pt suspend manual"
 echo -e "  ${GREEN}✓${NC}  Touchpad: libinput protejeaza in userspace (nu mai aplicam patch DKMS)"
 echo -e "  ${GREEN}✓${NC}  Touchpad UX — tap-to-click + natural scroll + disable-while-typing"
-echo -e "  ${GREEN}✓${NC}  Accelerare video VA-API — intel-media-va-driver + i965-va-driver"
+echo -e "  ${GREEN}✓${NC}  Accelerare video VA-API — ${VAAPI_DRIVER}"
 echo -e "  ${GREEN}✓${NC}  thermald (Intel thermal daemon) + lm-sensors"
 echo -e "  ${GREEN}✓${NC}  RAPL: PL1=22W / PL2=30W (Apple-like) prin regula udev + thermald reinit"
 echo -e "  ${GREEN}✓${NC}  Fan floor: fan1_min=3500 RPM (rece la idle, SMC ramp auto deasupra)"
