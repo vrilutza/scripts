@@ -266,13 +266,23 @@ else
 fi
 
 GRUB_FILE="/etc/default/grub"
+# Ca in macbook-debian-setup.sh (etapa 5a): markerul se pune inainte de editare si se sterge dupa un update-grub
+# reusit, ca o reluare dupa un update-grub esuat sa regenereze grub.cfg desi 'quiet' nu mai e in $GRUB_FILE.
+# Markerul e comun cu setup-ul; blocarea comuna (setup_lock) impiedica rularea lor in acelasi timp.
+GRUB_PENDING="$WORKDIR/grub-regenerare-in-asteptare"
 if grep -E '^GRUB_CMDLINE_LINUX_DEFAULT=' "$GRUB_FILE" | grep -qE '\b(quiet|splash)\b'; then
+    touch "$GRUB_PENDING" || fail "Nu am putut crea $GRUB_PENDING."
     sudo sed -i '/^GRUB_CMDLINE_LINUX_DEFAULT=/{s/\bquiet\b *//g; s/\bsplash\b *//g; s/" /"/}' \
         "$GRUB_FILE" || fail "Nu am putut edita $GRUB_FILE."
-    sudo update-grub || fail "update-grub a esuat."
-    ok "'quiet' scos din GRUB — la boot vezi mesajele serviciilor."
+elif [ -e "$GRUB_PENDING" ]; then
+    info "Regenerarea grub.cfg dintr-o rulare anterioara nu s-a terminat — se reia."
 else
     warn "GRUB nu contine quiet/splash — nimic de facut."
+fi
+if [ -e "$GRUB_PENDING" ]; then
+    sudo update-grub || fail "update-grub a esuat."
+    rm -f "$GRUB_PENDING" || fail "Nu am putut sterge $GRUB_PENDING."
+    ok "grub.cfg regenerat, fara 'quiet' — la boot vezi mesajele serviciilor."
 fi
 grep -E '^GRUB_CMDLINE_LINUX_DEFAULT=' "$GRUB_FILE" | grep -qE '\bquiet\b' \
     && fail "'quiet' este inca in $GRUB_FILE."

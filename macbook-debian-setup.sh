@@ -888,10 +888,20 @@ info "Verificare parametri GRUB..."
 
 GRUB_FILE="/etc/default/grub"
 GRUB_NEEDS_UPDATE=false
+# Markerul se pune inainte de orice editare si se sterge dupa un update-grub reusit. Daca update-grub esueaza sau
+# rularea se opreste intre editare si regenerare, la reluare parametrii sunt deja in $GRUB_FILE si fara marker
+# grub.cfg ar ramane cel vechi. Acelasi marker il foloseste macbook-debian-optimize.sh (pasul 3); blocarea comuna
+# (setup_lock) impiedica cele doua scripturi sa editeze si sa regenereze in acelasi timp.
+GRUB_PENDING="$WORKDIR/grub-regenerare-in-asteptare"
+if [ -e "$GRUB_PENDING" ]; then
+    info "Regenerarea grub.cfg dintr-o rulare anterioara nu s-a terminat — se reia."
+    GRUB_NEEDS_UPDATE=true
+fi
 
 # Inlocuieste mem_sleep_default=s2idle cu deep daca exista din versiuni anterioare
 if grep -q "mem_sleep_default=s2idle" "$GRUB_FILE"; then
     info "Inlocuire mem_sleep_default=s2idle cu deep..."
+    touch "$GRUB_PENDING" || fail "Nu am putut crea $GRUB_PENDING."
     sudo sed -i 's/mem_sleep_default=s2idle/mem_sleep_default=deep/g' \
         "$GRUB_FILE" || fail "Inlocuirea sleep mode in GRUB a esuat."
     GRUB_NEEDS_UPDATE=true
@@ -903,6 +913,7 @@ for param in "acpi_backlight=native" "mem_sleep_default=deep" "nvme.noacpi=1" \
         info "Prezent: $param"
     else
         info "Adaugare: $param"
+        touch "$GRUB_PENDING" || fail "Nu am putut crea $GRUB_PENDING."
         sudo sed -i \
             "s|GRUB_CMDLINE_LINUX_DEFAULT=\"\(.*\)\"|GRUB_CMDLINE_LINUX_DEFAULT=\"\1 ${param}\"|" \
             "$GRUB_FILE" || fail "Adaugare '$param' in GRUB a esuat."
@@ -913,6 +924,7 @@ done
 if [ "$GRUB_NEEDS_UPDATE" = true ]; then
     info "Regenerare grub.cfg..."
     sudo update-grub || fail "update-grub a esuat."
+    rm -f "$GRUB_PENDING" || fail "Nu am putut sterge $GRUB_PENDING."
 fi
 
 for param in "acpi_backlight=native" "mem_sleep_default=deep" "nvme.noacpi=1" \
