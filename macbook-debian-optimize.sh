@@ -79,7 +79,8 @@
 #  (telefon Samsung pe USB), bolt/udisks2 (necesare, oricum in paralel la boot).
 #
 #  Optiuni (schimba in 0 ca sa sari peste pasul respectiv):
-#    OPT_DOCKER=1       — pasul 1 (site-urile dev nu mai sunt up imediat la boot)
+#    OPT_DOCKER=1       — pasul 1 (site-urile dev nu mai sunt up imediat la boot);
+#                         fara Docker instalat, pasul 1 se sare singur
 #    OPT_LOCALSEARCH=1  — pasul 5 (cautarea in Files devine limitata)
 #    OPT_EDS=1          — pasul 13 (calendarul din Shell nu mai arata evenimente)
 #
@@ -180,7 +181,13 @@ user_mask() {  # $1=unit (user)
 # =============================================================================
 # PASUL 1 — Docker on-demand (cel mai mare castig: ~700 MB + 2.8s la boot)
 # =============================================================================
-if [ "$OPT_DOCKER" = "1" ]; then
+# Fara Docker instalat nu exista docker.socket: pasul 1 si verificarile lui finale nu au obiect. Daca unitatea exista,
+# dar nu poate fi activata, scriptul se opreste mai jos, ca inainte.
+if [ "$OPT_DOCKER" = "1" ] && [ "$(systemctl show -p LoadState --value docker.socket 2>/dev/null)" = "not-found" ]; then
+    step "PASUL 1 — Docker: SARIT (docker.socket nu exista)"
+    warn "Docker nu e instalat — nimic de facut."
+    OPT_DOCKER=0
+elif [ "$OPT_DOCKER" = "1" ]; then
     CURRENT_STEP="PASUL 1 — Docker on-demand"
     step "$CURRENT_STEP"
 
@@ -603,5 +610,5 @@ echo ""
 echo -e "  ${GREEN}✓${NC}  Castig masurat: boot 16s -> ~10s; servicii sistem 862 -> ~220 MB; sesiune -~280 MB"
 echo -e "  ${YELLOW}⚠${NC}  Necesar: ${BOLD}sudo reboot${NC} pentru efectul complet."
 echo -e "  ${BLUE}→${NC}  Dupa reboot, masoara cu: systemd-analyze && free -h"
-echo -e "  ${BLUE}→${NC}  Docker: stack-urile dev pornesc la prima comanda docker (ex: docker ps)."
+[ "$OPT_DOCKER" = "1" ] && echo -e "  ${BLUE}→${NC}  Docker: stack-urile dev pornesc la prima comanda docker (ex: docker ps)."
 echo ""

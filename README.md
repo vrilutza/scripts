@@ -378,7 +378,7 @@ mouse), `avahi-daemon` (SSH/`.local` to a second PC), `gvfs-mtp`/`gphoto2` (Sams
 
 Options at the top of the script: `OPT_DOCKER=0` skips step 1 (keep dev stacks up right after boot),
 `OPT_LOCALSEARCH=0` skips step 5 (keep file search), `OPT_EDS=0` skips step 13 (keep Shell calendar
-events). Run it, then `sudo reboot`; measure with `systemd-analyze && free -h`.
+events). Without Docker installed, step 1 is skipped on its own. Run it, then `sudo reboot`; measure with `systemd-analyze && free -h`.
 
 ## Touchpad — no patch needed
 
