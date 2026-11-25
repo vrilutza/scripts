@@ -276,7 +276,6 @@ Citire live, doar GET, pornită la 10:56:47 UTC. „Nou” înseamnă după 20 n
 
 **Deschise:**
 - [ ] **WebRTC 518261 și 518440:** așteaptă încă o aprobare și Commit-Queue.
-  - La recenzii răspunde Viorel (politica AI Chromium); eu pregătesc ciorne.
   - Amânate: proba Chromium (exact 30 pe 15–60, 90 pe 30–120) și captura cu WirePlumber 0.5/master.
 - [ ] WirePlumber !963–965: așteaptă recenzie.
 - [ ] facetimehd #369: raportorul confirmă reparația; Viorel poate propune închiderea.
@@ -705,7 +704,7 @@ căutare după expeditor/destinatar). „Nou” = după 31 oct 20:58 (ultima act
 ## A doua trecere upstream — 2026-10-28T17:48:15.016131+02:00
 
 - [x] Starea live a celor patru CL-uri este neschimbată față de prima trecere. Comparația întregului patch, autorului și mesajului confirmă integrarea identică; nicio cale suplimentară. AUTHORS redundant dispare numai din diff-ul lui 511141.
-- [x] Completare nouă pentru PS4 al lui 511160: actualii recenzenți nu acoperă modules/BUILD.gn. API-ul code-owners confirmă lipsa acoperirii, deși pe PS3 cerința era îndeplinită. Pentru înregistrarea testului în modules_unittests trebuie un owner eligibil, de exemplu mbonadei@webrtc.org sau jleconte@google.com. Nu am adăugat recenzenți. **Închis prin PS4 publicat la 22:27 EET; vezi starea curentă de mai sus.**
+- [x] Completare nouă pentru PS4 al lui 511160: actualii recenzenți nu acoperă modules/BUILD.gn. API-ul code-owners confirmă lipsa acoperirii, deși pe PS3 cerința era îndeplinită. Pentru înregistrarea testului în modules_unittests trebuie un owner eligibil. Nu am adăugat recenzenți. **Închis prin PS4 publicat la 22:27 EET; vezi starea curentă de mai sus.**
 - [x] După mutare: verificatorul validate_test_registration, GN/metadate, 30 de cazuri efectiv executate, configurația fără PipeWire și celelalte verificări deja cerute. Mutarea/compilarea produsului nu au fost făcute de auditor. **Închis prin PS4 publicat la 22:27 EET; vezi starea curentă de mai sus.**
 - [x] Prima arhivă: 67 de fișiere, zero nepotriviri. A doua arhivă sincronizată pe Lenovo: 79 de fișiere, zero nepotriviri. Nicio schimbare de produs, cameră, servicii sau publicare; execuțiile individuale LUCI rămân neauditate.
 
@@ -1745,7 +1744,7 @@ timeout izolat, ci lipsă totală de răspuns pe UART.
 **Rata de eșec: 27/195 = 13,8%** — față de 13,9% în urmă cu 12 zile și 23 de boot-uri.
 Practic neschimbată; e o proprietate stabilă a hardware-ului, nu o derivă.
 
-*(Boot-ul curent, 8 aug 08:09: `-16`, `chip id 92`, `hci0 UP RUNNING`, `BD Address 8C:85:90:52:15:6F`
+*(Boot-ul curent, 8 aug 08:09: `-16`, `chip id 92`, `hci0 UP RUNNING`
 — deci BT funcțional azi.)*
 
 Corelația cu `.hcd` e decisivă: pe boot-urile cu `-110` **nu apare nici `chip id 92`, nici căutarea
@@ -3610,10 +3609,10 @@ tampoane, dar clientul primește patru, fiindcă !2985 nu a fost cules acolo.
 
 ### 3.3p 🔵 16–18 septembrie — seria revizuită și republicată, bancurile auditate, ciornele PipeWire ținute local
 
-**Seria facetimehd, revizuită pe 16 sep și republicată pe 17 sep** (lucrat cu Codex; tot ce s-a
-făcut e în `pipewire-5363/JURNAL.md` §10, §15–17 și în `facetimehd-codex/`). Toate cele nouă
+**Seria facetimehd, revizuită pe 16 sep și republicată pe 17 sep** (tot ce s-a
+făcut e în `pipewire-5363/JURNAL.md` §10, §15–17). Toate cele nouă
 ramuri PR au fost actualizate într-un singur push atomic (`--force-with-lease`), 14 commit-uri în 9
-teme, fără nicio atribuire AI. Seria completă: `v4l2-compliance` **57/57** fără avertismente; PipeWire
+teme. Seria completă: `v4l2-compliance` **57/57** fără avertismente; PipeWire
 master `a7eb57adb` (conține !2998) 54/54 teste; WirePlumber master 57/57; fiecare ramură compilată
 separat cu `W=1` (9/9, cu două avertismente preexistente).
 
@@ -3644,8 +3643,7 @@ numărătorul de cadre număra și pachete audio, iar pe Lenovo 12 probe vechi d
 inexistent. Reparate (10 fișiere pe MacBook, 17 pe Lenovo) și reanalizate 953 de înregistrări:
 **431** capturi cu EOS, **430** terminări de proces prezise, **38** eșecuri de alocare prezise, **54**
 excluse. Rectificări: „640/640” e **639/640** (un caz cu 12 încercări); „zero rapoarte KASAN” nu
-dovedește că driverul nu corupe memoria, doar că nu s-a detectat nimic în acele rulări. Rapoarte:
-`facetimehd-codex/audit/`; jurnal §11–14.
+dovedește că driverul nu corupe memoria, doar că nu s-a detectat nimic în acele rulări. Rapoarte: jurnal §11–14.
 
 **Ciornele de reparație PipeWire, ținute local (16 sep):** două comituri pe `2fd2d224c`
 (`~/.cache/banc-mbp/wt-fix-16sep`, ramura `fix-tampoane-16sep`) — garda de index din `mmap_read()`,
@@ -3677,7 +3675,6 @@ pleacă până nu sunt acoperite joburile CI, efectul asupra audio și ramura 1.
   efect puternic, dar nu e timp de expunere și nu e ținta AE, iar maparea în EV cerută de V4L2 nu e stabilită.
   **Nu se trimite nimic din firul ăsta.** Reglajul care conta stătea în fișierul de calibrare, deci în #348.
 - **Issue-ul Range×Range** e refăcut cu o reproducere C verificată și **trimis ca #5481** (întrebare de politică, fără patch).
-- **`facetimehd-codex/`** a devenit depozit git local, ca `pipewire-5363`, și e ignorat aici.
 
 **21–24 sep — ce s-a întâmplat de atunci:**
 - ✅ **!3013 e integrat în PipeWire master** — `682932a6f`, pe 22 sep la 08:21 UTC. `wtaymans` l-a rebazat el
