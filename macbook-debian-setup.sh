@@ -51,7 +51,8 @@ fail()  {
     exit 1
 }
 
-# O singura rulare a scriptului odata, pe masina: flock pe /run/lock/macbook-setup.lock, tinut pana iese scriptul.
+# O singura rulare odata, pe masina, a acestui script sau a lui macbook-debian-optimize.sh, care ia aceeasi blocare:
+# flock pe /run/lock/macbook-setup.lock, tinut pana iese scriptul.
 # Se ia inainte de etapa 1: instalarea headerelor de acolo poate porni `dkms autoinstall`, care ar instala sau ar scoate
 # module in timp ce alta rulare e in etapele 2-4. Un `apt` pornit in afara scriptului nu e oprit de ea. Intoarce 1
 # daca blocarea e ocupata sau nu se poate deschide.
@@ -61,7 +62,7 @@ setup_lock() {
     { exec {SETUP_LOCK_FD}<>"$lock"; } 2>/dev/null || { exec {SETUP_LOCK_FD}<"$lock"; } 2>/dev/null \
         || { warn "Nu pot deschide blocarea $lock."; return 1; }
     flock -n "$SETUP_LOCK_FD" \
-        || { warn "O alta rulare a scriptului e in curs (blocare: $lock); reia dupa ce se termina."; return 1; }
+        || { warn "Ruleaza deja setup-ul sau optimize-ul (blocare: $lock); reia dupa ce se termina."; return 1; }
 }
 
 # Pachetul $1 e instalat, inclusiv cand e pus pe hold: `dpkg -l | grep "^ii"` rateaza starea "hi".
@@ -665,7 +666,7 @@ exec > >(tee -a "$LOGFILE") 2>&1
 if ! sudo -v 2>/dev/null; then
     fail "Ai nevoie de acces sudo pentru a continua."
 fi
-setup_lock || fail "Nu pornesc: scriptul ruleaza o singura data odata."
+setup_lock || fail "Nu pornesc: setup-ul si optimize-ul ruleaza cate unul odata."
 
 echo -e "${BOLD}"
 echo "  ╔══════════════════════════════════════════════════════╗"

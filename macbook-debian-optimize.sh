@@ -116,6 +116,18 @@ fail()  {
     exit 1
 }
 
+# Aceeasi blocare ca in macbook-debian-setup.sh: flock pe /run/lock/macbook-setup.lock, tinut pana iese scriptul.
+# Cele doua scripturi nu ruleaza simultan, nici doua rulari ale aceluiasi script; amandoua editeaza /etc/default/grub.
+# Intoarce 1 daca blocarea e ocupata sau nu se poate deschide.
+setup_lock() {
+    local lock=/run/lock/macbook-setup.lock
+    # Redirectarea lui stderr e pe grup: pe `exec` insusi ar ramane pentru tot scriptul.
+    { exec {SETUP_LOCK_FD}<>"$lock"; } 2>/dev/null || { exec {SETUP_LOCK_FD}<"$lock"; } 2>/dev/null \
+        || { warn "Nu pot deschide blocarea $lock."; return 1; }
+    flock -n "$SETUP_LOCK_FD" \
+        || { warn "Ruleaza deja setup-ul sau optimize-ul (blocare: $lock); reia dupa ce se termina."; return 1; }
+}
+
 CURRENT_STEP="initializare"
 WORKDIR="$HOME/macbook-setup"
 mkdir -p "$WORKDIR"
@@ -125,6 +137,7 @@ exec > >(tee -a "$LOGFILE") 2>&1
 
 [ "$EUID" -eq 0 ] && fail "Nu rula ca root. Foloseste un user normal cu sudo."
 sudo -v 2>/dev/null || fail "Ai nevoie de acces sudo pentru a continua."
+setup_lock || fail "Nu pornesc: setup-ul si optimize-ul ruleaza cate unul odata."
 
 echo -e "${BOLD}"
 echo "  ╔══════════════════════════════════════════════════════╗"
